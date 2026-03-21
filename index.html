@@ -184,6 +184,89 @@
             </div>
         </div>
     </div>
+<!-- TAB 5: KALKULYATOR -->
+    <div id="calculatorTab" class="tab-content">
+        <div class="page-header">
+            <h2>🧮 Kalkulyator</h2>
+            <div class="header-avatar">🧾</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Netto maoshni hisoblash</div>
+            <div class="input-group">
+                <label>Brutto maosh (UZS)</label>
+                <input type="number" id="calcBrutto" placeholder="Masalan: 8000000" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>Soliq (%)</label>
+                <input type="number" id="calcTax" placeholder="Masalan: 12" value="12" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>Bonus (UZS)</label>
+                <input type="number" id="calcBonus" placeholder="Masalan: 500000" value="0" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>Overtime soat</label>
+                <input type="number" id="calcOvertimeHours" placeholder="Masalan: 8" value="0" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>Overtime stavka (UZS/soat)</label>
+                <input type="number" id="calcOvertimeRate" placeholder="Masalan: 45000" value="0" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>Jarima / ushlanma (UZS)</label>
+                <input type="number" id="calcPenalty" placeholder="Masalan: 200000" value="0" inputmode="numeric">
+            </div>
+            <button class="btn-main" onclick="calculateSalary()">🧮 Hisoblash</button>
+        </div>
+
+        <div id="calcResult" class="card hidden"></div>
+
+        <div class="card">
+            <div class="card-title">What-if: maosh oshsa nima bo'ladi?</div>
+            <div class="input-group">
+                <label>Oshirish foizi: <span id="raisePercentLabel">10%</span></label>
+                <input type="range" id="raisePercent" min="0" max="100" value="10" oninput="updateRaisePreview()">
+            </div>
+            <div id="raisePreview" class="whatif-preview">Brutto kiriting va hisoblang.</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">So'nggi hisob-kitoblar</div>
+            <div id="calcHistory" class="history-compact"></div>
+        </div>
+    </div>
+
+    <!-- TAB 6: SOZLAMALAR -->
+    <div id="settingsTab" class="tab-content">
+        <div class="page-header">
+            <h2>⚙️ Sozlamalar</h2>
+            <div class="header-avatar">🎛️</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Dizayn</div>
+            <label class="switch-row">
+                <span>🌙 Tungi rejim (Dark mode)</span>
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+            </label>
+        </div>
+        <div class="card">
+            <div class="card-title">Eslatma qo'shish</div>
+            <div class="input-group">
+                <label>Sana</label>
+                <input type="date" id="remDate">
+            </div>
+            <div class="input-group">
+                <label>Matn</label>
+                <input type="text" id="remText" placeholder="Masalan: Oylik tushadigan kun">
+            </div>
+            <button class="btn-main bg-navy" onclick="addReminder()">🔔 Eslatma saqlash</button>
+            <div id="reminderStatus" class="status-msg"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Mening eslatmalarim</div>
+            <div id="remindersList"></div>
+        </div>
+    </div>
 
 </div><!-- /container -->
 
@@ -238,11 +321,17 @@
     <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboardTab','nav-dashboard')">
         <span class="nav-icon">📈</span><span>Dashboard</span>
     </div>
+     <div class="nav-item" id="nav-calculator" onclick="switchTab('calculatorTab','nav-calculator')">
+        <span class="nav-icon">🧮</span><span>Kalk</span>
+    </div>
     <div class="nav-fab-container">
         <div class="nav-fab" id="nav-add" onclick="switchTab('addTab','nav-add')">➕</div>
     </div>
     <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
         <span class="nav-icon">👑</span><span>Admin</span>
+    </div>
+      <div class="nav-item" id="nav-settings" onclick="switchTab('settingsTab','nav-settings')">
+        <span class="nav-icon">⚙️</span><span>Sozlama</span>
     </div>
 </div>
 
@@ -255,5 +344,7 @@
 <script src="dashboard.js"></script>
 <script src="detail_modal.js"></script>
 <script src="roles.js"></script>
+<script src="calculator.js"></script>
+<script src="settings.js"></script>
 </body>
 </html>
