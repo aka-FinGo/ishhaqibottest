@@ -66,7 +66,7 @@
             <div class="perm-warn-title" id="permWarnTitle">Ruxsat yo'q</div>
             <div class="perm-warn-desc" id="permWarnDesc">SuperAdminga murojaat qiling.</div>
             <button class="btn-secondary" onclick="switchTab('reportTab','nav-report')" style="margin-top:16px;">
-                ← Hisobotga qaytish
+                ← Bosh sahifaga qaytish
             </button>
         </div>
 
@@ -184,7 +184,7 @@
             </div>
         </div>
     </div>
-<!-- TAB 5: KALKULYATOR -->
+    <!-- TAB 5: KALKULYATOR (Sozlamalar ichidan ochiladi) -->
     <div id="calculatorTab" class="tab-content">
         <div class="page-header">
             <h2>🧮 Kalkulyator</h2>
@@ -241,6 +241,12 @@
         <div class="page-header">
             <h2>⚙️ Sozlamalar</h2>
             <div class="header-avatar">🎛️</div>
+        </div>
+        <div class="card">
+            <div class="card-title">🧮 Asboblar</div>
+            <button class="btn-main bg-navy" onclick="switchTab('calculatorTab','nav-settings')">
+                Kalkulyatorni ochish
+            </button>
         </div>
         <div class="card">
             <div class="card-title">Dizayn</div>
@@ -316,13 +322,10 @@
 <!-- Pastki menyu -->
 <div class="bottom-nav">
     <div class="nav-item active" id="nav-report" onclick="switchTab('reportTab','nav-report')">
-        <span class="nav-icon">📊</span><span>Hisobot</span>
+        <span class="nav-icon">🏠</span><span>Bosh sahifa</span>
     </div>
     <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboardTab','nav-dashboard')">
         <span class="nav-icon">📈</span><span>Dashboard</span>
-    </div>
-     <div class="nav-item" id="nav-calculator" onclick="switchTab('calculatorTab','nav-calculator')">
-        <span class="nav-icon">🧮</span><span>Kalk</span>
     </div>
     <div class="nav-fab-container">
         <div class="nav-fab" id="nav-add" onclick="switchTab('addTab','nav-add')">➕</div>
@@ -330,8 +333,8 @@
     <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
         <span class="nav-icon">👑</span><span>Admin</span>
     </div>
-      <div class="nav-item" id="nav-settings" onclick="switchTab('settingsTab','nav-settings')">
-        <span class="nav-icon">⚙️</span><span>Sozlama</span>
+    <div class="nav-item" id="nav-settings" onclick="switchTab('settingsTab','nav-settings')">
+        <span class="nav-icon">⚙️</span><span>Sozlamalar</span>
     </div>
 </div>
 
