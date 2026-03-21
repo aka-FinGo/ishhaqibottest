@@ -1217,3 +1217,89 @@ body { -webkit-overflow-scrolling: touch; }
 /* Prevent zoom on input focus (iOS) */
 input, select, textarea { font-size: 16px !important; }
 .input-group label { font-size: 12px !important; }
+/* ============================================================
+   KALKULYATOR / SETTINGS
+   ============================================================ */
+.whatif-preview {
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.calc-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.mini-stat {
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+}
+.mini-stat .k {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+.mini-stat .v {
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 14px;
+}
+.history-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.compact-item {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.switch-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: var(--text);
+    gap: 12px;
+}
+.switch-row input[type="checkbox"] {
+    width: 46px;
+    height: 24px;
+}
+
+/* Bottom nav ko'proq itemlar uchun */
+.bottom-nav {
+    gap: 6px;
+    justify-content: space-evenly;
+}
+.nav-item { min-width: 54px; }
+.nav-item span:last-child { font-size: 10px; }
+
+/* Dark mode */
+body.dark {
+    --bg: #0B1220;
+    --surface: #111827;
+    --border: #243244;
+    --text: #E2E8F0;
+    --text-muted: #93A3B8;
+    --navy: #E2E8F0;
+}
+body.dark .budget-card {
+    background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+}
+body.dark .compact-item,
+body.dark .mini-stat,
+body.dark .whatif-preview {
+    background: #0F172A;
+    border-color: #243244;
+}
