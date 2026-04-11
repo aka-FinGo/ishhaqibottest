@@ -658,6 +658,17 @@ function formatDateCell(val) {
   return String(val);
 }
 
+function parseActionPeriod_(val) {
+  if (!val) return '';
+  if (Object.prototype.toString.call(val) === '[object Date]') {
+    var y = val.getFullYear();
+    var m = String(val.getMonth() + 1);
+    if (m.length === 1) m = '0' + m;
+    return y + '-' + m;
+  }
+  return String(val || '').trim();
+}
+
 function parseDateInput_(dateValue, dateISOValue) {
   // Prefer explicit ISO from frontend when available.
   var parsed = parseDateRaw_(dateISOValue);
@@ -747,7 +758,7 @@ function initUser(tgId, auth, data) {
         rate:      Number(values[i][DATA_COL.RATE]) || 0,
         comment:   String(values[i][DATA_COL.COMMENT] || ''),
         date:      formatDateCell(values[i][DATA_COL.DATE]),
-        actionPeriod: String(values[i][DATA_COL.ACTION_PERIOD] || '') // YYYY-MM
+        actionPeriod: parseActionPeriod_(values[i][DATA_COL.ACTION_PERIOD]) // YYYY-MM
       });
     }
   }
@@ -815,7 +826,7 @@ function addRecord(data, auth, actorTgId) {
       data.comment      || '',
       parsedDate.dateObj,
       0,
-      forPeriod
+      forPeriod ? "'" + forPeriod : ""
     ]);
 
     var row = dataSheet.getLastRow();
@@ -866,7 +877,7 @@ function adminGetAll(options) {
     var comment = String(row[DATA_COL.COMMENT] || '');
     var dateMeta = parseDateInput_(row[DATA_COL.DATE], null);
     var dateText = dateMeta ? dateMeta.display : formatDateCell(row[DATA_COL.DATE]);
-    var ap = String(row[DATA_COL.ACTION_PERIOD] || '').trim();
+    var ap = parseActionPeriod_(row[DATA_COL.ACTION_PERIOD]);
 
     if (name) employeeSet[name] = true;
     if (ap) {
@@ -955,7 +966,8 @@ function adminEditRecord(data, actorTgId) {
     dataSheet.getRange(row, 5).setValue(Number(data.rate)      || 0);
     dataSheet.getRange(row, 6).setValue(data.comment           || '');
     if (data.actionPeriod !== undefined) {
-      dataSheet.getRange(row, 9).setValue(String(data.actionPeriod).trim());
+      var ap = String(data.actionPeriod).trim();
+      dataSheet.getRange(row, 9).setValue(ap ? "'" + ap : "");
     }
 
     var after = dataSheet.getRange(row, 1, 1, 9).getValues()[0];
@@ -1011,7 +1023,8 @@ function selfEditRecord(data, actorTgId) {
     dataSheet.getRange(row, 5).setValue(Number(data.rate)      || 0);
     dataSheet.getRange(row, 6).setValue(data.comment           || '');
     if (data.actionPeriod !== undefined) {
-      dataSheet.getRange(row, 9).setValue(String(data.actionPeriod).trim());
+      var ap = String(data.actionPeriod).trim();
+      dataSheet.getRange(row, 9).setValue(ap ? "'" + ap : "");
     }
 
     var after = dataSheet.getRange(row, 1, 1, 9).getValues()[0];
