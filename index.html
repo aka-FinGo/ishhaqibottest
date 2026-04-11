@@ -250,7 +250,45 @@
             <div id="pagination" class="pagination"></div>
         </div>
 
-        <div id="dashboardChartsArea">
+        <!-- TAB 5: KVADRATLAR -->
+    <div id="kvadratTab" class="tab-content">
+        <div class="page-header">
+            <div>
+                <h2>📏 Kvadratlar</h2>
+                <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">O'lchovlar va buyurtmalar</div>
+            </div>
+            <div class="header-avatar">📐</div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card" style="background:var(--navy);color:#fff;">
+                <div class="stat-label" style="opacity:0.8;">Jami m² (Tanlangan davr)</div>
+                <div class="stat-value" id="kvTotalM2">0</div>
+            </div>
+        </div>
+
+        <div class="filter-box">
+            <div class="filter-row">
+                <select id="kvFilterMonth" onchange="applyKvFilters()">
+                    <option value="all">Barcha oylar</option>
+                    <option value="01">Yanvar</option><option value="02">Fevral</option>
+                    <option value="03">Mart</option><option value="04">Aprel</option>
+                    <option value="05">May</option><option value="06">Iyun</option>
+                    <option value="07">Iyul</option><option value="08">Avgust</option>
+                    <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
+                    <option value="11">Noyabr</option><option value="12">Dekabr</option>
+                </select>
+                <select id="kvFilterYear" onchange="applyKvFilters()"><option value="all">Yillar</option></select>
+            </div>
+            <select id="kvFilterStaff" onchange="applyKvFilters()" style="margin-top:8px; width:100%;">
+                <option value="all">Barcha hodimlar</option>
+            </select>
+        </div>
+
+        <div id="kvList"></div>
+    </div>
+
+    <div id="dashboardChartsArea">
             <div id="dashboardContent">
                 <div class="dash-empty" style="padding:60px 20px;">
                     <div style="font-size:40px;margin-bottom:12px;">📊</div>
@@ -314,6 +352,37 @@
     </div>
 </div>
 
+<!-- Kvadratlar tahrirlash/qo'shish modali -->
+<div id="kvadratModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-drag"></div>
+        <div class="modal-header">
+            <div class="modal-title" id="kvModalTitle">📐 Kvadrat kiritish</div>
+        </div>
+        <form id="kvForm" onsubmit="event.preventDefault();saveKv();">
+            <input type="hidden" id="kvRowId">
+            <div class="input-group">
+                <label>📌 Buyurtma raqami / nomi</label>
+                <input type="text" id="kvOrderName" placeholder="Masalan: #123 yoki Oshxona" required>
+            </div>
+            <div class="input-group">
+                <label>📏 Necha metr kvadrat? (m²)</label>
+                <input type="number" step="0.01" id="kvTotalM2Input" placeholder="0.00" required inputmode="decimal">
+            </div>
+            <div class="input-group">
+                <label>👤 Mas'ul hodim</label>
+                <select id="kvStaffSelect" required>
+                    <option value="">Tanlang...</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn-main">💾 Saqlash</button>
+                <button type="button" class="btn-main bg-red" onclick="closeKvModal()">✕ Bekor</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Batafsil modal -->
 <div id="detailModal" class="modal hidden">
     <div class="modal-content"><div id="detailModalBody"></div></div>
@@ -328,7 +397,10 @@
         <span class="nav-icon">📈</span><span>Dashboard</span>
     </div>
     <div class="nav-fab-container">
-        <div class="nav-fab" id="nav-add" onclick="switchTab('addTab','nav-add')">➕</div>
+        <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
+    </div>
+    <div class="nav-item" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
+        <span class="nav-icon">📐</span><span>Kvadratlar</span>
     </div>
     <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
         <span class="nav-icon">👑</span><span>Admin</span>
@@ -343,6 +415,7 @@
 <script src="actions.js?v=1.0.14"></script>
 <script src="dashboard.js?v=1.0.14"></script>
 <script src="detail_modal.js?v=1.0.14"></script>
+<script src="kvadratlar.js?v=1.0.14"></script>
 <script src="roles.js?v=1.0.14"></script>
 </body>
 </html>

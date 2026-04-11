@@ -154,6 +154,26 @@ function doPost(e) {
         result  = { success: res.ok, error: res.description };
         break;
 
+      // ---- KVADRATLAR (Measurements) ----
+      case "kvadrat_add":
+        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        result = kvadratAdd(data, auth, tgId);
+        break;
+
+      case "kvadrat_get_all":
+        result = kvadratGetAll(data);
+        break;
+
+      case "kvadrat_edit":
+        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        result = kvadratEdit(data, auth, tgId);
+        break;
+
+      case "kvadrat_delete":
+        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        result = kvadratDelete(data, auth, tgId);
+        break;
+
       default:
         result = { success: false, error: "Noma'lum: " + action };
     }

@@ -1311,3 +1311,26 @@ body.dark .whatif-preview {
     background: #0F172A;
     border-color: #243244;
 }
+/* ========== KVADRATLAR SPECIFIC ========== */
+.hist-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+.hist-left { flex: 1; }
+.hist-reason { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+.hist-meta { font-size: 12px; color: var(--text-muted); }
+.hist-right { text-align: right; }
+.hist-amt { font-size: 16px; font-weight: 800; color: var(--navy); }
+
+.empty-msg {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Ensure Kvadrat Nav item is always visible */
+#nav-kvadrat { display: flex !important; }

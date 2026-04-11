@@ -777,6 +777,7 @@ function initUser(tgId, auth, data) {
     isDirektor:   auth.isDirector,
     permissions:  auth.permissions,
     inList:       emp !== null,   // Ro'yxatda bormi
+    employeeList: Object.values(usernameMap).sort(), // All employees for dropdowns
     autoAdded:    autoAdded,
     adminContactId: getConfigSuperAdminId_()
   };

@@ -1,6 +1,12 @@
 // ============================================================
 // ui.js — Navigatsiya va dastlabki yuklanish
 // ============================================================
+let myUsername        = '';
+let myRole            = 'User';
+let myPermissions     = {};
+let adminContactId    = '';
+let globalEmployeeList = []; // Global list for dropdowns
+
 window.onload = async () => {
     const firstName = user ? user.first_name : 'Xodim';
     document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
@@ -14,12 +20,21 @@ window.onload = async () => {
         });
 
         if (data.success) {
-            myFullRecords     = data.data || [];
-            myFilteredRecords = [...myFullRecords];
-            myInList          = data.inList  || false;
-            myCanAdd          = data.canAdd  !== false; // default true
-            myUsername        = data.username || '';
-            adminContactId    = String(data.adminContactId || '').trim();
+            myFullRecords      = data.data || [];
+            myFilteredRecords  = [...myFullRecords];
+            myInList           = data.inList  || false;
+            myCanAdd           = data.canAdd  !== false;
+            myUsername         = data.username || '';
+            adminContactId     = String(data.adminContactId || '').trim();
+            globalEmployeeList = data.employeeList || [];
+
+            // Populate kvadrat filters and forms
+            if (typeof populateKvadratMeta === 'function') {
+                populateKvadratMeta(globalEmployeeList);
+            }
+
+            // Populate kvadrat filters and forms
+            populateKvadratMeta(globalEmployeeList);
 
             // Greeting — laqab bo'lsa uni ko'rsat
             const displayName = myUsername || firstName;
@@ -78,18 +93,32 @@ window.onload = async () => {
 // ---- Tab almashtirish ----
 function switchTab(tabId, navId) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+    
+    const tabEl = document.getElementById(tabId);
+    if(tabEl) tabEl.classList.add('active');
+
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     if (navId !== 'nav-add') {
         const el = document.getElementById(navId);
         if (el) el.classList.add('active');
     }
+
     if (tabId === 'adminTab') initAdminTab();
     if (tabId === 'dashboardTab') initDashboardTab();
+    if (tabId === 'kvadratTab') initKvadratTab();
 
     // + tugmasiga bosilganda ruxsatni tekshir
     if (tabId === 'addTab') {
         checkAddPermission();
+    }
+}
+
+function handleFabAction() {
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab && activeTab.id === 'kvadratTab') {
+        openKvModal(); // Kvadratlar formasini ochish
+    } else {
+        switchTab('addTab', 'nav-add'); // Oylik qo'shish sahifasini ochish
     }
 }
 
