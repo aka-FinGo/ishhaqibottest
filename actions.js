@@ -113,7 +113,9 @@ function closeModal() {
     document.getElementById('editModal').classList.add('hidden');
 }
 
-function askActionReason(titleText) {
+async function askActionReason(titleText) {
+    if (document.activeElement) document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 50));
     const reason = prompt(`${titleText} sababini kiriting:`);
     if (!reason || !String(reason).trim()) {
         showToastMsg('❌ Sabab kiritilishi shart', true);
@@ -135,7 +137,7 @@ async function saveEdit() {
         actionPeriod = `${eYear.value}-${eMonth.value}`;
     }
 
-    const reason    = askActionReason("Tahrirlash");
+    const reason    = await askActionReason("Tahrirlash");
     if (!reason) return;
 
     // FIX 4: UZS ni qayta hisoblash
@@ -184,8 +186,10 @@ async function saveEdit() {
 }
 
 async function deleteRecord(rowId) {
+    if (document.activeElement) document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 50));
     if (!confirm("Ushbu ma'lumotni o'chirishga ishonchingiz komilmi?")) return;
-    const reason = askActionReason("O'chirish");
+    const reason = await askActionReason("O'chirish");
     if (!reason) return;
     document.getElementById('adminList').innerHTML = `
         <div class="skeleton skeleton-item"></div>
@@ -204,8 +208,10 @@ async function deleteRecord(rowId) {
 }
 
 async function deleteOwnRecord(rowId) {
+    if (document.activeElement) document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 50));
     if (!confirm("Ushbu ma'lumotni o'chirishga ishonchingiz komilmi?")) return;
-    const reason = askActionReason("O'chirish");
+    const reason = await askActionReason("O'chirish");
     if (!reason) return;
 
     try {
