@@ -6,11 +6,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Aristokrat Ish Haqi</title>
+    <title>Aristokrat Ish Haqi (v1.0.14)</title>
+    <meta name="app-version" content="v1.0.14">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.0.14">
 </head>
 <body>
 <div class="container">
@@ -18,7 +19,10 @@
     <!-- TAB 1: HISOBOT -->
     <div id="reportTab" class="tab-content active">
         <div class="page-header">
-            <h2 id="greeting">Salom!</h2>
+            <div>
+                <h2 id="greeting">Salom!</h2>
+                <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">v1.0.14</div>
+            </div>
             <div class="header-avatar">👤</div>
         </div>
         <div class="stats-grid">
@@ -65,6 +69,9 @@
             <div class="perm-warn-icon">⚠️</div>
             <div class="perm-warn-title" id="permWarnTitle">Ruxsat yo'q</div>
             <div class="perm-warn-desc" id="permWarnDesc">SuperAdminga murojaat qiling.</div>
+            <button id="contactAdminBtn" class="btn-main bg-navy hidden" onclick="contactAdmin()" style="margin-top:10px;">
+                📩 Admin bilan bog'lanish
+            </button>
             <button class="btn-secondary" onclick="switchTab('reportTab','nav-report')" style="margin-top:16px;">
                 ← Hisobotga qaytish
             </button>
@@ -73,6 +80,20 @@
         <!-- Forma -->
         <div id="addFormContent" class="card">
             <form id="financeForm">
+                <div class="input-group">
+                    <label>Davri (Qaysi oy uchun)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="actionMonth" style="flex: 1;">
+                            <option value="01">Yanvar</option><option value="02">Fevral</option>
+                            <option value="03">Mart</option><option value="04">Aprel</option>
+                            <option value="05">May</option><option value="06">Iyun</option>
+                            <option value="07">Iyul</option><option value="08">Avgust</option>
+                            <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
+                            <option value="11">Noyabr</option><option value="12">Dekabr</option>
+                        </select>
+                        <select id="actionYear" style="flex: 1;"></select>
+                    </div>
+                </div>
                 <div class="input-group">
                     <label>Summa</label>
                     <input type="number" id="amount" required placeholder="0" inputmode="numeric">
@@ -100,19 +121,109 @@
 
     <!-- TAB 3: ADMIN -->
     <div id="adminTab" class="tab-content">
-        <div class="sub-tabs hidden" id="bossNav">
-            <button class="sub-btn active" onclick="switchAdminSub('adminDataArea',this)">📊 Amallar</button>
-            <button class="sub-btn" onclick="switchAdminSub('adminHodimlarArea',this)">👥 Hodimlar</button>
+        <div class="page-header">
+            <h2>👑 Admin Panel</h2>
+            <div class="header-avatar">⚙️</div>
         </div>
 
-        <!-- Amallar -->
-        <div id="adminDataArea">
+        <div class="sub-tabs" id="adminNav">
+            <button class="sub-btn admin-sub-btn active" id="adminNavHodimlar" onclick="switchAdminSub('adminHodimlarArea',this)">👥 Hodimlar</button>
+            <button class="sub-btn admin-sub-btn" id="adminNavNotify" onclick="switchAdminSub('adminNotifyArea',this)">📣 Xabarlar</button>
+            <button class="sub-btn admin-sub-btn" id="adminNavService" onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
+        </div>
+
+        <div id="adminHodimlarArea">
+            <div class="card">
+                <div class="card-title">➕ Yangi Hodim Qo'shish</div>
+                <div class="input-group">
+                    <label>Telegram ID</label>
+                    <input type="text" id="newHodimId" placeholder="Hodimning Telegram ID raqami" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label>Laqab / Ko'rsatiladigan ism</label>
+                    <input type="text" id="newHodimName" placeholder="Masalan: Ali (Haydovchi)">
+                </div>
+                <button class="btn-main" onclick="addHodim()">➕ Qo'shish</button>
+                <div id="hodimStatus" class="status-msg"></div>
+            </div>
+
+            <div class="card" style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:16px;border-radius:16px;margin-bottom:14px;">
+                <div style="font-size:13px;font-weight:700;margin-bottom:10px;opacity:0.8;">📋 RUXSAT MODELI (V2)</div>
+                <div style="font-size:12px;line-height:2;opacity:0.85;">
+                    <div>🧩 Avval <b>Rol</b> tanlanadi: Hodim / Admin / Direktor / SuperAdmin</div>
+                    <div>🔧 Keyin har bir userga <b>individual override</b> berish mumkin</div>
+                    <div>👑 <b>SuperAdmin</b> — to'liq huquq (hammasi yoqilgan)</div>
+                    <div>🎯 <b>Direktor</b> — default: ko'rish + dashboard + export</div>
+                    <div>🛡 <b>Admin</b> — default: qo'shish + barchasini ko'rish</div>
+                    <div>➕ 👁 📈 📥 ✏️ 🗑 — qo'shish, ko'rish, dashboard, excel, tahrirlash, o'chirish</div>
+                </div>
+            </div>
+
+            <div class="section-title">Hodimlar ro'yxati</div>
+            <div id="hodimlarList"></div>
+        </div>
+
+        <div id="adminNotifyArea" class="hidden">
+            <div class="card">
+                <div class="card-title">📣 Xabar Yuborish</div>
+                <div class="input-group">
+                    <label>Default xabar matni</label>
+                    <textarea id="adminReminderText" rows="4" placeholder="Reminder matnini kiriting..."></textarea>
+                </div>
+                <div class="filter-row" style="margin-bottom:10px;">
+                    <button class="btn-secondary" style="margin-top:0;" onclick="loadReminderTextSettings(true)">🔄 Matnni yangilash</button>
+                    <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="saveReminderTextSettings()">💾 Default matnni saqlash</button>
+                </div>
+                <div class="filter-row" style="margin-bottom:8px;">
+                    <select id="adminNotifyTargetTgId"><option value="">User tanlang</option></select>
+                    <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="prepareReminderSend('single')">✉️ Userga tayyorlash</button>
+                </div>
+                <div class="filter-row" style="margin-bottom:8px;">
+                    <input type="number" id="adminInactiveDays" value="14" min="1" max="365" placeholder="Kun" inputmode="numeric">
+                    <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="prepareReminderSend('inactive')">🤖 Bulk tayyorlash</button>
+                </div>
+                <div id="adminNotifyConfirmBox" class="hidden" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px;margin-bottom:8px;">
+                    <div id="adminNotifyConfirmText" style="font-size:12px;font-weight:700;color:#1E3A8A;margin-bottom:8px;">Tasdiqlash kutilmoqda</div>
+                    <div class="filter-row" style="margin-bottom:0;">
+                        <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="confirmReminderSend()">✅ Tasdiqlab yuborish</button>
+                        <button class="btn-secondary" style="margin-top:0;" onclick="cancelReminderSend()">✖ Bekor qilish</button>
+                    </div>
+                </div>
+                <div id="adminNotifyStatus" class="status-msg"></div>
+            </div>
+        </div>
+
+        <div id="adminServiceArea" class="hidden">
+            <div class="card">
+                <div class="card-title">🧪 Tizim Tekshiruvi</div>
+                <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
+                    Prod ulanish va muhim sozlamalarni tekshiradi.
+                </p>
+                <button class="btn-secondary" id="selfCheckBtnAdmin" style="margin-top:0;" onclick="runSystemSelfCheck('admin')">🧪 Self-check (Prod sozlamalar)</button>
+                <div id="adminServiceStatus" class="status-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: DASHBOARD -->
+    <div id="dashboardTab" class="tab-content">
+        <div class="page-header">
+            <h2>📈 Dashboard</h2>
+            <div class="header-avatar">📊</div>
+        </div>
+
+        <div class="sub-tabs hidden" id="dashboardNav">
+            <button class="sub-btn dash-sub-btn active" id="dashNavActions" onclick="switchDashboardSub('dashboardActionsArea',this)">📋 Amallar</button>
+            <button class="sub-btn dash-sub-btn" id="dashNavCharts" onclick="switchDashboardSub('dashboardChartsArea',this)">📈 Dashboard</button>
+        </div>
+
+        <div id="dashboardActionsArea" class="hidden">
             <div class="budget-card" style="margin-bottom:14px;">
                 <div class="budget-label">Kompaniya Umumiy Budjet</div>
                 <div class="budget-amount" id="totalCompanyUzs">0 UZS</div>
                 <div class="budget-footer">
                     <span class="budget-count">📊 Filtrlangan: <span id="filteredCount">0</span> ta amal</span>
-                    <button class="excel-btn" onclick="exportAdminExcel()">📥 Excel</button>
+                    <button class="excel-btn" id="companyExportBtn" onclick="exportAdminExcel()">📥 Excel</button>
                 </div>
             </div>
             <div class="filter-box">
@@ -134,53 +245,17 @@
                     <select id="filterYear" onchange="applyFilters()"><option value="all">Yillar</option></select>
                 </div>
             </div>
+
             <div id="adminList"></div>
             <div id="pagination" class="pagination"></div>
         </div>
 
-        <!-- Hodimlar boshqaruvi (SuperAdmin) -->
-        <div id="adminHodimlarArea" class="hidden">
-            <div class="card">
-                <div class="card-title">➕ Yangi Hodim Qo'shish</div>
-                <div class="input-group">
-                    <label>Telegram ID</label>
-                    <input type="text" id="newHodimId" placeholder="Hodimning Telegram ID raqami" inputmode="numeric">
+        <div id="dashboardChartsArea">
+            <div id="dashboardContent">
+                <div class="dash-empty" style="padding:60px 20px;">
+                    <div style="font-size:40px;margin-bottom:12px;">📊</div>
+                    <p>Yuklanmoqda...</p>
                 </div>
-                <div class="input-group">
-                    <label>Laqab / Ko'rsatiladigan ism</label>
-                    <input type="text" id="newHodimName" placeholder="Masalan: Ali (Haydovchi)">
-                </div>
-                <button class="btn-main" onclick="addHodim()">➕ Qo'shish</button>
-                <div id="hodimStatus" class="status-msg"></div>
-            </div>
-
-            <div class="card" style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:16px;border-radius:16px;margin-bottom:14px;">
-                <div style="font-size:13px;font-weight:700;margin-bottom:10px;opacity:0.8;">📋 RUXSATLAR JADVALI</div>
-                <div style="font-size:12px;line-height:2;opacity:0.85;">
-                    <div>➕ <b>Amal qo'shish</b> — amal kirita oladi</div>
-                    <div>👑 <b>SuperAdmin</b> — barcha huquqlar</div>
-                    <div>🎯 <b>Direktor</b> — ko'radi, yuklab oladi</div>
-                    <div>🛡 <b>Admin</b> — quyidagi ruxsatlarga qarab</div>
-                    <div>👁 <b>Barchasini ko'rish</b> — admin panel</div>
-                    <div>✏️📥📈 — tahrirlash, excel, dashboard</div>
-                </div>
-            </div>
-
-            <div class="section-title">Hodimlar ro'yxati</div>
-            <div id="hodimlarList"></div>
-        </div>
-    </div>
-
-    <!-- TAB 4: DASHBOARD -->
-    <div id="dashboardTab" class="tab-content">
-        <div class="page-header">
-            <h2>📈 Dashboard</h2>
-            <div class="header-avatar">📊</div>
-        </div>
-        <div id="dashboardContent">
-            <div class="dash-empty" style="padding:60px 20px;">
-                <div style="font-size:40px;margin-bottom:12px;">📊</div>
-                <p>Yuklanmoqda...</p>
             </div>
         </div>
     </div>
@@ -200,6 +275,20 @@
         </div>
         <form id="editForm" onsubmit="event.preventDefault();saveEdit();">
             <input type="hidden" id="editRowId">
+            <div class="input-group">
+                <label>Davri (Qaysi oy uchun)</label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="editActionMonth" style="flex: 1;">
+                        <option value="01">Yanvar</option><option value="02">Fevral</option>
+                        <option value="03">Mart</option><option value="04">Aprel</option>
+                        <option value="05">May</option><option value="06">Iyun</option>
+                        <option value="07">Iyul</option><option value="08">Avgust</option>
+                        <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
+                        <option value="11">Noyabr</option><option value="12">Dekabr</option>
+                    </select>
+                    <select id="editActionYear" style="flex: 1;"></select>
+                </div>
+            </div>
             <div class="input-group">
                 <label>💰 Summa (UZS)</label>
                 <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView()" inputmode="numeric">
@@ -246,14 +335,14 @@
     </div>
 </div>
 
-<script src="config.js"></script>
-<script src="ui.js"></script>
-<script src="employee.js"></script>
-<script src="admin.js"></script>
-<script src="export.js"></script>
-<script src="actions.js"></script>
-<script src="dashboard.js"></script>
-<script src="detail_modal.js"></script>
-<script src="roles.js"></script>
+<script src="config.js?v=1.0.14"></script>
+<script src="ui.js?v=1.0.14"></script>
+<script src="employee.js?v=1.0.14"></script>
+<script src="admin.js?v=1.0.14"></script>
+<script src="export.js?v=1.0.14"></script>
+<script src="actions.js?v=1.0.14"></script>
+<script src="dashboard.js?v=1.0.14"></script>
+<script src="detail_modal.js?v=1.0.14"></script>
+<script src="roles.js?v=1.0.14"></script>
 </body>
 </html>

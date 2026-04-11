@@ -6,11 +6,12 @@ window.onload = async () => {
     document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
 
     try {
-        const res  = await fetch(API_URL, {
-            method: 'POST',
-            body:   JSON.stringify({ action: 'init', telegramId })
+        const data = await apiRequest({
+            action: 'init',
+            firstName: user ? (user.first_name || '') : '',
+            lastName: user ? (user.last_name || '') : '',
+            tgUsername: user ? (user.username || '') : ''
         });
-        const data = await res.json();
 
         if (data.success) {
             myFullRecords     = data.data || [];
@@ -18,6 +19,7 @@ window.onload = async () => {
             myInList          = data.inList  || false;
             myCanAdd          = data.canAdd  !== false; // default true
             myUsername        = data.username || '';
+            adminContactId    = String(data.adminContactId || '').trim();
 
             // Greeting — laqab bo'lsa uni ko'rsat
             const displayName = myUsername || firstName;
@@ -30,29 +32,42 @@ window.onload = async () => {
             else                                       myRole = 'User';
 
             // Ruhsatlar
+            const asBool = function (v) {
+                return v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
+            };
             if (myRole === 'SuperAdmin') {
                 myPermissions = { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true };
-            } else if (myRole === 'Direktor') {
-                myPermissions = { canViewAll:true, canEdit:false, canDelete:false, canExport:true, canViewDash:true };
-            } else if (myRole === 'Admin') {
+            } else {
+                const p = data.permissions || {};
                 myPermissions = {
-                    canViewAll:  data.permissions?.canViewAll  ?? false,
-                    canEdit:     data.permissions?.canEdit     ?? false,
-                    canDelete:   data.permissions?.canDelete   ?? false,
-                    canExport:   data.permissions?.canExport   ?? false,
-                    canViewDash: data.permissions?.canViewDash ?? false,
+                    canViewAll:  asBool(p.canViewAll),
+                    canEdit:     asBool(p.canEdit),
+                    canDelete:   asBool(p.canDelete),
+                    canExport:   asBool(p.canExport),
+                    canViewDash: asBool(p.canViewDash),
                 };
             }
 
-            // Admin panel ko'rinishi
-            const showAdmin = myRole === 'SuperAdmin' || myRole === 'Direktor' ||
-                              (myRole === 'Admin' && myPermissions.canViewAll);
-            if (showAdmin) document.getElementById('nav-admin').classList.remove('hidden');
+            canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
+            canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
 
-            // Hodimlar boshqaruvi — faqat SuperAdmin
-            if (myRole === 'SuperAdmin') document.getElementById('bossNav').classList.remove('hidden');
+            // Admin panel (SuperAdmin va Admin)
+            if (myRole === 'SuperAdmin' || myRole === 'Admin') {
+                document.getElementById('nav-admin').classList.remove('hidden');
+            }
+
+            // Tizim tekshiruv tugmasi — SuperAdmin va Admin
+            setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
+            setCompanyExportVisibility(canExportCompanyData);
+            updateContactAdminButton();
+
+            if (data.autoAdded) {
+                showToastMsg("✅ Siz ro'yxatga qo'shildingiz. Ruxsat uchun admin bilan bog'laning.");
+            }
 
             initMyFilters();
+        } else {
+            showToastMsg('❌ ' + (data.error || 'Init xatosi'), true);
         }
     } catch(e) {
         console.error('Init xato:', e);
@@ -69,13 +84,98 @@ function switchTab(tabId, navId) {
         const el = document.getElementById(navId);
         if (el) el.classList.add('active');
     }
-    if (tabId === 'adminTab')     loadAdminData();
-    if (tabId === 'dashboardTab') loadDashboard();
+    if (tabId === 'adminTab') initAdminTab();
+    if (tabId === 'dashboardTab') initDashboardTab();
 
     // + tugmasiga bosilganda ruxsatni tekshir
     if (tabId === 'addTab') {
         checkAddPermission();
     }
+}
+
+function setSelfCheckButtonsVisibility(canRunSelfCheck) {
+    ['selfCheckBtnAdmin'].forEach(function (id) {
+        const btn = document.getElementById(id);
+        if (btn) btn.style.display = canRunSelfCheck ? '' : 'none';
+    });
+}
+
+function setCompanyExportVisibility(canExport) {
+    const btn = document.getElementById('companyExportBtn');
+    if (btn) btn.style.display = canExport ? '' : 'none';
+}
+
+function updateContactAdminButton() {
+    const btn = document.getElementById('contactAdminBtn');
+    if (!btn) return;
+    btn.classList.toggle('hidden', !adminContactId);
+}
+
+function contactAdmin() {
+    if (!adminContactId) {
+        showToastMsg('❌ Admin kontakti topilmadi', true);
+        return;
+    }
+    const deepLink = 'tg://user?id=' + encodeURIComponent(adminContactId);
+    window.location.href = deepLink;
+}
+
+function initAdminTab() {
+    const isSuperAdmin = myRole === 'SuperAdmin';
+    const canUseAdminPanel = isSuperAdmin || myRole === 'Admin';
+    if (!canUseAdminPanel) {
+        showToastMsg('❌ Admin panel ruxsati yo\'q', true);
+        switchTab('reportTab', 'nav-report');
+        return;
+    }
+
+    const navHodimlar = document.getElementById('adminNavHodimlar');
+    const navNotify = document.getElementById('adminNavNotify');
+    const navService = document.getElementById('adminNavService');
+
+    if (navHodimlar) navHodimlar.classList.toggle('hidden', !isSuperAdmin);
+    if (navNotify) navNotify.classList.remove('hidden');
+    if (navService) navService.classList.remove('hidden');
+
+    if (isSuperAdmin && navHodimlar) {
+        switchAdminSub('adminHodimlarArea', navHodimlar);
+    } else if (navNotify) {
+        switchAdminSub('adminNotifyArea', navNotify);
+    } else if (navService) {
+        switchAdminSub('adminServiceArea', navService);
+    }
+}
+
+function initDashboardTab() {
+    const nav = document.getElementById('dashboardNav');
+    if (!canViewCompanyActions) {
+        if (nav) nav.classList.add('hidden');
+        const actionsArea = document.getElementById('dashboardActionsArea');
+        const chartsArea  = document.getElementById('dashboardChartsArea');
+        if (actionsArea) actionsArea.classList.add('hidden');
+        if (chartsArea) chartsArea.classList.remove('hidden');
+        loadDashboard();
+        return;
+    }
+
+    if (nav) nav.classList.remove('hidden');
+    const btnActions = document.getElementById('dashNavActions');
+    switchDashboardSub('dashboardActionsArea', btnActions || null);
+}
+
+function switchDashboardSub(areaId, btn) {
+    ['dashboardActionsArea', 'dashboardChartsArea'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    document.querySelectorAll('.dash-sub-btn').forEach(b => b.classList.remove('active'));
+
+    const target = document.getElementById(areaId);
+    if (target) target.classList.remove('hidden');
+    if (btn) btn.classList.add('active');
+
+    if (areaId === 'dashboardActionsArea') loadAdminData();
+    if (areaId === 'dashboardChartsArea') loadDashboard();
 }
 
 // ---- + bosilganda ruxsat tekshiruvi ----
@@ -108,6 +208,7 @@ function showPermWarning(title, desc) {
     w.classList.remove('hidden');
     document.getElementById('permWarnTitle').innerText = title;
     document.getElementById('permWarnDesc').innerText  = desc;
+    updateContactAdminButton();
     if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
 }
 
@@ -122,15 +223,30 @@ function showToastMsg(msg, isErr=false) {
 }
 
 function switchAdminSub(areaId, btn) {
-    ['adminDataArea','adminRolesArea','adminHodimlarArea'].forEach(id => {
+    if (areaId === 'adminHodimlarArea' && myRole !== 'SuperAdmin') {
+        showToastMsg('❌ Hodimlar bo\'limi faqat SuperAdmin uchun', true);
+        return;
+    }
+    ['adminHodimlarArea', 'adminNotifyArea', 'adminServiceArea'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     });
-    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(areaId).classList.remove('hidden');
-    btn.classList.add('active');
+    document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
+
+    const target = document.getElementById(areaId);
+    if (target) target.classList.remove('hidden');
+    if (btn) btn.classList.add('active');
 
     if (areaId === 'adminHodimlarArea') loadHodimlar();
+    if (areaId === 'adminNotifyArea') {
+        loadNotifyTargets();
+        loadReminderTextSettings();
+        cancelReminderSend();
+        setNotifyStatus('', false, 'admin');
+    }
+    if (areaId === 'adminServiceArea') {
+        setNotifyStatus('', false, 'admin_service');
+    }
 }
 
 function toggleRate() {

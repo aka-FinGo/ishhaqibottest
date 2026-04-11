@@ -567,6 +567,14 @@ textarea { resize: vertical; min-height: 80px; }
 
 .page-btn:hover { border-color: var(--green); color: var(--green); }
 .page-btn.active { background: var(--green); color: #fff; border-color: var(--green); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+.page-ellipsis {
+    width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    font-weight: 700;
+}
 
 /* ========== BOTTOM NAV ========== */
 .bottom-nav {

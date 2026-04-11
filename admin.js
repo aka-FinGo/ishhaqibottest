@@ -1,84 +1,390 @@
 // ================= ADMIN FUNKSIYALARI =================
 
+const ADMIN_SERVER_PAGE_SIZE = 10;
+let adminTotalCount = 0;
+let adminTotalPages = 1;
+let adminTotalUZS = 0;
+let adminFiltersReady = false;
+let adminReqSerial = 0;
+let adminFilterDebounceTimer;
+let notifyUsersLoaded = false;
+let reminderTextLoaded = false;
+let pendingReminderSend = null;
+
+function getAdminFilterState() {
+    return {
+        query: (document.getElementById('searchInput')?.value || '').trim(),
+        employee: document.getElementById('filterEmployee')?.value || 'all',
+        month: document.getElementById('filterMonth')?.value || 'all',
+        year: document.getElementById('filterYear')?.value || 'all'
+    };
+}
+
+function normalizeAdminFilterState(state) {
+    const s = state || {};
+    return {
+        query: String(s.query || ''),
+        employee: String(s.employee || 'all'),
+        month: String(s.month || 'all'),
+        year: String(s.year || 'all')
+    };
+}
+
+function setSelectValueSafe(selectEl, value) {
+    if (!selectEl) return;
+    const v = String(value || 'all');
+    const found = Array.from(selectEl.options).some(function (opt) { return opt.value === v; });
+    selectEl.value = found ? v : 'all';
+}
+
+function populateFiltersFromServer(employees, years, selectedState) {
+    const state = normalizeAdminFilterState(selectedState);
+    const empSel = document.getElementById('filterEmployee');
+    const yearSel = document.getElementById('filterYear');
+
+    if (empSel) {
+        empSel.innerHTML = '<option value="all">Barcha xodimlar</option>';
+        (employees || []).forEach(function (name) {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            empSel.appendChild(option);
+        });
+        setSelectValueSafe(empSel, state.employee);
+    }
+
+    if (yearSel) {
+        yearSel.innerHTML = '<option value="all">Yillar</option>';
+        (years || []).forEach(function (year) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSel.appendChild(option);
+        });
+        setSelectValueSafe(yearSel, state.year);
+    }
+
+    adminFiltersReady = true;
+}
+
 async function loadAdminData() {
     document.getElementById('adminList').innerHTML = `
         <div class="skeleton skeleton-item"></div>
         <div class="skeleton skeleton-item"></div>
         <div class="skeleton skeleton-item"></div>`;
+
+    adminFiltersReady = false;
+    await fetchAdminPage(1, { refreshMeta: true });
+}
+
+async function fetchAdminPage(page, opts) {
+    const options = opts || {};
+    const requestId = ++adminReqSerial;
+    const state = normalizeAdminFilterState(getAdminFilterState());
+
     try {
-        const res  = await fetch(API_URL, { method:'POST', body:JSON.stringify({ action:'admin_get_all', telegramId }) });
-        const data = await res.json();
-        if (data.success) {
-            globalAdminData = data.data || [];
-            filteredData    = [...globalAdminData];
-            currentPage = 1;
-            populateFilters();
-            calculateTotal();
-            renderAdminPage();
-        } else {
+        const data = await apiRequest({
+            action: 'admin_get_all',
+            page: Number(page) || 1,
+            pageSize: ADMIN_SERVER_PAGE_SIZE,
+            query: state.query,
+            employee: state.employee,
+            month: state.month,
+            year: state.year
+        });
+
+        if (requestId !== adminReqSerial) return;
+
+        if (!data.success) {
             showAdminError(data.error || 'Server xatosi');
+            return;
         }
-    } catch(e) {
+
+        filteredData = data.data || [];
+        globalAdminData = filteredData;
+        globalAdminDataIsPartial = true;
+        currentPage = Number(data.page) || 1;
+        adminTotalPages = Math.max(1, Number(data.totalPages) || 1);
+        adminTotalCount = Number(data.totalCount) || filteredData.length;
+        adminTotalUZS = Number(data.totalUZS) || 0;
+
+        if (!adminFiltersReady || options.refreshMeta) {
+            populateFiltersFromServer(data.employees || [], data.years || [], state);
+        }
+
+        if ((myRole === 'SuperAdmin' || myRole === 'Admin') && (!notifyUsersLoaded || options.refreshMeta)) {
+            loadNotifyTargets();
+        }
+
+        calculateTotal();
+        renderAdminPage();
+    } catch (e) {
         console.error(e);
+        if (requestId !== adminReqSerial) return;
         showAdminError('Internet ulanishini tekshiring.');
     }
 }
 
+function getNotifyStatusElement(scope) {
+    if (scope === 'admin') return document.getElementById('adminNotifyStatus');
+    if (scope === 'admin_service') return document.getElementById('adminServiceStatus');
+    return document.getElementById('adminNotifyStatus');
+}
+
+function setNotifyStatus(msg, isErr, scope) {
+    const el = getNotifyStatusElement(scope || 'dashboard');
+    if (!el) return;
+    el.style.color = isErr ? 'var(--red)' : 'var(--green-dark)';
+    el.innerText = msg || '';
+}
+
+function getNotifyTargetSelects() {
+    const ids = ['adminNotifyTargetTgId'];
+    return ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+}
+
+async function loadNotifyTargets() {
+    const selects = getNotifyTargetSelects();
+    if (!selects.length) return;
+
+    try {
+        const data = await apiRequest({ action: 'list_notify_users' });
+        if (!data.success) {
+            const msg = '❌ ' + (data.error || 'Userlar yuklanmadi');
+            setNotifyStatus(msg, true, 'dashboard');
+            setNotifyStatus(msg, true, 'admin');
+            return;
+        }
+
+        const oldValues = {};
+        selects.forEach(function (select) {
+            oldValues[select.id] = select.value;
+            select.innerHTML = '<option value="">User tanlang</option>';
+        });
+
+        (data.data || []).forEach(function (u) {
+            selects.forEach(function (select) {
+                const option = document.createElement('option');
+                option.value = u.tgId;
+                option.textContent = (u.username || 'User') + ' [' + u.tgId + ']';
+                select.appendChild(option);
+            });
+        });
+
+        selects.forEach(function (select) {
+            const oldValue = oldValues[select.id] || '';
+            const hasOld = Array.from(select.options).some(function (opt) { return opt.value === oldValue; });
+            if (hasOld) select.value = oldValue;
+        });
+
+        notifyUsersLoaded = true;
+    } catch {
+        setNotifyStatus('❌ User ro\'yxati yuklanmadi', true, 'dashboard');
+        setNotifyStatus('❌ User ro\'yxati yuklanmadi', true, 'admin');
+    }
+}
+
+function getAdminReminderTextValue() {
+    const el = document.getElementById('adminReminderText');
+    return el ? String(el.value || '').trim() : '';
+}
+
+async function loadReminderTextSettings(forceReload) {
+    if (reminderTextLoaded && !forceReload) return;
+    const textEl = document.getElementById('adminReminderText');
+    if (!textEl) return;
+    try {
+        const data = await apiRequest({ action: 'get_reminder_text' });
+        if (!data.success) {
+            setNotifyStatus('❌ ' + (data.error || 'Matn yuklanmadi'), true, 'admin');
+            return;
+        }
+        textEl.value = String(data.text || '');
+        reminderTextLoaded = true;
+    } catch {
+        setNotifyStatus('❌ Matn yuklanmadi', true, 'admin');
+    }
+}
+
+async function saveReminderTextSettings() {
+    const text = getAdminReminderTextValue();
+    if (!text) {
+        setNotifyStatus('❗ Xabar matni bo\'sh bo\'lmasin', true, 'admin');
+        return;
+    }
+    setNotifyStatus('⏳ Matn saqlanmoqda...', false, 'admin');
+    try {
+        const data = await apiRequest({ action: 'set_reminder_text', text: text });
+        if (!data.success) {
+            setNotifyStatus('❌ ' + (data.error || 'Saqlanmadi'), true, 'admin');
+            return;
+        }
+        reminderTextLoaded = true;
+        setNotifyStatus('✅ Default xabar matni saqlandi', false, 'admin');
+    } catch {
+        setNotifyStatus('❌ Server xatosi', true, 'admin');
+    }
+}
+
+function prepareReminderSend(type) {
+    const text = getAdminReminderTextValue();
+    if (!text) {
+        setNotifyStatus('❗ Avval xabar matnini kiriting', true, 'admin');
+        return;
+    }
+
+    if (type === 'single') {
+        const select = document.getElementById('adminNotifyTargetTgId');
+        const tgId = select ? String(select.value || '').trim() : '';
+        if (!tgId) {
+            setNotifyStatus('❗ Avval user tanlang', true, 'admin');
+            return;
+        }
+        const label = select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : tgId;
+        pendingReminderSend = { type: 'single', targetTgId: tgId, label: label, messageText: text };
+        showReminderConfirmBox('Tanlangan userga yuborishga tayyor. Tasdiqlang: ' + label);
+        setNotifyStatus('⏳ Tasdiqlash kutilmoqda', false, 'admin');
+        return;
+    }
+
+    const daysEl = document.getElementById('adminInactiveDays');
+    const days = daysEl ? Number(daysEl.value || 0) : 0;
+    if (!Number.isFinite(days) || days < 1) {
+        setNotifyStatus('❗ Kun sonini to\'g\'ri kiriting', true, 'admin');
+        return;
+    }
+    pendingReminderSend = { type: 'inactive', days: days, messageText: text };
+    showReminderConfirmBox('Faol bo\'lmaganlarga yuborishga tayyor. Kun: ' + days);
+    setNotifyStatus('⏳ Tasdiqlash kutilmoqda', false, 'admin');
+}
+
+function showReminderConfirmBox(message) {
+    const box = document.getElementById('adminNotifyConfirmBox');
+    const txt = document.getElementById('adminNotifyConfirmText');
+    if (!box || !txt) return;
+    txt.innerText = message || 'Tasdiqlash kutilmoqda';
+    box.classList.remove('hidden');
+}
+
+function cancelReminderSend() {
+    pendingReminderSend = null;
+    const box = document.getElementById('adminNotifyConfirmBox');
+    if (box) box.classList.add('hidden');
+}
+
+async function confirmReminderSend() {
+    if (!pendingReminderSend) {
+        setNotifyStatus('❗ Tasdiqlash uchun tayyorlangan amal yo\'q', true, 'admin');
+        return;
+    }
+    if (pendingReminderSend.type === 'single') {
+        await sendUserReminderFromPanel('admin', pendingReminderSend.messageText);
+    } else {
+        await sendInactiveRemindersFromPanel('admin', pendingReminderSend.messageText);
+    }
+    cancelReminderSend();
+}
+
+async function sendUserReminderFromPanel(scope, messageText) {
+    const mode = scope === 'admin' ? 'admin' : 'dashboard';
+    const selectId = mode === 'admin' ? 'adminNotifyTargetTgId' : 'notifyTargetTgId';
+    const select = document.getElementById(selectId);
+    const tgId = select ? String(select.value || '').trim() : '';
+    if (!tgId) {
+        setNotifyStatus('❗ Avval user tanlang', true, mode);
+        return;
+    }
+
+    setNotifyStatus('⏳ Xabar yuborilmoqda...', false, mode);
+    try {
+        const payload = { action: 'send_user_reminder', targetTgId: tgId };
+        const msg = String(messageText || '').trim();
+        if (msg) payload.messageText = msg;
+        const data = await apiRequest(payload);
+        if (data.success) {
+            setNotifyStatus('✅ Userga xabar yuborildi', false, mode);
+        } else {
+            setNotifyStatus('❌ ' + (data.error || 'Yuborilmadi'), true, mode);
+        }
+    } catch {
+        setNotifyStatus('❌ Server xatosi', true, mode);
+    }
+}
+
+async function sendInactiveRemindersFromPanel(scope, messageText) {
+    const mode = scope === 'admin' ? 'admin' : 'dashboard';
+    const daysId = mode === 'admin' ? 'adminInactiveDays' : 'inactiveDays';
+    const daysEl = document.getElementById(daysId);
+    const days = daysEl ? Number(daysEl.value || 0) : 0;
+    if (!Number.isFinite(days) || days < 1) {
+        setNotifyStatus('❗ Kun sonini to\'g\'ri kiriting', true, mode);
+        return;
+    }
+
+    setNotifyStatus('⏳ Faol bo\'lmagan userlarga yuborilmoqda...', false, mode);
+    try {
+        const payload = { action: 'send_inactive_reminders', days };
+        const msg = String(messageText || '').trim();
+        if (msg) payload.messageText = msg;
+        const data = await apiRequest(payload, { timeoutMs: 60000 });
+        if (data.success) {
+            setNotifyStatus(`✅ Yuborildi: ${data.sent}/${data.total} ta`, false, mode);
+        } else {
+            setNotifyStatus('❌ ' + (data.error || 'Yuborilmadi'), true, mode);
+        }
+    } catch {
+        setNotifyStatus('❌ Server xatosi', true, mode);
+    }
+}
+
+async function runSystemSelfCheck(scope) {
+    const statusScope = scope === 'admin' ? 'admin_service' : 'dashboard';
+    setNotifyStatus('⏳ Self-check ishlayapti...', false, statusScope);
+    try {
+        const data = await apiRequest({ action: 'self_check' });
+        if (!data.success) {
+            setNotifyStatus('❌ ' + (data.error || 'Self-check xato'), true, statusScope);
+            return;
+        }
+        const checks = Array.isArray(data.checks) ? data.checks : [];
+        const bad = checks.filter(function (c) { return !c.ok; });
+        const summary = bad.length
+            ? ('⚠️ ' + bad.length + ' ta ogohlantirish bor')
+            : '✅ Barcha tekshiruvlar yaxshi';
+        setNotifyStatus(summary, bad.length > 0, statusScope);
+        if (bad.length > 0) {
+            const msg = bad.map(function (c) { return '• ' + c.key + ': ' + c.note; }).join('\n');
+            alert('Self-check:\n' + msg);
+        }
+    } catch {
+        setNotifyStatus('❌ Server xatosi', true, statusScope);
+    }
+}
+
 function showAdminError(msg) {
+    const safeMsg = escapeHtml(msg || 'Server xatosi');
     document.getElementById('adminList').innerHTML = `
         <div class="empty-state">
             <div class="empty-icon">⚠️</div>
             <p style="color:#EF4444;font-weight:700;">Yuklanmadi</p>
-            <p style="font-size:12px;margin-top:6px;color:var(--text-muted);">${msg}</p>
+            <p style="font-size:12px;margin-top:6px;color:var(--text-muted);">${safeMsg}</p>
             <button class="btn-main bg-navy" style="margin-top:16px;width:auto;padding:10px 24px;" onclick="loadAdminData()">🔄 Qayta urinish</button>
         </div>`;
+    document.getElementById('pagination').innerHTML = '';
 }
 
-function populateFilters() {
-    const empSel  = document.getElementById('filterEmployee');
-    const yearSel = document.getElementById('filterYear');
-    let emps = new Set(), years = new Set();
-    globalAdminData.forEach(r => {
-        if (r.name) emps.add(r.name);
-        if (r.date) { const p = r.date.split('/'); if (p[2]) years.add(p[2]); }
-    });
-    empSel.innerHTML  = '<option value="all">Barcha xodimlar</option>';
-    yearSel.innerHTML = '<option value="all">Yillar</option>';
-    Array.from(emps).sort().forEach(e => empSel.innerHTML  += `<option value="${e}">${e}</option>`);
-    Array.from(years).sort((a,b) => b-a).forEach(y => yearSel.innerHTML += `<option value="${y}">${y}</option>`);
-}
-
-let debounceTimer;
 function applyFilters() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-        const query = (document.getElementById('searchInput').value || '').toLowerCase();
-        const emp   = document.getElementById('filterEmployee').value;
-        const month = document.getElementById('filterMonth').value;
-        const year  = document.getElementById('filterYear').value;
-        filteredData = globalAdminData.filter(item => {
-            const mt = (item.name    && item.name.toLowerCase().includes(query)) ||
-                       (item.comment && item.comment.toLowerCase().includes(query));
-            const me = emp === 'all' || item.name === emp;
-            let mm = true, my = true;
-            if (item.date) {
-                const p = item.date.split('/');
-                if (month !== 'all') mm = p[1] === month;
-                if (year  !== 'all') my = p[2] === year;
-            }
-            return mt && me && mm && my;
-        });
-        currentPage = 1; calculateTotal(); renderAdminPage();
+    clearTimeout(adminFilterDebounceTimer);
+    adminFilterDebounceTimer = setTimeout(function () {
+        fetchAdminPage(1);
     }, 300);
 }
 
 function calculateTotal() {
-    let total = 0;
-    filteredData.forEach(r => { total += Number(r.amountUZS) || 0; });
     const bEl = document.getElementById('totalCompanyUzs');
     const cEl = document.getElementById('filteredCount');
-    if (bEl) bEl.innerText = total.toLocaleString() + ' UZS';
-    if (cEl) cEl.innerText = filteredData.length;
+    if (bEl) bEl.innerText = adminTotalUZS.toLocaleString() + ' UZS';
+    if (cEl) cEl.innerText = adminTotalCount;
 }
 
 function renderAdminPage() {
@@ -89,27 +395,29 @@ function renderAdminPage() {
         return;
     }
 
-    const start    = (currentPage - 1) * ITEMS_PER_PAGE;
-    const pageData = filteredData.slice(start, start + ITEMS_PER_PAGE);
-
-    // Huquqlarni aniqlaymiz
-    const canEditAny = myRole === 'SuperAdmin' ||
-                       (myRole === 'Admin' && (myPermissions.canEdit || myPermissions.canDelete));
+    const canEditAny = myRole === 'SuperAdmin' || myPermissions.canEdit || myPermissions.canDelete;
 
     let html = '';
-    pageData.forEach(r => {
-        const gIdx  = filteredData.indexOf(r);
+    filteredData.forEach(function (r, idx) {
         const isUsd = Number(r.amountUSD) > 0;
-        const rate  = Number(r.rate) || Number(r.exchangeRate) || 0;
-        const effRate = rate > 0 ? rate : (isUsd && r.amountUZS > 0 ? Math.round(r.amountUZS/r.amountUSD) : 0);
+        const rate = Number(r.rate) || Number(r.exchangeRate) || 0;
+        const effRate = rate > 0 ? rate : (isUsd && r.amountUZS > 0 ? Math.round(r.amountUZS / r.amountUSD) : 0);
+        const safeName = escapeHtml(r.name || '—');
+        const safeDate = escapeHtml(r.date || '—');
+        const safeComment = escapeHtml(r.comment || '—');
+
+        let dateHtml = `<span class="item-date">⏳ ${safeDate}</span>`;
+        if (r.actionPeriod) {
+            dateHtml = `<span class="item-date">📅 Davr: ${escapeHtml(r.actionPeriod)} (Yoz: ${safeDate})</span>`;
+        }
 
         html += `
-        <div class="history-item" onclick="showAdminDetailModal(${gIdx})" style="cursor:pointer;">
+        <div class="history-item" onclick="showAdminDetailModal(${idx})" style="cursor:pointer;">
             <div class="item-header">
-                <span class="item-name">👤 ${r.name || '—'}</span>
-                <span class="item-date">${r.date || '—'}</span>
+                <span class="item-name">👤 ${safeName}</span>
+                ${dateHtml}
             </div>
-            <div class="item-comment">📝 ${r.comment || '—'}</div>
+            <div class="item-comment">📝 ${safeComment}</div>
             <div class="item-amounts">
                 ${Number(r.amountUZS) > 0 ? `<span class="amount-chip uzs">💰 ${Number(r.amountUZS).toLocaleString()} UZS</span>` : ''}
                 ${isUsd ? `<span class="amount-chip usd">💵 $${Number(r.amountUSD).toLocaleString()}</span>` : ''}
@@ -124,26 +432,57 @@ function renderAdminPage() {
 }
 
 function renderPaginationControls() {
-    const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+    if (adminTotalPages <= 1) {
+        document.getElementById('pagination').innerHTML = '';
+        return;
+    }
+
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(adminTotalPages, currentPage + 2);
     let html = '';
-    if (totalPages > 1)
-        for (let i = 1; i <= totalPages; i++)
-            html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goToPage(${i})">${i}</button>`;
+
+    if (start > 1) {
+        html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+        if (start > 2) html += `<span class="page-ellipsis">…</span>`;
+    }
+
+    for (let i = start; i <= end; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    }
+
+    if (end < adminTotalPages) {
+        if (end < adminTotalPages - 1) html += `<span class="page-ellipsis">…</span>`;
+        html += `<button class="page-btn" onclick="goToPage(${adminTotalPages})">${adminTotalPages}</button>`;
+    }
+
     document.getElementById('pagination').innerHTML = html;
 }
 
 function goToPage(page) {
-    currentPage = page;
-    renderAdminPage();
-    document.getElementById('adminDataArea').scrollIntoView({ behavior:'smooth' });
+    fetchAdminPage(page);
+    const area = document.getElementById('dashboardActionsArea') || document.getElementById('adminDataArea');
+    if (area) area.scrollIntoView({ behavior: 'smooth' });
 }
 
-function showAdminDetailModal(gIdx) {
-    const r = filteredData[gIdx];
+function showAdminDetailModal(idx) {
+    const r = filteredData[idx];
     if (!r) return;
-    // canEdit = SuperAdmin yoki ruxsatli Admin
-    const canEdit = myRole === 'SuperAdmin' ||
-                    (myRole === 'Admin' && (myPermissions.canEdit || myPermissions.canDelete));
-    showDetailModal(r, canEdit);
+    showDetailModal(r, 'admin');
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+async function fetchAdminFilteredDataForExport() {
+    const state = normalizeAdminFilterState(getAdminFilterState());
+    const data = await apiRequest({
+        action: 'admin_get_all',
+        query: state.query,
+        employee: state.employee,
+        month: state.month,
+        year: state.year
+    }, { timeoutMs: 30000 });
+
+    if (!data.success) {
+        throw new Error(data.error || 'Eksport uchun ma\'lumot olinmadi');
+    }
+    return data.data || [];
 }
