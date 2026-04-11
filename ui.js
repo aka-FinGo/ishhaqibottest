@@ -33,9 +33,6 @@ window.onload = async () => {
                 populateKvadratMeta(globalEmployeeList);
             }
 
-            // Populate kvadrat filters and forms
-            populateKvadratMeta(globalEmployeeList);
-
             // Greeting — laqab bo'lsa uni ko'rsat
             const displayName = myUsername || firstName;
             document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
