@@ -1,10 +1,6 @@
 // ============================================================
 // ui.js — Navigatsiya va dastlabki yuklanish
 // ============================================================
-let myUsername        = '';
-let myRole            = 'User';
-let myPermissions     = {};
-let adminContactId    = '';
 let globalEmployeeList = []; // Global list for dropdowns
 
 window.onload = async () => {
