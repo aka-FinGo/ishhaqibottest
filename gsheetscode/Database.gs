@@ -836,7 +836,7 @@ function addRecord(data, auth, actorTgId) {
       actionPeriod: forPeriod
     };
 
-    return { success: true };
+    return { success: true, rowId: row };
   });
 
   if (!writeResult.success) return writeResult;

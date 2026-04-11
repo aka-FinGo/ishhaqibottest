@@ -185,7 +185,7 @@ document.getElementById('financeForm').addEventListener('submit', async(e)=>{
         if(data.success){
             status.style.color='var(--green-dark)'; status.innerText='✅ Muvaffaqiyatli saqlandi!';
             myFullRecords.push({
-                rowId: Date.now(),
+                rowId: data.rowId || Date.now(),
                 name: myUsername || employeeName || '—',
                 amountUZS: Number(amountUZS) || 0,
                 amountUSD: Number(amountUSD) || 0,
