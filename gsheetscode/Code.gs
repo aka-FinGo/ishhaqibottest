@@ -200,12 +200,19 @@ function handleStartCommand_(message) {
   };
   var reg = autoRegisterPendingUserIfMissing_(tgId, data, 'start');
 
-  var text = "Assalomu alaykum!\n" +
-             "Siz tizim ro'yxatiga qo'shildingiz.\n" +
-             "Ruxsat olish uchun admin bilan bog'laning.";
+  var text;
+  var auth = checkUserRoles(tgId);
+
   if (reg && reg.created) {
     text = "Assalomu alaykum!\n" +
            "Siz yangi foydalanuvchi sifatida ro'yxatga qo'shildingiz.\n" +
+           "Ruxsat olish uchun admin bilan bog'laning.";
+  } else if (auth.isSuperAdmin || auth.inList) {
+    text = "Assalomu alaykum! Tizimga xush kelibsiz.\n" +
+           "Pastdagi tugma orqali Web App dasturini oching:";
+  } else {
+    text = "Assalomu alaykum!\n" +
+           "Sizning hisobingiz tasdiqlash jarayonida.\n" +
            "Ruxsat olish uchun admin bilan bog'laning.";
   }
 
