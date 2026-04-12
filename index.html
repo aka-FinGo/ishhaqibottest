@@ -245,12 +245,21 @@
                     <select id="filterYear" onchange="applyFilters()"><option value="all">Yillar</option></select>
                 </div>
             </div>
-
             <div id="adminList"></div>
             <div id="pagination" class="pagination"></div>
         </div>
 
-        <!-- TAB 5: KVADRATLAR -->
+        <div id="dashboardChartsArea">
+            <div id="dashboardContent">
+                <div class="dash-empty" style="padding:60px 20px;">
+                    <div style="font-size:40px;margin-bottom:12px;">📊</div>
+                    <p>Yuklanmoqda...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: KVADRATLAR — MUSTAQIL TAB (dashboardTab TASHQARISIDA) -->
     <div id="kvadratTab" class="tab-content">
         <div class="page-header">
             <div>
@@ -259,11 +268,11 @@
             </div>
             <div class="header-avatar">📐</div>
         </div>
-        
+
         <div class="stats-grid">
-            <div class="stat-card" style="background:var(--navy);color:#fff;">
+            <div class="stat-card" style="background:var(--navy);color:#fff;grid-column:1/-1;">
                 <div class="stat-label" style="opacity:0.8;">Jami m² (Tanlangan davr)</div>
-                <div class="stat-value" id="kvTotalM2">0</div>
+                <div class="stat-value" id="kvTotalM2" style="color:#fff;">0</div>
             </div>
         </div>
 
@@ -280,22 +289,12 @@
                 </select>
                 <select id="kvFilterYear" onchange="applyKvFilters()"><option value="all">Yillar</option></select>
             </div>
-            <select id="kvFilterStaff" onchange="applyKvFilters()" style="margin-top:8px; width:100%;">
+            <select id="kvFilterStaff" onchange="applyKvFilters()">
                 <option value="all">Barcha hodimlar</option>
             </select>
         </div>
 
         <div id="kvList"></div>
-    </div>
-
-    <div id="dashboardChartsArea">
-            <div id="dashboardContent">
-                <div class="dash-empty" style="padding:60px 20px;">
-                    <div style="font-size:40px;margin-bottom:12px;">📊</div>
-                    <p>Yuklanmoqda...</p>
-                </div>
-            </div>
-        </div>
     </div>
 
 </div><!-- /container -->
