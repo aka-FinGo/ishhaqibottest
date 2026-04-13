@@ -182,7 +182,16 @@ function doPost(e) {
 
       case "kvadrat_claim":
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
-        result = kvadratClaimWork(data, auth, tgId);
+        result = processWorkflowStep(data.rowId, auth, tgId);
+        break;
+
+      case "workflow_get_config":
+        result = { success:true, steps: getWorkflowConfig() };
+        break;
+
+      case "workflow_save_config":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin oqimni o'zgartira oladi" });
+        result = saveWorkflowConfig(data.steps);
         break;
 
       default:

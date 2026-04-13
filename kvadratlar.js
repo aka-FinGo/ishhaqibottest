@@ -106,6 +106,31 @@ async function initKvadratTab() {
         const listEl = document.getElementById('kvList');
         if (listEl) listEl.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi</p></div>`;
     }
+
+    updateKvFabVisibility();
+}
+
+/**
+ * Shows/hides "+" button for Kvadrat Tab based on Loyihachi position.
+ */
+function updateKvFabVisibility() {
+    const fab = document.getElementById('nav-add');
+    if (!fab) return;
+
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab && activeTab.id === 'kvadratTab') {
+        const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+        const isLoyihachi = myRole === 'SuperAdmin' || positions.indexOf('Loyihachi') !== -1;
+        fab.style.visibility = isLoyihachi ? 'visible' : 'hidden';
+        fab.style.pointerEvents = isLoyihachi ? 'auto' : 'none';
+        fab.style.opacity = isLoyihachi ? '1' : '0';
+        fab.style.transition = 'opacity 0.2s';
+    } else {
+        // Normal behavior for other tabs where FAB goes to addTab
+        fab.style.visibility = 'visible';
+        fab.style.pointerEvents = 'auto';
+        fab.style.opacity = '1';
+    }
 }
 
 /**
@@ -136,27 +161,29 @@ function renderKvList() {
         const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
         
         const monthLabel = kvMonthLabel(rec.month);
-        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
-        
-        // Status colors & labels
+        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2         // Status colors & labels based on dynamic config
         let statusHtml = '';
         const status = rec.status || 'yangi';
-        if (status === 'yangi') {
-            statusHtml = `<span class="kv-badge b-yellow">🟡 Yangi</span>`;
-        } else if (status === 'yig\'ildi') {
-            statusHtml = `<span class="kv-badge b-blue">🔵 Yig'ildi</span>`;
-        } else if (status === 'tayyor') {
-            statusHtml = `<span class="kv-badge b-green">🟢 Tayyor</span>`;
-        }
-
-        // Quick action button logic
-        let actionBtn = '';
-        const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+        const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
+        const stepMatch = config.find(s => s.status === status);
         
-        if (status === 'yangi' && positions.indexOf('Yig\'uvchi') !== -1) {
-            actionBtn = `<button class="kv-claim-btn b-blue" onclick="event.stopPropagation();claimKvWork(${rec.rowId}, 'yiguvchi')">🔧 Men yig'dim</button>`;
-        } else if (status === 'yig\'ildi' && positions.indexOf('Qadoqlovchi') !== -1) {
-            actionBtn = `<button class="kv-claim-btn b-green" onclick="event.stopPropagation();claimKvWork(${rec.rowId}, 'qadoqlovchi')">📦 Men qadoqladim</button>`;
+        let badgeColor = 'b-yellow'; // default
+        if (status === 'yangi') badgeColor = 'b-yellow';
+        else if (status.indexOf('yigi') !== -1) badgeColor = 'b-blue';
+        else if (status.indexOf('tayyor') !== -1 || status.indexOf('landi') !== -1) badgeColor = 'b-green';
+
+        statusHtml = `<span class="kv-badge ${badgeColor}">${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span>`;
+
+        // Quick action button logic (DYNAMIC)
+        let actionBtn = '';
+        const myPoss = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+        const currentStepIdx = Number(rec.currentStep) || 1;
+        const nextStep = config.find(s => s.index === currentStepIdx + 1);
+
+        if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
+            let btnClass = 'b-blue';
+            if (nextStep.status.indexOf('tayyor') !== -1 || nextStep.status.indexOf('landi') !== -1) btnClass = 'b-green';
+            actionBtn = `<button class="kv-claim-btn ${btnClass}" onclick="event.stopPropagation();claimKvWork(${rec.rowId})">${escapeHtml(nextStep.action)}</button>`;
         }
 
         html += `
@@ -182,7 +209,9 @@ function renderKvList() {
                      </span>
                 </div>
             </div>
-            ${canManage ? `<div class="item-edit-hint">→ batafsil</div>` : ''}
+            <div class="item-edit-hint">→ batafsil tarix</div>
+        </div>`;
+-hint">→ batafsil</div>` : ''}
         </div>`;
     });
 
@@ -200,55 +229,67 @@ function showKvDetailModal(idx) {
     const isOwner = String(rec.ownerTgId) === String(telegramId);
     const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
     const monthLabel = kvMonthLabel(rec.month);
-    const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
-
-    // Workflow actions in modal
+    const m2Val = (Number(rec.totalM2) || 0).toLoca    // Workflow actions in modal (DYNAMIC)
     let claimBtnHtml = '';
     const status = rec.status || 'yangi';
-    const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
-    
-    if (status === 'yangi' && positions.indexOf('Yig\'uvchi') !== -1) {
-        claimBtnHtml = `<button class="btn-main" style="background:#2563EB;margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, 'yiguvchi')">🔧 Men yig'dim</button>`;
-    } else if (status === 'yig\'ildi' && positions.indexOf('Qadoqlovchi') !== -1) {
-        claimBtnHtml = `<button class="btn-main" style="background:#059669;margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, 'qadoqlovchi')">📦 Men qadoqladim</button>`;
+    const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
+    const myPoss = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+    const currentStepIdx = Number(rec.currentStep) || 1;
+    const nextStep = config.find(s => s.index === currentStepIdx + 1);
+
+    if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
+        claimBtnHtml = `<button class="btn-main" style="background:var(--navy);margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
+
+    // Build History View
+    let historyHtml = '';
+    const logs = rec.logs || [];
+    logs.forEach(log => {
+        const stepCfg = config.find(s => s.index === log.step);
+        const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => e.tgId == log.uid)?.username || log.uid);
+        historyHtml += `
+        <div style="border-left:2px solid var(--border); padding-left:12px; margin-bottom:12px; position:relative;">
+            <div style="width:10px; height:10px; border-radius:50%; background:var(--navy); position:absolute; left:-6px; top:4px;"></div>
+            <div style="font-size:12px; font-weight:700; color:var(--navy);">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
+        </div>`;
+    });
 
     document.getElementById('kvDetailModalBody').innerHTML = `
         <div class="modal-drag"></div>
         <div class="detail-header">
-            <span class="detail-badge uzs" style="background:#EFF6FF;color:#1D4ED8;">📐 Kvadrat o'lchov</span>
+            <span class="detail-badge uzs" style="background:#EFF6FF;color:#1D4ED8;">📐 Ish Oqimi Tarixi</span>
             <div class="detail-comment">📌 ${escapeHtml(rec.orderName || '—')}</div>
-            <div class="detail-date">📅 Sana: ${escapeHtml(rec.date || '—')}</div>
+            <div class="detail-date">📅 №${rec.no || '—'} | Sana: ${escapeHtml(rec.date || '—')}</div>
         </div>
+        
+        <div class="card" style="margin-bottom:15px; background:#F8FAFC;">
+            <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--text-muted); margin-bottom:10px;">📉 Jarayon tarixi</div>
+            ${historyHtml || '<p style="font-size:12px; color:var(--text-muted);">Tarix bo\'sh</p>'}
+        </div>
+
         <div class="detail-card">
             <div class="detail-row">
-                <span class="detail-key">Status</span>
-                <span class="detail-val">${status === 'yangi' ? '🟡 Yangi' : (status === 'yig\'ildi' ? '🔵 Yig\'ildi' : '🟢 Tayyor')}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-key">№</span>
-                <span class="detail-val">${rec.no || '—'}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-key">Loyihachi</span>
-                <span class="detail-val"><strong>${escapeHtml(rec.staffName || '—')}</strong></span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-key">Yig'uvchi</span>
-                <span class="detail-val">${escapeHtml(rec.yiguvchi || '—')}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-key">Qadoqlovchi</span>
-                <span class="detail-val">${escapeHtml(rec.qadoqlovchi || '—')}</span>
+                <span class="detail-key">Hozirgi Status</span>
+                <span class="detail-val"><b>${escapeHtml(status.toUpperCase())}</b></span>
             </div>
             <div class="detail-row">
                 <span class="detail-key">Jami m²</span>
                 <span class="detail-val" style="color:#0F172A;font-size:18px;">${m2Val} m²</span>
             </div>
         </div>
+
         ${claimBtnHtml}
-        <button class="btn-secondary" style="margin-top:12px;" onclick="closeKvDetailModal()">✕ Yopish</button>
-        ${actionBtns}`;
+        
+        <div class="admin-actions" style="display:flex; gap:10px; margin-top:10px;">
+            ${myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1;" onclick="closeKvDetailModal();openEditKvModal(${idx})">✏️ Tahrirlash</button>` : ''}
+            ${myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; color:var(--red);" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : ''}
+        </div>
+
+        <button class="btn-secondary" style="margin-top:12px; width:100%;" onclick="closeKvDetailModal()">✕ Yopish</button>
+    `;
+condary" style="margin-top:12px;" onclick="closeKvDetailModal()">✕ Yopish</button>
+    `;
 
     document.getElementById('kvDetailModal').classList.remove('hidden');
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');

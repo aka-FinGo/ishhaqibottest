@@ -11,7 +11,15 @@ const ROLE_OPTIONS = [
 
 const ROLE_PERM_FIELDS = ['canAdd', 'canViewAll', 'canViewDash', 'canExport', 'canEdit', 'canDelete'];
 
-const TECHNICAL_POSITIONS = ['Loyihachi', 'Yig\'uvchi', 'Qadoqlovchi'];
+let TECHNICAL_POSITIONS = ['Loyihachi', 'Yig\'uvchi', 'Qadoqlovchi'];
+
+function updateTechnicalPositions(config) {
+    if (!config || !config.length) return;
+    // Get unique position names from workflow config
+    const posSet = new Set();
+    config.forEach(s => { if (s.position) posSet.add(s.position); });
+    TECHNICAL_POSITIONS = Array.from(posSet);
+}
 
 function normalizeRoleKey(role) {
     const raw = String(role || '').trim().toUpperCase();
@@ -236,10 +244,14 @@ async function loadHodimlar() {
                         ${TECHNICAL_POSITIONS.map(pos => {
                             const isChecked = (h.positions || []).indexOf(pos) !== -1;
                             const pid = `hpos_${safeTgId}_${pos.replace(/\s+/g, '_')}`;
+                            let icon = '📐';
+                            if (pos === 'Yig\'uvchi') icon = '🔧';
+                            if (pos === 'Qadoqlovchi') icon = '📦';
+                            
                             return `
-                            <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; flex:1; min-width:90px;" onclick="togglePermLabel(this,'${pid}')">
+                            <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; flex:1; min-width:95px; font-weight:500;" onclick="togglePermLabel(this,'${pid}')">
                                 <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos}" onclick="event.stopPropagation();syncPermLabel(this)">
-                                <span style="font-size:12px;">${pos}</span>
+                                <span style="font-size:12px;">${icon} ${pos}</span>
                             </label>`;
                         }).join('')}
                     </div>

@@ -5,21 +5,22 @@
 var KVADRAT_SHEET_NAME = "Kvadratlar";
 
 var KV_COL = {
-  DATE:          0,
-  NO:            1,
-  MONTH:         2,
-  TOTAL_M2:      3,
-  ORDER_NAME:    4,
-  STAFF_NAME:    5,
-  OWNER_TG_ID:   6,
-  IS_DELETED:    7,
-  YIGUVCHI:      8,
-  QADOQLOVCHI:   9,
-  STATUS:        10
+  DATE:             0,
+  NO:               1,
+  MONTH:            2,
+  TOTAL_M2:         3,
+  ORDER_NAME:       4,
+  STAFF_NAME:       5, // Created By
+  OWNER_TG_ID:      6,
+  IS_DELETED:       7,
+  STEP_INDEX:       8,
+  STATUS:           9,
+  STEP_LOGS:        10
 };
 
 var KV_HEADERS = [
-  "Sana", "№", "Oy", "Jami m2:", "Buyurtma nomi/Mijoz ismi", "Hodim", "OwnerTgId", "IsDeleted", "Yig'uvchi", "Qadoqlovchi", "Status"
+  "Sana", "№", "Oy", "Jami m2:", "Buyurtma nomi/Mijoz ismi", "Hodim", "OwnerTgId", "IsDeleted", 
+  "CurrentStep", "Status", "WorkflowLogs"
 ];
 
 function getKvadratSheet() {
@@ -82,9 +83,11 @@ function kvadratAdd(data, auth, actorTgId) {
       String(data.staffName || '').trim(),
       String(actorTgId),
       0,
-      "",
-      "",
-      "yangi"
+      String(actorTgId),
+      0,
+      1, // Step 1: Kiritildi
+      "yangi",
+      JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString() }])
     ]);
 
     var row = sh.getLastRow();
@@ -101,8 +104,9 @@ function kvadratAdd(data, auth, actorTgId) {
  */
 function kvadratGetAll(options) {
   var sh = getKvadratSheet();
-  var values = sh.getDataRange().getValues();
-  var records = [];
+  var values      = sh.getDataRange().getValues();
+  var records     = [];
+  var userMap     = buildUsernameMap(); // For resolving names from IDs
 
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
@@ -123,11 +127,11 @@ function kvadratGetAll(options) {
       month:      cleanMonth,                          // "_03" etc
       totalM2:    Number(row[KV_COL.TOTAL_M2]) || 0,
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
-      staffName:  String(row[KV_COL.STAFF_NAME] || ''),
-      ownerTgId:  String(row[KV_COL.OWNER_TG_ID] || ''),
-      yiguvchi:   String(row[KV_COL.YIGUVCHI] || ''),
-      qadoqlovchi:String(row[KV_COL.QADOQLOVCHI] || ''),
-      status:     String(row[KV_COL.STATUS] || 'yangi')
+      staffName:         String(row[KV_COL.STAFF_NAME] || ''),
+      ownerTgId:         String(row[KV_COL.OWNER_TG_ID] || ''),
+      currentStep:       Number(row[KV_COL.STEP_INDEX]) || 1,
+      status:            String(row[KV_COL.STATUS] || 'yangi'),
+      logs:              JSON.parse(row[KV_COL.STEP_LOGS] || '[]')
     });
   }
 
@@ -204,20 +208,23 @@ function kvadratClaimWork(data, auth, actorTgId) {
     var type = data.claimType; // 'yiguvchi' or 'qadoqlovchi'
     var userName = auth.username || 'Noma\'lum';
     var positions = auth.positions || [];
+    var now = new Date();
 
     if (type === 'yiguvchi') {
       if (!positions.indexOf || positions.indexOf('Yig\'uvchi') === -1) {
         return { success: false, error: 'Sizda "Yig\'uvchi" lavozimi yo\'q' };
       }
-      sh.getRange(row, KV_COL.YIGUVCHI + 1).setValue(userName);
-      sh.getRange(row, KV_COL.STATUS + 1).setValue('yig\'ildi');
+      sh.getRange(row, KV_COL.YIGUVCHI_ID     + 1).setValue(String(actorTgId));
+      sh.getRange(row, KV_COL.YIGUVCHI_DATE   + 1).setValue(now);
+      sh.getRange(row, KV_COL.STATUS         + 1).setValue('yig\'ildi');
     } 
     else if (type === 'qadoqlovchi') {
       if (!positions.indexOf || positions.indexOf('Qadoqlovchi') === -1) {
         return { success: false, error: 'Sizda "Qadoqlovchi" lavozimi yo\'q' };
       }
-      sh.getRange(row, KV_COL.QADOQLOVCHI + 1).setValue(userName);
-      sh.getRange(row, KV_COL.STATUS + 1).setValue('tayyor');
+      sh.getRange(row, KV_COL.QADOQLOVCHI_ID   + 1).setValue(String(actorTgId));
+      sh.getRange(row, KV_COL.QADOQLOVCHI_DATE + 1).setValue(now);
+      sh.getRange(row, KV_COL.STATUS           + 1).setValue('tayyor');
     }
 
     return { success: true };

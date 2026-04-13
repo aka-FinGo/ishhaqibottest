@@ -1359,3 +1359,48 @@ body.dark .whatif-preview {
 .kv-claim-btn:active { transform: scale(0.95); }
 .kv-claim-btn.b-blue { background: #2563EB; color: #fff; }
 .kv-claim-btn.b-green { background: #10B981; color: #fff; }
+
+/* Admin: Enhanced Perm Labels (Chips) */
+.perm-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.perm-label:hover {
+    border-color: #CBD5E1;
+    background: #F8FAFC;
+}
+
+.perm-label input {
+    display: none; /* Hide original checkbox */
+}
+
+.perm-label.checked {
+    background: #EFF6FF;
+    border-color: #3B82F6;
+    color: #1D4ED8;
+    font-weight: 600;
+}
+
+.perm-label.checked::after {
+    content: "✓";
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.hodim-perms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}

@@ -66,6 +66,10 @@ var EMP_HEADERS = [
   "Lavozim"
 ];
 
+var WORKFLOW_HEADERS = [
+  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart"
+];
+
 function getSheets() {
   if (_MEMO.sheets) return _MEMO.sheets;
 
@@ -96,7 +100,18 @@ function getSheets() {
   }
 
   ensureEmployeeInfrastructure_(empSheet);
-  _MEMO.sheets = { dataSheet: dataSheet, empSheet: empSheet };
+  
+  var workflowSheet = ss.getSheetByName("WorkflowSteps");
+  if (!workflowSheet) {
+    workflowSheet = ss.insertSheet("WorkflowSteps");
+    ensureWorkflowInfrastructure_(workflowSheet);
+  }
+
+  _MEMO.sheets = { 
+    dataSheet: dataSheet, 
+    empSheet: empSheet, 
+    workflowSheet: workflowSheet 
+  };
   return _MEMO.sheets;
 }
 
@@ -132,7 +147,16 @@ function migrateHodimlarToV2(hideLegacyColumns) {
   return synchronizeEmployeeRowsToV2_(sh, hideLegacyColumns !== false);
 }
 
-function synchronizeEmployeeRowsToV2_(empSheet, hideLegacyColumns) {
+function ensureWorkflowInfrastructure_(sh) {
+  sh.clear();
+  sh.appendRow(WORKFLOW_HEADERS);
+  sh.getRange(1, 1, 1, WORKFLOW_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  
+  // Default dynamic steps
+  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1]);
+  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0]);
+  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0]);
+}
   if (!empSheet) return { success:false, error:'Hodimlar sheet topilmadi' };
   var requiredCols = EMP_HEADERS.length;
   var lastRow = empSheet.getLastRow();
