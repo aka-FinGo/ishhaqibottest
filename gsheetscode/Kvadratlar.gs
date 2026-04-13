@@ -83,8 +83,6 @@ function kvadratAdd(data, auth, actorTgId) {
       String(data.staffName || '').trim(),
       String(actorTgId),
       0,
-      String(actorTgId),
-      0,
       1, // Step 1: Kiritildi
       "yangi",
       JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString() }])
@@ -131,7 +129,10 @@ function kvadratGetAll(options) {
       ownerTgId:         String(row[KV_COL.OWNER_TG_ID] || ''),
       currentStep:       Number(row[KV_COL.STEP_INDEX]) || 1,
       status:            String(row[KV_COL.STATUS] || 'yangi'),
-      logs:              JSON.parse(row[KV_COL.STEP_LOGS] || '[]')
+      logs:              (function(){
+        try { return JSON.parse(row[KV_COL.STEP_LOGS] || '[]'); }
+        catch(e) { return []; }
+      })()
     });
   }
 
