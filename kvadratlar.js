@@ -5,13 +5,27 @@
 let kvFullRecords = [];
 let kvFilteredRecords = [];
 
+const KV_MONTHS_UZ = [
+    '', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+    'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'
+];
+
+/**
+ * Month string like "_01" → "Yanvar"
+ */
+function kvMonthLabel(monthStr) {
+    const clean = String(monthStr || '').replace(/^_+/, '').replace(/^'/, '');
+    const num = parseInt(clean, 10);
+    return (num >= 1 && num <= 12) ? KV_MONTHS_UZ[num] : (clean || '—');
+}
+
 /**
  * Populates staff dropdowns and basic filters.
  */
 function populateKvadratMeta(staffList) {
     const staffFilter = document.getElementById('kvFilterStaff');
-    const staffSelect = document.getElementById('kvStaffSelect');
-    
+    const kvStaffModal = document.getElementById('kvStaffSelect');
+
     if (staffFilter) {
         staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
         staffList.forEach(name => {
@@ -21,14 +35,14 @@ function populateKvadratMeta(staffList) {
             staffFilter.appendChild(opt);
         });
     }
-    
-    if (staffSelect) {
-        staffSelect.innerHTML = '<option value="">Tanlang...</option>';
+
+    if (kvStaffModal) {
+        kvStaffModal.innerHTML = '<option value="">Hodimni tanlang...</option>';
         staffList.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name;
             opt.textContent = name;
-            staffSelect.appendChild(opt);
+            kvStaffModal.appendChild(opt);
         });
     }
 
@@ -44,6 +58,29 @@ function populateKvadratMeta(staffList) {
             yearSel.appendChild(opt);
         }
     }
+
+    // Populate month/year in add modal
+    _initKvFormYears();
+}
+
+function _initKvFormYears() {
+    const curYear = new Date().getFullYear();
+    const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+
+    const yearEl = document.getElementById('kvActionYear');
+    if (yearEl) {
+        yearEl.innerHTML = '';
+        for (let y = curYear + 1; y >= curYear - 2; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === curYear) opt.selected = true;
+            yearEl.appendChild(opt);
+        }
+    }
+
+    const monthEl = document.getElementById('kvActionMonth');
+    if (monthEl) monthEl.value = curMonth;
 }
 
 /**
@@ -51,7 +88,9 @@ function populateKvadratMeta(staffList) {
  */
 async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
+    if (!listContainer) return;
     listContainer.innerHTML = `
+        <div class="skeleton skeleton-item"></div>
         <div class="skeleton skeleton-item"></div>
         <div class="skeleton skeleton-item"></div>`;
 
@@ -61,10 +100,11 @@ async function initKvadratTab() {
             kvFullRecords = data.data || [];
             applyKvFilters();
         } else {
-            showToastMsg('❌ ' + (data.error || 'Yuklashda xato'), true);
+            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
         }
     } catch (e) {
-        showToastMsg('❌ Tarmoq xatosi', true);
+        const listEl = document.getElementById('kvList');
+        if (listEl) listEl.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi</p></div>`;
     }
 }
 
@@ -74,68 +114,136 @@ async function initKvadratTab() {
 function renderKvList() {
     const container = document.getElementById('kvList');
     const totalDisplay = document.getElementById('kvTotalM2');
-    
+    if (!container) return;
+
     if (!kvFilteredRecords.length) {
-        container.innerHTML = '<div class="empty-msg">Ma\'lumot topilmadi</div>';
-        totalDisplay.innerText = '0';
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📏</div>
+                <p>Ma'lumot topilmadi</p>
+            </div>`;
+        if (totalDisplay) totalDisplay.innerText = '0';
         return;
     }
 
     let totalM2 = 0;
     let html = '';
 
-    kvFilteredRecords.forEach(rec => {
-        totalM2 += rec.totalM2;
-        
-        // Ownership check
+    kvFilteredRecords.forEach((rec, idx) => {
+        totalM2 += Number(rec.totalM2) || 0;
+
         const isOwner = String(rec.ownerTgId) === String(telegramId);
         const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
+        const monthLabel = kvMonthLabel(rec.month);
+        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
 
         html += `
-            <div class="history-item">
-                <div class="hist-main">
-                    <div class="hist-left">
-                        <div class="hist-reason">${rec.orderName}</div>
-                        <div class="hist-meta">
-                            <span>👤 ${rec.staffName}</span> • 
-                            <span>📅 ${rec.date}</span>
-                        </div>
-                    </div>
-                    <div class="hist-right">
-                        <div class="hist-amt" style="color:var(--navy);">${rec.totalM2.toLocaleString()} m²</div>
-                        ${canManage ? `
-                        <div style="display:flex; gap:8px; margin-top:4px; justify-content: flex-end;">
-                            <span onclick="openKvModal(${rec.rowId})" style="cursor:pointer; font-size:16px;">✏️</span>
-                            <span onclick="deleteKv(${rec.rowId})" style="cursor:pointer; font-size:16px;">🗑️</span>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
+        <div class="history-item kv-item" onclick="showKvDetailModal(${idx})" style="cursor:pointer;">
+            <div class="item-header">
+                <span class="item-name" style="display:flex;align-items:center;gap:6px;">
+                    <span style="background:#EFF6FF;color:#1D4ED8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">
+                        №${rec.no || '—'}
+                    </span>
+                    <span style="background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">
+                        ${escapeHtml(monthLabel)}
+                    </span>
+                </span>
+                <span class="item-date">📅 ${escapeHtml(rec.date || '—')}</span>
             </div>
-        `;
+            <div style="font-size:15px;font-weight:700;color:var(--navy);margin:6px 0 4px;">
+                📌 ${escapeHtml(rec.orderName || '—')}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--text-muted);">👤 ${escapeHtml(rec.staffName || '—')}</span>
+                <span style="background:#0F172A;color:#fff;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:800;">
+                    ${m2Val} m²
+                </span>
+            </div>
+            ${canManage ? `<div class="item-edit-hint">→ batafsil</div>` : ''}
+        </div>`;
     });
 
     container.innerHTML = html;
-    totalDisplay.innerText = totalM2.toLocaleString();
+    if (totalDisplay) totalDisplay.innerText = totalM2.toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+}
+
+/**
+ * Show detail modal for a kvadrat record
+ */
+function showKvDetailModal(idx) {
+    const rec = kvFilteredRecords[idx];
+    if (!rec) return;
+
+    const isOwner = String(rec.ownerTgId) === String(telegramId);
+    const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
+    const monthLabel = kvMonthLabel(rec.month);
+    const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+
+    const actionBtns = canManage ? `
+        <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            <button class="edit-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
+                onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>
+            <button class="del-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
+                onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>
+        </div>` : '';
+
+    document.getElementById('kvDetailModalBody').innerHTML = `
+        <div class="modal-drag"></div>
+        <div class="detail-header">
+            <span class="detail-badge uzs" style="background:#EFF6FF;color:#1D4ED8;">📐 Kvadrat o'lchov</span>
+            <div class="detail-comment">📌 ${escapeHtml(rec.orderName || '—')}</div>
+            <div class="detail-date">📅 Sana: ${escapeHtml(rec.date || '—')}</div>
+        </div>
+        <div class="detail-card">
+            <div class="detail-row">
+                <span class="detail-key">№</span>
+                <span class="detail-val">${rec.no || '—'}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Oy</span>
+                <span class="detail-val">${escapeHtml(monthLabel)}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Jami m²</span>
+                <span class="detail-val" style="color:#0F172A;font-size:18px;">${m2Val} m²</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Buyurtma / Mijoz</span>
+                <span class="detail-val">${escapeHtml(rec.orderName || '—')}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Mas'ul hodim</span>
+                <span class="detail-val"><strong>${escapeHtml(rec.staffName || '—')}</strong></span>
+            </div>
+        </div>
+        <button class="btn-secondary" style="margin-top:12px;" onclick="closeKvDetailModal()">✕ Yopish</button>
+        ${actionBtns}`;
+
+    document.getElementById('kvDetailModal').classList.remove('hidden');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+function closeKvDetailModal() {
+    document.getElementById('kvDetailModal').classList.add('hidden');
 }
 
 /**
  * Applies current filters to the full records.
  */
 function applyKvFilters() {
-    const month = document.getElementById('kvFilterMonth').value;
-    const year = document.getElementById('kvFilterYear').value;
-    const staff = document.getElementById('kvFilterStaff').value;
+    const month = document.getElementById('kvFilterMonth')?.value || 'all';
+    const year = document.getElementById('kvFilterYear')?.value || 'all';
+    const staff = document.getElementById('kvFilterStaff')?.value || 'all';
 
     kvFilteredRecords = kvFullRecords.filter(rec => {
-        // Month filter (record.month is "_01", "_02" etc)
+        // Month filter: rec.month is "_01", "_02" etc
         if (month !== 'all') {
-            const targetM = "_" + month;
-            if (rec.month !== targetM) return false;
+            const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
+            if (cleanMonth !== month) return false;
         }
-        // Year filter (record.date is "DD/MM/YYYY")
+        // Year filter: rec.date is "DD/MM/YYYY"
         if (year !== 'all') {
-            if (!rec.date.endsWith(year)) return false;
+            if (!String(rec.date || '').endsWith(String(year))) return false;
         }
         // Staff filter
         if (staff !== 'all') {
@@ -148,33 +256,48 @@ function applyKvFilters() {
 }
 
 /**
- * Modal control
+ * Open Add/Edit modal
  */
 function openKvModal(rowId = null) {
     const modal = document.getElementById('kvadratModal');
     const title = document.getElementById('kvModalTitle');
     const form = document.getElementById('kvForm');
-    
+
     form.reset();
     document.getElementById('kvRowId').value = rowId || '';
+    _initKvFormYears();
 
     if (rowId) {
         title.innerText = '✏️ Tahrirlash';
         const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
         if (rec) {
-            document.getElementById('kvOrderName').value = rec.orderName;
-            document.getElementById('kvTotalM2Input').value = rec.totalM2;
-            document.getElementById('kvStaffSelect').value = rec.staffName;
+            document.getElementById('kvOrderName').value = rec.orderName || '';
+            document.getElementById('kvTotalM2Input').value = rec.totalM2 || '';
+            document.getElementById('kvStaffSelect').value = rec.staffName || '';
+
+            // Parse month from rec.month like "_03" → "03"
+            const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
+            const monthEl = document.getElementById('kvActionMonth');
+            if (monthEl && cleanMonth) monthEl.value = cleanMonth.padStart(2, '0');
+
+            // Parse year from rec.date "DD/MM/YYYY"
+            const yearEl = document.getElementById('kvActionYear');
+            if (yearEl && rec.date) {
+                const parts = String(rec.date).split('/');
+                if (parts.length === 3) yearEl.value = parts[2];
+            }
         }
     } else {
-        title.innerText = '📐 Kvadrat kiritish';
-        // Auto select current user if in staff list
-        if (globalEmployeeList.includes(myUsername)) {
-            document.getElementById('kvStaffSelect').value = myUsername;
+        title.innerText = '📐 Yangi o\'lchov kiritish';
+        // Auto-select current user
+        if (typeof globalEmployeeList !== 'undefined' && globalEmployeeList.includes(myUsername)) {
+            const sel = document.getElementById('kvStaffSelect');
+            if (sel) sel.value = myUsername;
         }
     }
 
     modal.classList.remove('hidden');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 }
 
 function closeKvModal() {
@@ -186,23 +309,42 @@ function closeKvModal() {
  */
 async function saveKv() {
     const rowId = document.getElementById('kvRowId').value;
-    const orderName = document.getElementById('kvOrderName').value;
+    const orderName = (document.getElementById('kvOrderName').value || '').trim();
     const totalM2 = parseFloat(document.getElementById('kvTotalM2Input').value) || 0;
     const staffName = document.getElementById('kvStaffSelect').value;
+    const month = document.getElementById('kvActionMonth')?.value || '';
+    const year = document.getElementById('kvActionYear')?.value || '';
+    const monthStr = (year && month) ? `_${month}` : '';
 
-    if (!orderName || totalM2 <= 0 || !staffName) {
-        showToastMsg('❌ Ma\'lumotlarni to\'liq kiriting', true);
+    if (!orderName) {
+        showToastMsg('❌ Buyurtma nomini kiriting', true);
+        return;
+    }
+    if (totalM2 <= 0) {
+        showToastMsg('❌ m² miqdorini kiriting', true);
+        return;
+    }
+    if (!staffName) {
+        showToastMsg('❌ Hodimni tanlang', true);
         return;
     }
 
     try {
         const action = rowId ? 'kvadrat_edit' : 'kvadrat_add';
-        const data = await apiRequest({ action, rowId, orderName, totalM2, staffName });
-        
+        const data = await apiRequest({
+            action,
+            rowId: rowId || undefined,
+            orderName,
+            totalM2,
+            staffName,
+            month: monthStr,
+            year
+        });
+
         if (data.success) {
             showToastMsg('✅ Saqlandi!');
             closeKvModal();
-            initKvadratTab(); // Refresh list
+            initKvadratTab();
         } else {
             showToastMsg('❌ ' + (data.error || 'Saqlashda xato'), true);
         }
@@ -217,16 +359,16 @@ async function saveKv() {
 async function deleteKv(rowId) {
     if (document.activeElement) document.activeElement.blur();
     await new Promise(r => setTimeout(r, 50));
-    
-    if (!confirm('Ushbu o\'lchovni o\'chirishga ishonchingiz komilmi?')) return;
+
+    if (!confirm("Ushbu o'lchovni o'chirishga ishonchingiz komilmi?")) return;
 
     try {
         const data = await apiRequest({ action: 'kvadrat_delete', rowId });
         if (data.success) {
-            showToastMsg('✅ O\'chirildi');
+            showToastMsg("✅ O'chirildi");
             initKvadratTab();
         } else {
-            showToastMsg('❌ ' + (data.error || 'O\'chirishda xato'), true);
+            showToastMsg('❌ ' + (data.error || "O'chirishda xato"), true);
         }
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);

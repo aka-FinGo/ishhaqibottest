@@ -356,29 +356,67 @@
     <div class="modal-content">
         <div class="modal-drag"></div>
         <div class="modal-header">
-            <div class="modal-title" id="kvModalTitle">📐 Kvadrat kiritish</div>
+            <div class="modal-title" id="kvModalTitle">📐 Yangi o'lchov kiritish</div>
         </div>
         <form id="kvForm" onsubmit="event.preventDefault();saveKv();">
             <input type="hidden" id="kvRowId">
+
+            <!-- OY/YIL TANLASH -->
             <div class="input-group">
-                <label>📌 Buyurtma raqami / nomi</label>
-                <input type="text" id="kvOrderName" placeholder="Masalan: #123 yoki Oshxona" required>
+                <label>📅 Qaysi oy uchun</label>
+                <div style="display:flex;gap:10px;">
+                    <select id="kvActionMonth" style="flex:1;">
+                        <option value="01">Yanvar</option>
+                        <option value="02">Fevral</option>
+                        <option value="03">Mart</option>
+                        <option value="04">Aprel</option>
+                        <option value="05">May</option>
+                        <option value="06">Iyun</option>
+                        <option value="07">Iyul</option>
+                        <option value="08">Avgust</option>
+                        <option value="09">Sentyabr</option>
+                        <option value="10">Oktyabr</option>
+                        <option value="11">Noyabr</option>
+                        <option value="12">Dekabr</option>
+                    </select>
+                    <select id="kvActionYear" style="flex:1;">
+                        <!-- JS tomonidan to'ldiriladi -->
+                    </select>
+                </div>
             </div>
+
             <div class="input-group">
-                <label>📏 Necha metr kvadrat? (m²)</label>
-                <input type="number" step="0.01" id="kvTotalM2Input" placeholder="0.00" required inputmode="decimal">
+                <label>📌 Buyurtma raqami / Mijoz ismi</label>
+                <input type="text" id="kvOrderName"
+                       placeholder="Masalan: #123 yoki Ali oshxona" required>
             </div>
+
+            <div class="input-group">
+                <label>📏 Jami m² (metr kvadrat)</label>
+                <input type="number" step="0.01" id="kvTotalM2Input"
+                       placeholder="0.00" required inputmode="decimal">
+            </div>
+
             <div class="input-group">
                 <label>👤 Mas'ul hodim</label>
                 <select id="kvStaffSelect" required>
-                    <option value="">Tanlang...</option>
+                    <option value="">Hodimni tanlang...</option>
                 </select>
             </div>
+
             <div class="modal-actions">
                 <button type="submit" class="btn-main">💾 Saqlash</button>
-                <button type="button" class="btn-main bg-red" onclick="closeKvModal()">✕ Bekor</button>
+                <button type="button" class="btn-main bg-red"
+                        onclick="closeKvModal()">✕ Bekor</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Kvadratlar batafsil modal -->
+<div id="kvDetailModal" class="modal hidden">
+    <div class="modal-content">
+        <div id="kvDetailModalBody"></div>
     </div>
 </div>
 
