@@ -157,6 +157,8 @@ function ensureWorkflowInfrastructure_(sh) {
   sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0]);
   sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0]);
 }
+
+function synchronizeEmployeeRowsToV2_(empSheet, hideLegacyColumns) {
   if (!empSheet) return { success:false, error:'Hodimlar sheet topilmadi' };
   var requiredCols = EMP_HEADERS.length;
   var lastRow = empSheet.getLastRow();

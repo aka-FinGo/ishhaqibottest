@@ -161,7 +161,9 @@ function renderKvList() {
         const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
         
         const monthLabel = kvMonthLabel(rec.month);
-        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2         // Status colors & labels based on dynamic config
+        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+
+        // Status colors & labels based on dynamic config
         let statusHtml = '';
         const status = rec.status || 'yangi';
         const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
@@ -211,8 +213,6 @@ function renderKvList() {
             </div>
             <div class="item-edit-hint">→ batafsil tarix</div>
         </div>`;
--hint">→ batafsil</div>` : ''}
-        </div>`;
     });
 
     container.innerHTML = html;
@@ -229,7 +229,9 @@ function showKvDetailModal(idx) {
     const isOwner = String(rec.ownerTgId) === String(telegramId);
     const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
     const monthLabel = kvMonthLabel(rec.month);
-    const m2Val = (Number(rec.totalM2) || 0).toLoca    // Workflow actions in modal (DYNAMIC)
+    const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+
+    // Workflow actions in modal (DYNAMIC)
     let claimBtnHtml = '';
     const status = rec.status || 'yangi';
     const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
@@ -287,8 +289,6 @@ function showKvDetailModal(idx) {
         </div>
 
         <button class="btn-secondary" style="margin-top:12px; width:100%;" onclick="closeKvDetailModal()">✕ Yopish</button>
-    `;
-condary" style="margin-top:12px;" onclick="closeKvDetailModal()">✕ Yopish</button>
     `;
 
     document.getElementById('kvDetailModal').classList.remove('hidden');

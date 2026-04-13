@@ -64,7 +64,7 @@ function processWorkflowStep(rowId, auth, actorTgId) {
     var row = parseInt(rowId, 10);
     if (!row || row <= 1 || row > sh.getLastRow()) return { success: false, error: 'Buyurtma topilmadi' };
 
-    var values = sh.getRange(row, 1, 1, sh.getLastColumns()).getValues()[0];
+    var values = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
     var currentStepIdx = Number(values[KV_COL.STEP_INDEX]) || 1;
     var logs = [];
     try {
