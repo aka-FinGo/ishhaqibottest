@@ -61,6 +61,7 @@ var _MEMO = {
 var EMP_HEADERS = [
   "TelegramId","Username","CanAdd",
   "SuperAdmin","Direktor","Admin",
+  "canViewAll","canEdit","canDelete","canExport","canViewDash",
   "Role","OverrideCanAdd","OverrideViewAll","OverrideEdit","OverrideDelete","OverrideExport","OverrideViewDash",
   "Lavozim"
 ];
