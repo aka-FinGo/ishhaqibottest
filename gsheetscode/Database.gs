@@ -70,6 +70,10 @@ var WORKFLOW_HEADERS = [
   "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart"
 ];
 
+var POSITIONS_HEADERS = [
+  "PositionName", "Icon"
+];
+
 function getSheets() {
   if (_MEMO.sheets) return _MEMO.sheets;
 
@@ -107,10 +111,18 @@ function getSheets() {
     ensureWorkflowInfrastructure_(workflowSheet);
   }
 
+  // Lavozimlar sheet (Positions)
+  var positionsSheet = ss.getSheetByName("Lavozimlar");
+  if (!positionsSheet) {
+    positionsSheet = ss.insertSheet("Lavozimlar");
+    ensurePositionsInfrastructure_(positionsSheet);
+  }
+
   _MEMO.sheets = { 
-    dataSheet: dataSheet, 
+    data: dataSheet, 
     empSheet: empSheet, 
-    workflowSheet: workflowSheet 
+    workflowSheet: workflowSheet,
+    positionsSheet: positionsSheet
   };
   return _MEMO.sheets;
 }
@@ -156,6 +168,17 @@ function ensureWorkflowInfrastructure_(sh) {
   sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1]);
   sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0]);
   sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0]);
+}
+
+function ensurePositionsInfrastructure_(sh) {
+  sh.clear();
+  sh.appendRow(POSITIONS_HEADERS);
+  sh.getRange(1, 1, 1, POSITIONS_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+
+  // Default positions
+  sh.appendRow(["Loyihachi", "📐"]);
+  sh.appendRow(["Yig'uvchi", "🔧"]);
+  sh.appendRow(["Qadoqlovchi", "📦"]);
 }
 
 function synchronizeEmployeeRowsToV2_(empSheet, hideLegacyColumns) {
@@ -810,6 +833,8 @@ function initUser(tgId, auth, data) {
     positions:    auth.positions || [],
     inList:       emp !== null,   // Ro'yxatda bormi
     employeeList: Object.values(usernameMap).sort(), // All employees for dropdowns
+    workflowConfig: getWorkflowConfig ? getWorkflowConfig() : [],
+    allPositions: getAllPositions ? getAllPositions() : [],
     autoAdded:    autoAdded,
     adminContactId: getConfigSuperAdminId_()
   };

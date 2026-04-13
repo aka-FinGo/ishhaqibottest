@@ -36,7 +36,14 @@ function renderWorkflowSteps() {
             <div class="filter-row" style="margin-bottom:8px;">
                 <div style="flex:1;">
                     <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🏷 Lavozim</label>
-                    <input type="text" value="${escapeHtml(step.position)}" onchange="updateStepData(${idx}, 'position', this.value)" placeholder="Masalan: Kesuvchi">
+                    <select onchange="updateStepData(${idx}, 'position', this.value)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:10px;">
+                        <option value="">-- Tanlang --</option>
+                        ${TECHNICAL_POSITIONS.map(p => `
+                            <option value="${escapeHtml(p.name)}" ${step.position === p.name ? 'selected' : ''}>
+                                ${p.icon} ${p.name}
+                            </option>
+                        `).join('')}
+                    </select>
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔘 Tugma matni</label>

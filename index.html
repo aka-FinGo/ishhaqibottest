@@ -129,6 +129,7 @@
         <div class="sub-tabs" id="adminNav">
             <button class="sub-btn admin-sub-btn active" id="adminNavHodimlar" onclick="switchAdminSub('adminHodimlarArea',this)">👥 Hodimlar</button>
             <button class="sub-btn admin-sub-btn" id="adminNavWorkflow" onclick="switchAdminSub('adminWorkflowArea',this)">⚙️ Ish Oqimi</button>
+            <button class="sub-btn admin-sub-btn" id="adminNavPositions" onclick="switchAdminSub('adminPositionsArea',this)">📁 Lavozimlar</button>
             <button class="sub-btn admin-sub-btn" id="adminNavNotify" onclick="switchAdminSub('adminNotifyArea',this)">📣 Xabarlar</button>
             <button class="sub-btn admin-sub-btn" id="adminNavService" onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
         </div>
@@ -207,6 +208,18 @@
                     <button class="btn-secondary" onclick="addNewWorkflowStep()" style="flex:1;">➕ Bosqich qo'shish</button>
                     <button class="btn-main" onclick="saveWorkflowConfigUI()" style="flex:1;">💾 Oqimni saqlash</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="adminPositionsArea" class="hidden">
+            <div class="card">
+                <div class="card-title">📁 Texnik Lavozimlar (Pool)</div>
+                <p style="margin:-10px 0 15px; font-size:12px; color:var(--text-muted);">
+                    Barcha mavjud lavozimlarni bu yerda boshqaring.
+                </p>
+                <div id="positionsListUI"></div>
+                <button class="btn-secondary" onclick="addPositionUI()" style="width:100%; margin-bottom:10px;">➕ Yangi Lavozim</button>
+                <button class="btn-main" onclick="savePositionsUI()" style="width:100%;">💾 Lavozimlarni Saqlash</button>
             </div>
         </div>
 
@@ -472,5 +485,6 @@
 <script src="kvadratlar.js?v=1.0.14"></script>
 <script src="roles.js?v=1.0.14"></script>
 <script src="admin_workflow.js?v=1.0.14"></script>
+<script src="admin_positions.js?v=1.0.14"></script>
 </body>
 </html>

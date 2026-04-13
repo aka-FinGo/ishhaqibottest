@@ -194,6 +194,15 @@ function doPost(e) {
         result = saveWorkflowConfig(data.steps);
         break;
 
+      case "positions_get_all":
+        result = { success:true, positions: getAllPositions() };
+        break;
+
+      case "positions_save_all":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin lavozimlarni o'zgartira oladi" });
+        result = savePositions(data.positions);
+        break;
+
       default:
         result = { success: false, error: "Noma'lum: " + action };
     }

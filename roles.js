@@ -11,14 +11,15 @@ const ROLE_OPTIONS = [
 
 const ROLE_PERM_FIELDS = ['canAdd', 'canViewAll', 'canViewDash', 'canExport', 'canEdit', 'canDelete'];
 
-let TECHNICAL_POSITIONS = ['Loyihachi', 'Yig\'uvchi', 'Qadoqlovchi'];
+let TECHNICAL_POSITIONS = [
+    { name: 'Loyihachi', icon: '📐' },
+    { name: 'Yig\'uvchi', icon: '🔧' },
+    { name: 'Qadoqlovchi', icon: '📦' }
+];
 
-function updateTechnicalPositions(config) {
-    if (!config || !config.length) return;
-    // Get unique position names from workflow config
-    const posSet = new Set();
-    config.forEach(s => { if (s.position) posSet.add(s.position); });
-    TECHNICAL_POSITIONS = Array.from(posSet);
+function updateTechnicalPositions(allPositions) {
+    if (!allPositions || !allPositions.length) return;
+    TECHNICAL_POSITIONS = allPositions;
 }
 
 function normalizeRoleKey(role) {
@@ -242,16 +243,13 @@ async function loadHodimlar() {
                     </label>
                     <div style="display:flex; flex-wrap:wrap; gap:8px;">
                         ${TECHNICAL_POSITIONS.map(pos => {
-                            const isChecked = (h.positions || []).indexOf(pos) !== -1;
-                            const pid = `hpos_${safeTgId}_${pos.replace(/\s+/g, '_')}`;
-                            let icon = '📐';
-                            if (pos === 'Yig\'uvchi') icon = '🔧';
-                            if (pos === 'Qadoqlovchi') icon = '📦';
+                            const isChecked = (h.positions || []).indexOf(pos.name) !== -1;
+                            const pid = `hpos_${safeTgId}_${pos.name.replace(/\s+/g, '_')}`;
                             
                             return `
-                            <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; flex:1; min-width:95px; font-weight:500;" onclick="togglePermLabel(this,'${pid}')">
-                                <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos}" onclick="event.stopPropagation();syncPermLabel(this)">
-                                <span style="font-size:12px;">${icon} ${pos}</span>
+                            <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; flex:1; min-width:110px; font-weight:500;" onclick="togglePermLabel(this,'${pid}')">
+                                <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos.name}" onclick="event.stopPropagation();syncPermLabel(this)">
+                                <span style="font-size:12px;">${pos.icon} ${pos.name}</span>
                             </label>`;
                         }).join('')}
                     </div>

@@ -44,7 +44,7 @@ window.onload = async () => {
                 return v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
             };
             if (myRole === 'SuperAdmin') {
-                myPermissions = { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true, positions: data.positions || [], workflowConfig: data.workflowConfig || [] };
+                myPermissions = { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true, positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [] };
             } else {
                 const p = data.permissions || {};
                 myPermissions = {
@@ -54,8 +54,13 @@ window.onload = async () => {
                     canExport:   asBool(p.canExport),
                     canViewDash: asBool(p.canViewDash),
                     positions:   data.positions || [],
-                    workflowConfig: data.workflowConfig || []
+                    workflowConfig: data.workflowConfig || [],
+                    allPositions: data.allPositions || []
                 };
+            }
+
+            if (typeof updateTechnicalPositions === 'function') {
+                updateTechnicalPositions(data.allPositions || []);
             }
 
             // Update dynamic technical roles for roles.js
@@ -255,11 +260,11 @@ function showToastMsg(msg, isErr=false) {
 }
 
 function switchAdminSub(areaId, btn) {
-    if ((areaId === 'adminHodimlarArea' || areaId === 'adminWorkflowArea') && myRole !== 'SuperAdmin') {
+    if ((areaId === 'adminHodimlarArea' || areaId === 'adminWorkflowArea' || areaId === 'adminPositionsArea') && myRole !== 'SuperAdmin') {
         showToastMsg('❌ Bu bo\'lim faqat SuperAdmin uchun', true);
         return;
     }
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminNotifyArea', 'adminServiceArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     });
@@ -272,6 +277,9 @@ function switchAdminSub(areaId, btn) {
     if (areaId === 'adminHodimlarArea') loadHodimlar();
     if (areaId === 'adminWorkflowArea') {
         if (typeof initWorkflowAdmin === 'function') initWorkflowAdmin();
+    }
+    if (areaId === 'adminPositionsArea') {
+        if (typeof initPositionsUI === 'function') initPositionsUI(myPermissions.allPositions);
     }
     if (areaId === 'adminNotifyArea') {
         loadNotifyTargets();
