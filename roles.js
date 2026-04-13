@@ -11,6 +11,8 @@ const ROLE_OPTIONS = [
 
 const ROLE_PERM_FIELDS = ['canAdd', 'canViewAll', 'canViewDash', 'canExport', 'canEdit', 'canDelete'];
 
+const TECHNICAL_POSITIONS = ['Loyihachi', 'Yig\'uvchi', 'Qadoqlovchi'];
+
 function normalizeRoleKey(role) {
     const raw = String(role || '').trim().toUpperCase();
     if (raw === 'SUPER_ADMIN' || raw === 'SUPERADMIN') return 'SUPER_ADMIN';
@@ -224,6 +226,25 @@ async function loadHodimlar() {
                     </select>
                 </div>
 
+                <div style="margin-bottom:8px;">
+                    <label style="font-size:11px;font-weight:700;color:var(--text-muted);
+                                  text-transform:uppercase;letter-spacing:0.5px;
+                                  display:block;margin-bottom:8px;">
+                        🛠 Lavozimlar (Workflow)
+                    </label>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        ${TECHNICAL_POSITIONS.map(pos => {
+                            const isChecked = (h.positions || []).indexOf(pos) !== -1;
+                            const pid = `hpos_${safeTgId}_${pos.replace(/\s+/g, '_')}`;
+                            return `
+                            <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; flex:1; min-width:90px;" onclick="togglePermLabel(this,'${pid}')">
+                                <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos}" onclick="event.stopPropagation();syncPermLabel(this)">
+                                <span style="font-size:12px;">${pos}</span>
+                            </label>`;
+                        }).join('')}
+                    </div>
+                </div>
+
                 ${isConfigLocked ? `<div style="font-size:11px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:8px 10px;margin-bottom:8px;">🔒 Bu akkaunt CONFIG dagi SUPER_ADMIN_ID. Rol/ruxsatni faqat Google Sheetsdan o'zgartirasiz.</div>` : ''}
 
                 <button class="perm-toggle-btn" id="hbtn_${safeTgId}" onclick="toggleHodimPerms('${safeTgId}')">
@@ -278,6 +299,14 @@ async function saveHodim(tgId) {
 
     const usernameEl = document.getElementById(`uname_${tgId}`);
     if (usernameEl) payload.username = usernameEl.value;
+
+    const selectedPositions = [];
+    TECHNICAL_POSITIONS.forEach(pos => {
+        const pid = `hpos_${tgId}_${pos.replace(/\s+/g, '_')}`;
+        const el = document.getElementById(pid);
+        if (el && el.checked) selectedPositions.push(pos);
+    });
+    payload.lavozim = selectedPositions.join(',');
 
     try {
         const data = await apiRequest(payload);

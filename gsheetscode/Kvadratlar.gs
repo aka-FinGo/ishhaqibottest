@@ -12,11 +12,14 @@ var KV_COL = {
   ORDER_NAME:    4,
   STAFF_NAME:    5,
   OWNER_TG_ID:   6,
-  IS_DELETED:    7
+  IS_DELETED:    7,
+  YIGUVCHI:      8,
+  QADOQLOVCHI:   9,
+  STATUS:        10
 };
 
 var KV_HEADERS = [
-  "Sana", "№", "Oy", "Jami m2:", "Buyurtma nomi/Mijoz ismi", "Hodim", "OwnerTgId", "IsDeleted"
+  "Sana", "№", "Oy", "Jami m2:", "Buyurtma nomi/Mijoz ismi", "Hodim", "OwnerTgId", "IsDeleted", "Yig'uvchi", "Qadoqlovchi", "Status"
 ];
 
 function getKvadratSheet() {
@@ -78,7 +81,10 @@ function kvadratAdd(data, auth, actorTgId) {
       String(data.orderName || '').trim(),
       String(data.staffName || '').trim(),
       String(actorTgId),
-      0
+      0,
+      "",
+      "",
+      "yangi"
     ]);
 
     var row = sh.getLastRow();
@@ -118,7 +124,10 @@ function kvadratGetAll(options) {
       totalM2:    Number(row[KV_COL.TOTAL_M2]) || 0,
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
       staffName:  String(row[KV_COL.STAFF_NAME] || ''),
-      ownerTgId:  String(row[KV_COL.OWNER_TG_ID] || '')
+      ownerTgId:  String(row[KV_COL.OWNER_TG_ID] || ''),
+      yiguvchi:   String(row[KV_COL.YIGUVCHI] || ''),
+      qadoqlovchi:String(row[KV_COL.QADOQLOVCHI] || ''),
+      status:     String(row[KV_COL.STATUS] || 'yangi')
     });
   }
 
@@ -179,6 +188,38 @@ function kvadratDelete(data, auth, actorTgId) {
     }
 
     sh.getRange(row, KV_COL.IS_DELETED + 1).setValue(1);
+    return { success: true };
+  });
+}
+
+/**
+ * Claims work (Assembly or Packaging).
+ */
+function kvadratClaimWork(data, auth, actorTgId) {
+  return withWriteLock_(function() {
+    var sh = getKvadratSheet();
+    var row = parseInt(data.rowId, 10);
+    if (!row || row <= 1 || row > sh.getLastRow()) return { success: false, error: 'Buyurtma topilmadi' };
+
+    var type = data.claimType; // 'yiguvchi' or 'qadoqlovchi'
+    var userName = auth.username || 'Noma\'lum';
+    var positions = auth.positions || [];
+
+    if (type === 'yiguvchi') {
+      if (!positions.indexOf || positions.indexOf('Yig\'uvchi') === -1) {
+        return { success: false, error: 'Sizda "Yig\'uvchi" lavozimi yo\'q' };
+      }
+      sh.getRange(row, KV_COL.YIGUVCHI + 1).setValue(userName);
+      sh.getRange(row, KV_COL.STATUS + 1).setValue('yig\'ildi');
+    } 
+    else if (type === 'qadoqlovchi') {
+      if (!positions.indexOf || positions.indexOf('Qadoqlovchi') === -1) {
+        return { success: false, error: 'Sizda "Qadoqlovchi" lavozimi yo\'q' };
+      }
+      sh.getRange(row, KV_COL.QADOQLOVCHI + 1).setValue(userName);
+      sh.getRange(row, KV_COL.STATUS + 1).setValue('tayyor');
+    }
+
     return { success: true };
   });
 }

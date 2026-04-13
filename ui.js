@@ -44,7 +44,7 @@ window.onload = async () => {
                 return v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
             };
             if (myRole === 'SuperAdmin') {
-                myPermissions = { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true };
+                myPermissions = { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true, positions: data.positions || [] };
             } else {
                 const p = data.permissions || {};
                 myPermissions = {
@@ -53,6 +53,7 @@ window.onload = async () => {
                     canDelete:   asBool(p.canDelete),
                     canExport:   asBool(p.canExport),
                     canViewDash: asBool(p.canViewDash),
+                    positions:   data.positions || []
                 };
             }
 

@@ -15,6 +15,7 @@
 //  15:OverrideDelete
 //  16:OverrideExport
 //  17:OverrideViewDash
+//  18:Lavozim
 // ============================================================
 
 var COL = {
@@ -35,7 +36,8 @@ var COL = {
   OVR_EDIT:     14,
   OVR_DELETE:   15,
   OVR_EXPORT:   16,
-  OVR_VIEW_DASH:17
+  OVR_VIEW_DASH:17,
+  LAVOZIM:      18
 };
 
 var DATA_COL = {
@@ -59,8 +61,8 @@ var _MEMO = {
 var EMP_HEADERS = [
   "TelegramId","Username","CanAdd",
   "SuperAdmin","Direktor","Admin",
-  "canViewAll","canEdit","canDelete","canExport","canViewDash",
-  "Role","OverrideCanAdd","OverrideViewAll","OverrideEdit","OverrideDelete","OverrideExport","OverrideViewDash"
+  "Role","OverrideCanAdd","OverrideViewAll","OverrideEdit","OverrideDelete","OverrideExport","OverrideViewDash",
+  "Lavozim"
 ];
 
 function getSheets() {
@@ -534,7 +536,8 @@ function getEmployee(tgId) {
         isDirektor:  access.isDirektor,
         isAdmin:     access.isAdmin,
         permissions: access.permissions,
-        overrides:   access.overrides
+        overrides:   access.overrides,
+        positions:   String(rows[i][COL.LAVOZIM] || '').split(',').map(function(s){return s.trim();}).filter(Boolean)
       };
     }
   }
@@ -644,6 +647,7 @@ function checkUserRoles(tgId) {
   auth.isAdmin    = emp.isAdmin;
   auth.isBoss     = emp.isSuperAdmin;
   auth.permissions = emp.permissions;
+  auth.positions  = emp.positions || [];
   return auth;
 }
 
@@ -776,6 +780,7 @@ function initUser(tgId, auth, data) {
     isDirector:   auth.isDirector,
     isDirektor:   auth.isDirector,
     permissions:  auth.permissions,
+    positions:    auth.positions || [],
     inList:       emp !== null,   // Ro'yxatda bormi
     employeeList: Object.values(usernameMap).sort(), // All employees for dropdowns
     autoAdded:    autoAdded,
@@ -1325,7 +1330,8 @@ function addHodim(data) {
       overrideToCellValue_(cfg.overrides.canEdit),
       overrideToCellValue_(cfg.overrides.canDelete),
       overrideToCellValue_(cfg.overrides.canExport),
-      overrideToCellValue_(cfg.overrides.canViewDash)
+      overrideToCellValue_(cfg.overrides.canViewDash),
+      data.lavozim || ''
     ]);
     resetEmployeeCache_();
     return { success: true };
@@ -1361,6 +1367,7 @@ function updateHodim(data) {
         empSheet.getRange(r, COL.OVR_DELETE   + 1).setValue(overrideToCellValue_(cfg.overrides.canDelete));
         empSheet.getRange(r, COL.OVR_EXPORT   + 1).setValue(overrideToCellValue_(cfg.overrides.canExport));
         empSheet.getRange(r, COL.OVR_VIEW_DASH+ 1).setValue(overrideToCellValue_(cfg.overrides.canViewDash));
+        empSheet.getRange(r, COL.LAVOZIM      + 1).setValue(data.lavozim || '');
         resetEmployeeCache_();
         return { success: true };
       }

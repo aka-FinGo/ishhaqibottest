@@ -156,7 +156,9 @@ function doPost(e) {
 
       // ---- KVADRATLAR (Measurements) ----
       case "kvadrat_add":
-        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
+          return sendJSON({ success:false, error: "Faqat 'Loyihachi' buyurtma qo'sha oladi" });
+        }
         result = kvadratAdd(data, auth, tgId);
         break;
 
@@ -165,13 +167,22 @@ function doPost(e) {
         break;
 
       case "kvadrat_edit":
-        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
+          return sendJSON({ success:false, error: "Faqat 'Loyihachi' tahrirlay oladi" });
+        }
         result = kvadratEdit(data, auth, tgId);
         break;
 
       case "kvadrat_delete":
-        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
+          return sendJSON({ success:false, error: "Faqat 'Loyihachi' o'chira oladi" });
+        }
         result = kvadratDelete(data, auth, tgId);
+        break;
+
+      case "kvadrat_claim":
+        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        result = kvadratClaimWork(data, auth, tgId);
         break;
 
       default:

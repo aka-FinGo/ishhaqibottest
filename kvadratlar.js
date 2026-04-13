@@ -134,8 +134,30 @@ function renderKvList() {
 
         const isOwner = String(rec.ownerTgId) === String(telegramId);
         const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
+        
         const monthLabel = kvMonthLabel(rec.month);
         const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+        
+        // Status colors & labels
+        let statusHtml = '';
+        const status = rec.status || 'yangi';
+        if (status === 'yangi') {
+            statusHtml = `<span class="kv-badge b-yellow">🟡 Yangi</span>`;
+        } else if (status === 'yig\'ildi') {
+            statusHtml = `<span class="kv-badge b-blue">🔵 Yig'ildi</span>`;
+        } else if (status === 'tayyor') {
+            statusHtml = `<span class="kv-badge b-green">🟢 Tayyor</span>`;
+        }
+
+        // Quick action button logic
+        let actionBtn = '';
+        const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+        
+        if (status === 'yangi' && positions.indexOf('Yig\'uvchi') !== -1) {
+            actionBtn = `<button class="kv-claim-btn b-blue" onclick="event.stopPropagation();claimKvWork(${rec.rowId}, 'yiguvchi')">🔧 Men yig'dim</button>`;
+        } else if (status === 'yig\'ildi' && positions.indexOf('Qadoqlovchi') !== -1) {
+            actionBtn = `<button class="kv-claim-btn b-green" onclick="event.stopPropagation();claimKvWork(${rec.rowId}, 'qadoqlovchi')">📦 Men qadoqladim</button>`;
+        }
 
         html += `
         <div class="history-item kv-item" onclick="showKvDetailModal(${idx})" style="cursor:pointer;">
@@ -144,9 +166,7 @@ function renderKvList() {
                     <span style="background:#EFF6FF;color:#1D4ED8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">
                         №${rec.no || '—'}
                     </span>
-                    <span style="background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">
-                        ${escapeHtml(monthLabel)}
-                    </span>
+                    ${statusHtml}
                 </span>
                 <span class="item-date">📅 ${escapeHtml(rec.date || '—')}</span>
             </div>
@@ -155,9 +175,12 @@ function renderKvList() {
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-size:13px;color:var(--text-muted);">👤 ${escapeHtml(rec.staffName || '—')}</span>
-                <span style="background:#0F172A;color:#fff;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:800;">
-                    ${m2Val} m²
-                </span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                     ${actionBtn}
+                     <span style="background:#0F172A;color:#fff;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:800;">
+                        ${m2Val} m²
+                     </span>
+                </div>
             </div>
             ${canManage ? `<div class="item-edit-hint">→ batafsil</div>` : ''}
         </div>`;
@@ -179,13 +202,16 @@ function showKvDetailModal(idx) {
     const monthLabel = kvMonthLabel(rec.month);
     const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
 
-    const actionBtns = canManage ? `
-        <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-            <button class="edit-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
-                onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>
-            <button class="del-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
-                onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>
-        </div>` : '';
+    // Workflow actions in modal
+    let claimBtnHtml = '';
+    const status = rec.status || 'yangi';
+    const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+    
+    if (status === 'yangi' && positions.indexOf('Yig\'uvchi') !== -1) {
+        claimBtnHtml = `<button class="btn-main" style="background:#2563EB;margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, 'yiguvchi')">🔧 Men yig'dim</button>`;
+    } else if (status === 'yig\'ildi' && positions.indexOf('Qadoqlovchi') !== -1) {
+        claimBtnHtml = `<button class="btn-main" style="background:#059669;margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, 'qadoqlovchi')">📦 Men qadoqladim</button>`;
+    }
 
     document.getElementById('kvDetailModalBody').innerHTML = `
         <div class="modal-drag"></div>
@@ -196,26 +222,31 @@ function showKvDetailModal(idx) {
         </div>
         <div class="detail-card">
             <div class="detail-row">
+                <span class="detail-key">Status</span>
+                <span class="detail-val">${status === 'yangi' ? '🟡 Yangi' : (status === 'yig\'ildi' ? '🔵 Yig\'ildi' : '🟢 Tayyor')}</span>
+            </div>
+            <div class="detail-row">
                 <span class="detail-key">№</span>
                 <span class="detail-val">${rec.no || '—'}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-key">Oy</span>
-                <span class="detail-val">${escapeHtml(monthLabel)}</span>
+                <span class="detail-key">Loyihachi</span>
+                <span class="detail-val"><strong>${escapeHtml(rec.staffName || '—')}</strong></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Yig'uvchi</span>
+                <span class="detail-val">${escapeHtml(rec.yiguvchi || '—')}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Qadoqlovchi</span>
+                <span class="detail-val">${escapeHtml(rec.qadoqlovchi || '—')}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-key">Jami m²</span>
                 <span class="detail-val" style="color:#0F172A;font-size:18px;">${m2Val} m²</span>
             </div>
-            <div class="detail-row">
-                <span class="detail-key">Buyurtma / Mijoz</span>
-                <span class="detail-val">${escapeHtml(rec.orderName || '—')}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-key">Mas'ul hodim</span>
-                <span class="detail-val"><strong>${escapeHtml(rec.staffName || '—')}</strong></span>
-            </div>
         </div>
+        ${claimBtnHtml}
         <button class="btn-secondary" style="margin-top:12px;" onclick="closeKvDetailModal()">✕ Yopish</button>
         ${actionBtns}`;
 
@@ -288,6 +319,12 @@ function openKvModal(rowId = null) {
             }
         }
     } else {
+        const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+        if (myRole !== 'SuperAdmin' && positions.indexOf('Loyihachi') === -1) {
+            showToastMsg('❌ Faqat "Loyihachi" buyurtma qo\'sha oladi', true);
+            return;
+        }
+
         title.innerText = '📐 Yangi o\'lchov kiritish';
         // Auto-select current user
         if (typeof globalEmployeeList !== 'undefined' && globalEmployeeList.includes(myUsername)) {
@@ -369,6 +406,30 @@ async function deleteKv(rowId) {
             initKvadratTab();
         } else {
             showToastMsg('❌ ' + (data.error || "O'chirishda xato"), true);
+        }
+    } catch (e) {
+        showToastMsg('❌ Tarmoq xatosi', true);
+    }
+}
+
+/**
+ * Claims work (Yig'uvchi or Qadoqlovchi)
+ */
+async function claimKvWork(rowId, claimType) {
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    
+    try {
+        const data = await apiRequest({
+            action: 'kvadrat_claim',
+            rowId,
+            claimType
+        });
+
+        if (data.success) {
+            showToastMsg('✅ Muvaffaqiyatli belgilandi!');
+            initKvadratTab();
+        } else {
+            showToastMsg('❌ ' + (data.error || 'Xato yuz berdi'), true);
         }
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);

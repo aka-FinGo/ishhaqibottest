@@ -1334,3 +1334,28 @@ body.dark .whatif-preview {
 
 /* Ensure Kvadrat Nav item is always visible */
 #nav-kvadrat { display: flex !important; }
+
+/* Workflow Badges & Buttons */
+.kv-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.b-yellow { background: #FEF9C3; color: #854D0E; }
+.b-blue { background: #EFF6FF; color: #1D4ED8; }
+.b-green { background: #F0FDF4; color: #166534; }
+
+.kv-claim-btn {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.kv-claim-btn:active { transform: scale(0.95); }
+.kv-claim-btn.b-blue { background: #2563EB; color: #fff; }
+.kv-claim-btn.b-green { background: #10B981; color: #fff; }
