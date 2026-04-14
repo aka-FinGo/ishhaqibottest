@@ -10,10 +10,14 @@ let kvFilterStaff = 'all';
 let kvFilterMonth = 'all';
 let kvFilterYear = 'all';
 
-// Sahifani ochish
-function openKvDashboard() {
-    switchTab('kvDashboardTab', 'nav-kv-dashboard');
-    initKvDashboard();
+// Sahifani ochish - avval ma'lumotlarni yuklash
+async function openKvDashboard() {
+    // Agar ma'lumotlar yuklanmagan bo'lsa, avval yuklash
+    if (!kvFullRecords || kvFullRecords.length === 0) {
+        await initKvadratTab();
+    }
+    switchTab('kvDashboardTab', null);
+    setTimeout(initKvDashboard, 100);
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 }
 
