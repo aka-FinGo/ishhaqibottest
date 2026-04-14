@@ -43,9 +43,9 @@ function closeKvDashboard() {
 
 // Filtrlarni o'zgartirish
 function changeKvFilter() {
-    kvFilterStaff = document.getElementById('kvFilterStaff') ? document.getElementById('kvFilterStaff').value : 'all';
-    kvFilterMonth = document.getElementById('kvFilterMonth') ? document.getElementById('kvFilterMonth').value : 'all';
-    kvFilterYear = document.getElementById('kvFilterYear') ? document.getElementById('kvFilterYear').value : 'all';
+    kvFilterStaff = document.getElementById('kvDashboardFilterStaff') ? document.getElementById('kvDashboardFilterStaff').value : 'all';
+    kvFilterMonth = document.getElementById('kvDashboardFilterMonth') ? document.getElementById('kvDashboardFilterMonth').value : 'all';
+    kvFilterYear = document.getElementById('kvDashboardFilterYear') ? document.getElementById('kvDashboardFilterYear').value : 'all';
     initKvDashboard();
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
@@ -96,8 +96,8 @@ function populateKvFilters() {
     const staffMembers = Array.from(staffSet).sort();
     
     // Filter elementlari mavjudligini tekshirish
-    const yearSelect = document.getElementById('kvFilterYear');
-    const staffSelect = document.getElementById('kvFilterStaff');
+    const yearSelect = document.getElementById('kvDashboardFilterYear');
+    const staffSelect = document.getElementById('kvDashboardFilterStaff');
     
     if (yearSelect) {
         const currentYear = yearSelect.value;
@@ -113,7 +113,7 @@ function populateKvFilters() {
         const currentStaff = staffSelect.value;
         staffSelect.innerHTML = '<option value="all">Barcha hodimlar</option>';
         staffMembers.forEach(s => {
-            staffSelect.innerHTML += `<option value="${s}">${escapeHtml(s)}</option>`;
+            staffSelect.innerHTML += `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`;
         });
         if (staffMembers.includes(currentStaff)) staffSelect.value = currentStaff;
     }
@@ -131,10 +131,10 @@ function initKvDashboard() {
         body.innerHTML = `
             <div class="kv-dashboard-container">
                 <div class="kv-filter-bar">
-                    <select id="kvFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
+                    <select id="kvDashboardFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
                         <option value="all">Barcha hodimlar</option>
                     </select>
-                    <select id="kvFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
+                    <select id="kvDashboardFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
                         <option value="all">Barcha oylar</option>
                         <option value="01">Yanvar</option>
                         <option value="02">Fevral</option>
@@ -149,7 +149,7 @@ function initKvDashboard() {
                         <option value="11">Noyabr</option>
                         <option value="12">Dekabr</option>
                     </select>
-                    <select id="kvFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
+                    <select id="kvDashboardFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
                         <option value="all">Barcha yillar</option>
                     </select>
                 </div>
@@ -170,10 +170,10 @@ function initKvDashboard() {
         body.innerHTML = `
             <div class="kv-dashboard-container">
                 <div class="kv-filter-bar">
-                    <select id="kvFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
+                    <select id="kvDashboardFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
                         <option value="all">Barcha hodimlar</option>
                     </select>
-                    <select id="kvFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
+                    <select id="kvDashboardFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
                         <option value="all">Barcha oylar</option>
                         <option value="01">Yanvar</option>
                         <option value="02">Fevral</option>
@@ -188,7 +188,7 @@ function initKvDashboard() {
                         <option value="11">Noyabr</option>
                         <option value="12">Dekabr</option>
                     </select>
-                    <select id="kvFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
+                    <select id="kvDashboardFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
                         <option value="all">Barcha yillar</option>
                     </select>
                 </div>
@@ -240,11 +240,11 @@ function initKvDashboard() {
     let html = `
     <div class="kv-dashboard-container">
         <div class="kv-filter-bar">
-            <select id="kvFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
+            <select id="kvDashboardFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
                 <option value="all">Barcha hodimlar</option>
                 ${availableStaff.map(s => `<option value="${escapeHtml(s)}" ${kvFilterStaff === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
             </select>
-            <select id="kvFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
+            <select id="kvDashboardFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
                 <option value="all">Barcha oylar</option>
                 <option value="01" ${kvFilterMonth === '01' ? 'selected' : ''}>Yanvar</option>
                 <option value="02" ${kvFilterMonth === '02' ? 'selected' : ''}>Fevral</option>
@@ -259,7 +259,7 @@ function initKvDashboard() {
                 <option value="11" ${kvFilterMonth === '11' ? 'selected' : ''}>Noyabr</option>
                 <option value="12" ${kvFilterMonth === '12' ? 'selected' : ''}>Dekabr</option>
             </select>
-            <select id="kvFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
+            <select id="kvDashboardFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
                 <option value="all">Barcha yillar</option>
                 ${availableYears.map(y => `<option value="${y}" ${kvFilterYear === y ? 'selected' : ''}>${y}</option>`).join('')}
             </select>
