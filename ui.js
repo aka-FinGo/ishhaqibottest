@@ -23,9 +23,7 @@ window.onload = async () => {
             myUsername = data.username || '';
             adminContactId = String(data.adminContactId || '').trim();
             const _empRaw = data.employeeList || {};
-            // _empRaw: { tgId: username } object (buildUsernameMap dan)
-            // window._kvEmpMap — tgId→name reverse lookup uchun saqlash
-            window._kvEmpMap = Array.isArray(_empRaw) ? {} : Object.assign({}, _empRaw);
+            window._kvEmpMap = _empRaw; // Store for reverse lookup
             globalEmployeeList = Array.isArray(_empRaw)
                 ? _empRaw
                 : Object.values(_empRaw).filter(Boolean);
