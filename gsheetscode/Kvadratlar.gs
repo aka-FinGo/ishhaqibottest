@@ -10,7 +10,7 @@ var KV_COL = {
   MONTH:            2,
   TOTAL_M2:         3,
   ORDER_NAME:       4,
-  STAFF_NAME:       5, // Created By
+  STAFF_NAME:       5, // Display name (hodim ismi)
   OWNER_TG_ID:      6,
   IS_DELETED:       7,
   STEP_INDEX:       8,
@@ -57,7 +57,19 @@ function normalizeKvMonth_(val) {
 }
 
 /**
+ * Hodim tgId orqali ismini hodimlar ro'yxatidan topadi.
+ * Avval username map'dan qidiradi, topilmasa staffName ni qaytaradi.
+ */
+function resolveStaffName_(ownerTgId, fallbackStaffName, userMap) {
+  if (!ownerTgId) return fallbackStaffName || '';
+  var mapped = userMap && userMap[String(ownerTgId)];
+  if (mapped) return mapped;
+  return fallbackStaffName || '';
+}
+
+/**
  * Adds a new measurement record.
+ * staffName hodimlar ro'yxatidan avtomatik olinadi (tgId orqali).
  */
 function kvadratAdd(data, auth, actorTgId) {
   return withWriteLock_(function() {
@@ -74,13 +86,17 @@ function kvadratAdd(data, auth, actorTgId) {
     var today = new Date();
     var monthStr = normalizeKvMonth_(data.month);
 
+    // Hodim ismini hodimlar ro'yxatidan olamiz
+    var userMap = buildUsernameMap();
+    var resolvedStaffName = resolveStaffName_(actorTgId, data.staffName, userMap);
+
     sh.appendRow([
       today,
       nextNo,
       "'" + monthStr,          // Force text with apostrophe
       Number(data.totalM2) || 0,
       String(data.orderName || '').trim(),
-      String(data.staffName || '').trim(),
+      resolvedStaffName,       // Hodimlar ro'yxatidan olingan ism
       String(actorTgId),
       0,
       1, // Step 1: Kiritildi
@@ -99,12 +115,13 @@ function kvadratAdd(data, auth, actorTgId) {
 
 /**
  * Gets all measurement records.
+ * Har bir yozuvga hodim ismi va username hodimlar ro'yxatidan qo'shiladi.
  */
 function kvadratGetAll(options) {
   var sh = getKvadratSheet();
   var values      = sh.getDataRange().getValues();
   var records     = [];
-  var userMap     = buildUsernameMap(); // For resolving names from IDs
+  var userMap     = buildUsernameMap(); // tgId → username map
 
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
@@ -118,6 +135,12 @@ function kvadratGetAll(options) {
     var cleanMonth = rawMonth.replace(/^'/, '');   // remove apostrophe
     // Keep "_03" format for frontend filtering
 
+    var ownerTgId  = String(row[KV_COL.OWNER_TG_ID] || '');
+    var staffNameRaw = String(row[KV_COL.STAFF_NAME] || '');
+
+    // Hodim ismini hodimlar ro'yxatidan olamiz (tgId → username)
+    var resolvedName = resolveStaffName_(ownerTgId, staffNameRaw, userMap);
+
     records.push({
       rowId:      i + 1,
       date:       formatDateCell(row[KV_COL.DATE]),
@@ -125,8 +148,8 @@ function kvadratGetAll(options) {
       month:      cleanMonth,                          // "_03" etc
       totalM2:    Number(row[KV_COL.TOTAL_M2]) || 0,
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
-      staffName:         String(row[KV_COL.STAFF_NAME] || ''),
-      ownerTgId:         String(row[KV_COL.OWNER_TG_ID] || ''),
+      staffName:         resolvedName,                 // Hodimlar ro'yxatidan olingan ism
+      ownerTgId:         ownerTgId,
       currentStep:       Number(row[KV_COL.STEP_INDEX]) || 1,
       status:            String(row[KV_COL.STATUS] || 'yangi'),
       logs:              (function(){
@@ -143,6 +166,7 @@ function kvadratGetAll(options) {
 
 /**
  * Edits a measurement record.
+ * staffName ham yangilanganida hodimlar ro'yxatidan olinadi.
  */
 function kvadratEdit(data, auth, actorTgId) {
   return withWriteLock_(function() {
@@ -160,9 +184,13 @@ function kvadratEdit(data, auth, actorTgId) {
       return { success: false, error: "Tahrirlashga ruxsat yo'q" };
     }
 
+    // Hodim ismini hodimlar ro'yxatidan yangilab olamiz
+    var userMap = buildUsernameMap();
+    var resolvedName = resolveStaffName_(ownerTgId, data.staffName, userMap);
+
     sh.getRange(row, KV_COL.TOTAL_M2    + 1).setValue(Number(data.totalM2) || 0);
     sh.getRange(row, KV_COL.ORDER_NAME  + 1).setValue(String(data.orderName || '').trim());
-    sh.getRange(row, KV_COL.STAFF_NAME  + 1).setValue(String(data.staffName || '').trim());
+    sh.getRange(row, KV_COL.STAFF_NAME  + 1).setValue(resolvedName); // Hodimlar ro'yxatidan olingan ism
 
     if (data.month) {
       var monthStr = normalizeKvMonth_(data.month);
@@ -230,6 +258,34 @@ function kvadratClaimWork(data, auth, actorTgId) {
 
     return { success: true };
   });
+}
+
+/**
+ * Mavjud yozuvlardagi Hodim ustunini hodimlar ro'yxatidan yangilaydi.
+ * Bu funksiyani bir marta ishga tushirish kerak (migration).
+ */
+function migrateKvadratStaffNames() {
+  var sh = getKvadratSheet();
+  var values = sh.getDataRange().getValues();
+  var userMap = buildUsernameMap();
+  var updated = 0;
+
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    var ownerTgId = String(row[KV_COL.OWNER_TG_ID] || '').trim();
+    if (!ownerTgId) continue;
+
+    var resolvedName = userMap[ownerTgId];
+    if (!resolvedName) continue;
+
+    var currentName = String(row[KV_COL.STAFF_NAME] || '').trim();
+    if (currentName !== resolvedName) {
+      sh.getRange(i + 1, KV_COL.STAFF_NAME + 1).setValue(resolvedName);
+      updated++;
+    }
+  }
+
+  return { success: true, updated: updated, message: updated + " ta yozuv yangilandi" };
 }
 
 function getKratSheet_internal() {
