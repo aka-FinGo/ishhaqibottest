@@ -63,10 +63,6 @@ window.onload = async () => {
                 updateTechnicalPositions(data.allPositions || []);
             }
 
-            // Update dynamic technical roles for roles.js
-            if (typeof updateTechnicalPositions === 'function') {
-                updateTechnicalPositions(data.workflowConfig);
-            }
 
             canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
             canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
