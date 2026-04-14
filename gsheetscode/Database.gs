@@ -186,19 +186,30 @@ function getAuditSheet_() {
   return sh;
 }
 
+function migrateHodimlarToV2(hideLegacyColumns) {
+  var empSheet = getSheets().empSheet;
+  return synchronizeEmployeeRowsToV2_(empSheet, hideLegacyColumns !== false);
+}
+
 function initUser(tgId, auth, data) {
   var targetId = String(tgId || '').trim();
   if (!targetId) return { success: false, error: 'TelegramId topilmadi' };
   
-  autoRegisterPendingUserIfMissing_(targetId, data, 'init');
+  if (typeof autoRegisterPendingUserIfMissing_ === 'function') {
+    autoRegisterPendingUserIfMissing_(targetId, data, 'init');
+  }
   
   var dataSheet = getSheets().dataSheet;
   var values = dataSheet.getDataRange().getValues();
   var userRecords = [];
   
+  var isDeletedFn = (typeof isDeletedRow_ === 'function') ? isDeletedRow_ : function() { return false; };
+  var formatFn    = (typeof formatDateCell === 'function') ? formatDateCell : function(v) { return String(v); };
+  var apFn        = (typeof parseActionPeriod_ === 'function') ? parseActionPeriod_ : function(v) { return String(v); };
+
   for (var i = values.length - 1; i > 0; i--) {
     var row = values[i];
-    if (isDeletedRow_(row)) continue;
+    if (isDeletedFn(row)) continue;
     if (String(row[DATA_COL.TG_ID]) === targetId) {
       userRecords.push({
         rowId: i + 1,
@@ -206,14 +217,15 @@ function initUser(tgId, auth, data) {
         amountUSD: Number(row[DATA_COL.AMOUNT_USD]) || 0,
         rate: Number(row[DATA_COL.RATE]) || 0,
         comment: String(row[DATA_COL.COMMENT] || ''),
-        date: formatDateCell(row[DATA_COL.DATE]),
-        actionPeriod: parseActionPeriod_(row[DATA_COL.ACTION_PERIOD])
+        date: formatFn(row[DATA_COL.DATE]),
+        actionPeriod: apFn(row[DATA_COL.ACTION_PERIOD])
       });
     }
   }
 
   var workflowConfig = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
-  var allPositions = (typeof positions_get_all === 'function') ? positions_get_all().data : [];
+  var allPositions   = (typeof getAllPositions === 'function') ? getAllPositions() : [];
+  var empList        = (typeof buildUsernameMap === 'function') ? buildUsernameMap() : {};
 
   return {
     success: true,
@@ -228,6 +240,6 @@ function initUser(tgId, auth, data) {
     allPositions: allPositions,
     workflowConfig: workflowConfig,
     data: userRecords,
-    employeeList: buildUsernameMap()
+    employeeList: empList
   };
 }
