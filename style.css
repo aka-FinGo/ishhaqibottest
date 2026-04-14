@@ -1441,3 +1441,267 @@ body.dark .whatif-preview {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+/* ========== KV DASHBOARD STYLES ========== */
+.kv-dashboard-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Filter Bar */
+.kv-filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.kv-filter-select {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    font-size: 13px;
+    background: #fff;
+    color: #334155;
+    font-weight: 500;
+}
+
+.kv-filter-select:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Stats Row */
+.kv-stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 600px) {
+    .kv-stats-row {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.kv-stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #E2E8F0;
+}
+
+.kv-stat-icon {
+    font-size: 28px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F8FAFC;
+    border-radius: 10px;
+}
+
+.kv-stat-content {
+    flex: 1;
+}
+
+.kv-stat-label {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.kv-stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0F172A;
+    margin-top: 2px;
+}
+
+/* Charts Grid */
+.kv-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 600px) {
+    .kv-charts-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.kv-chart-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #E2E8F0;
+}
+
+.kv-chart-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 14px;
+}
+
+.kv-chart-container {
+    height: 200px;
+    position: relative;
+}
+
+/* Staff Section */
+.kv-staff-section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #E2E8F0;
+}
+
+.kv-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 16px;
+}
+
+.kv-staff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.kv-staff-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #F8FAFC;
+    border-radius: 10px;
+}
+
+.kv-staff-rank {
+    font-size: 18px;
+    width: 32px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.kv-staff-info {
+    flex: 1;
+}
+
+.kv-staff-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0F172A;
+    margin-bottom: 6px;
+}
+
+.kv-staff-bar {
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.kv-staff-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3B82F6, #10B981);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.kv-staff-value {
+    text-align: right;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+}
+
+.kv-staff-percent {
+    display: block;
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 500;
+}
+
+/* Records Section */
+.kv-records-section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #E2E8F0;
+}
+
+.kv-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.kv-record-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    background: #F8FAFC;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+}
+
+.kv-record-main {
+    flex: 1;
+}
+
+.kv-record-order {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 4px;
+}
+
+.kv-record-meta {
+    font-size: 12px;
+    color: #64748B;
+    display: flex;
+    gap: 12px;
+}
+
+.kv-record-right {
+    text-align: right;
+}
+
+.kv-record-m2 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #3B82F6;
+    margin-bottom: 4px;
+}
+
+.kv-status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}

@@ -1,28 +1,140 @@
 // ============================================================
-// dashboard_kv.js — Kvadratlar Dashboard Logic
+// dashboard_kv.js — Kvadratlar Dashboard (ALOHIDA SAHIFA)
 // ============================================================
 
 let kvChartStatus = null;
 let kvChartTrends = null;
 
+// Filtrlarni saqlash uchun global o'zgaruvchilar
+let kvFilterStaff = 'all';
+let kvFilterMonth = 'all';
+let kvFilterYear = 'all';
+
+// Sahifani ochish
 function openKvDashboard() {
-    const modal = document.getElementById('kvDashboardModal');
-    if (modal) modal.classList.remove('hidden');
+    switchTab('kvDashboardTab', 'nav-kv-dashboard');
     initKvDashboard();
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 }
 
-function closeKvDashboard() {
-    const modal = document.getElementById('kvDashboardModal');
-    if (modal) modal.classList.add('hidden');
+// Filtrlarni o'zgartirish
+function changeKvFilter() {
+    kvFilterStaff = document.getElementById('kvFilterStaff') ? document.getElementById('kvFilterStaff').value : 'all';
+    kvFilterMonth = document.getElementById('kvFilterMonth') ? document.getElementById('kvFilterMonth').value : 'all';
+    kvFilterYear = document.getElementById('kvFilterYear') ? document.getElementById('kvFilterYear').value : 'all';
+    initKvDashboard();
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+// Filterlangan ma'lumotlarni olish
+function getFilteredKvRecords() {
+    if (!kvFullRecords || !kvFullRecords.length) return [];
+    
+    return kvFullRecords.filter(rec => {
+        // Hodim filter
+        if (kvFilterStaff !== 'all' && rec.staffName !== kvFilterStaff) return false;
+        
+        // Oy/Yil filter
+        if (rec.date) {
+            const parts = rec.date.split('/');
+            if (parts.length === 3) {
+                const recMonth = parts[1];
+                const recYear = parts[2];
+                
+                if (kvFilterMonth !== 'all' && recMonth !== kvFilterMonth) return false;
+                if (kvFilterYear !== 'all' && recYear !== kvFilterYear) return false;
+            }
+        }
+        
+        return true;
+    });
+}
+
+// Mavjud yillardan filterlarni to'ldirish
+function populateKvFilters() {
+    // Yillar
+    const yearsSet = new Set();
+    const staffSet = new Set();
+    
+    if (kvFullRecords && kvFullRecords.length) {
+        kvFullRecords.forEach(rec => {
+            if (rec.date) {
+                const parts = rec.date.split('/');
+                if (parts.length === 3) {
+                    yearsSet.add(parts[2]);
+                }
+            }
+            if (rec.staffName) staffSet.add(rec.staffName);
+        });
+    }
+    
+    const years = Array.from(yearsSet).sort();
+    const staffMembers = Array.from(staffSet).sort();
+    
+    // Filter elementlari mavjudligini tekshirish
+    const yearSelect = document.getElementById('kvFilterYear');
+    const staffSelect = document.getElementById('kvFilterStaff');
+    
+    if (yearSelect) {
+        const currentYear = yearSelect.value;
+        yearSelect.innerHTML = '<option value="all">Barcha yillar</option>';
+        years.forEach(y => {
+            yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+        // Avvalgi tanlovni tiklash
+        if (years.includes(currentYear)) yearSelect.value = currentYear;
+    }
+    
+    if (staffSelect) {
+        const currentStaff = staffSelect.value;
+        staffSelect.innerHTML = '<option value="all">Barcha hodimlar</option>';
+        staffMembers.forEach(s => {
+            staffSelect.innerHTML += `<option value="${s}">${escapeHtml(s)}</option>`;
+        });
+        if (staffMembers.includes(currentStaff)) staffSelect.value = currentStaff;
+    }
 }
 
 function initKvDashboard() {
     const body = document.getElementById('kvDashboardBody');
     if (!body) return;
 
-    if (!kvFullRecords || !kvFullRecords.length) {
-        body.innerHTML = `<div class="empty-state"><p>Ma'lumotlar mavjud emas</p></div>`;
+    const filteredRecords = getFilteredKvRecords();
+
+    if (!filteredRecords.length) {
+        body.innerHTML = `
+            <div class="kv-dashboard-container">
+                <div class="kv-filter-bar">
+                    <select id="kvFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
+                        <option value="all">Barcha hodimlar</option>
+                    </select>
+                    <select id="kvFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
+                        <option value="all">Barcha oylar</option>
+                        <option value="01">Yanvar</option>
+                        <option value="02">Fevral</option>
+                        <option value="03">Mart</option>
+                        <option value="04">Aprel</option>
+                        <option value="05">May</option>
+                        <option value="06">Iyun</option>
+                        <option value="07">Iyul</option>
+                        <option value="08">Avgust</option>
+                        <option value="09">Sentyabr</option>
+                        <option value="10">Oktyabr</option>
+                        <option value="11">Noyabr</option>
+                        <option value="12">Dekabr</option>
+                    </select>
+                    <select id="kvFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
+                        <option value="all">Barcha yillar</option>
+                    </select>
+                </div>
+                <div class="empty-state" style="padding:60px 20px; text-align:center;">
+                    <div style="font-size:48px; margin-bottom:15px;">📊</div>
+                    <p style="font-size:16px; color:#64748b; font-weight:600;">Ma'lumotlar mavjud emas</p>
+                    <p style="font-size:13px; color:#94a3b8; margin-top:8px;">Filterlarni o'zgartirib ko'ring</p>
+                </div>
+            </div>
+        `;
+        populateKvFilters();
         return;
     }
 
@@ -32,7 +144,7 @@ function initKvDashboard() {
     const monthlyData = {}; // keyed by "YYYY-MM"
     const staffData = {};   // keyed by "StaffName"
 
-    kvFullRecords.forEach(rec => {
+    filteredRecords.forEach(rec => {
         const m2 = Number(rec.totalM2) || 0;
         totalM2 += m2;
 
@@ -54,36 +166,96 @@ function initKvDashboard() {
         staffData[staff] = (staffData[staff] || 0) + m2;
     });
 
+    // Mavjud oylar va yillarni aniqlash
+    const availableMonths = Object.keys(monthlyData).sort();
+    const availableYears = [...new Set(availableMonths.map(m => m.split('-')[0]))].sort();
+    const availableStaff = Object.keys(staffData).sort();
+
     // --- Render Cards ---
     let html = `
-    <div class="stats-grid" style="margin-bottom:15px;">
-        <div class="stat-card" style="background:#fff; border:1px solid var(--border);">
-            <div class="stat-label">Jami O'lchov</div>
-            <div class="stat-value" style="color:var(--navy);">${kvFullRecords.length} ta</div>
+    <div class="kv-dashboard-container">
+        <div class="kv-filter-bar">
+            <select id="kvFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
+                <option value="all">Barcha hodimlar</option>
+                ${availableStaff.map(s => `<option value="${escapeHtml(s)}" ${kvFilterStaff === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
+            </select>
+            <select id="kvFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
+                <option value="all">Barcha oylar</option>
+                <option value="01" ${kvFilterMonth === '01' ? 'selected' : ''}>Yanvar</option>
+                <option value="02" ${kvFilterMonth === '02' ? 'selected' : ''}>Fevral</option>
+                <option value="03" ${kvFilterMonth === '03' ? 'selected' : ''}>Mart</option>
+                <option value="04" ${kvFilterMonth === '04' ? 'selected' : ''}>Aprel</option>
+                <option value="05" ${kvFilterMonth === '05' ? 'selected' : ''}>May</option>
+                <option value="06" ${kvFilterMonth === '06' ? 'selected' : ''}>Iyun</option>
+                <option value="07" ${kvFilterMonth === '07' ? 'selected' : ''}>Iyul</option>
+                <option value="08" ${kvFilterMonth === '08' ? 'selected' : ''}>Avgust</option>
+                <option value="09" ${kvFilterMonth === '09' ? 'selected' : ''}>Sentyabr</option>
+                <option value="10" ${kvFilterMonth === '10' ? 'selected' : ''}>Oktyabr</option>
+                <option value="11" ${kvFilterMonth === '11' ? 'selected' : ''}>Noyabr</option>
+                <option value="12" ${kvFilterMonth === '12' ? 'selected' : ''}>Dekabr</option>
+            </select>
+            <select id="kvFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
+                <option value="all">Barcha yillar</option>
+                ${availableYears.map(y => `<option value="${y}" ${kvFilterYear === y ? 'selected' : ''}>${y}</option>`).join('')}
+            </select>
         </div>
-        <div class="stat-card" style="background:#fff; border:1px solid var(--border);">
-            <div class="stat-label">Jami m²</div>
-            <div class="stat-value" style="color:var(--navy);">${totalM2.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²</div>
-        </div>
-    </div>
 
-    <div class="card" style="margin-bottom:15px; padding:15px;">
-        <div class="card-title" style="margin-bottom:12px; font-size:14px;">📊 Holatlar bo'yicha (ta)</div>
-        <div style="height:200px; display:flex; justify-content:center;">
-            <canvas id="kvChartStatus"></canvas>
+        <div class="kv-stats-row">
+            <div class="kv-stat-card">
+                <div class="kv-stat-icon">📐</div>
+                <div class="kv-stat-content">
+                    <div class="kv-stat-label">Jami O'lchovlar</div>
+                    <div class="kv-stat-value">${filteredRecords.length} ta</div>
+                </div>
+            </div>
+            <div class="kv-stat-card">
+                <div class="kv-stat-icon">📏</div>
+                <div class="kv-stat-content">
+                    <div class="kv-stat-label">Jami m²</div>
+                    <div class="kv-stat-value">${totalM2.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²</div>
+                </div>
+            </div>
+            <div class="kv-stat-card">
+                <div class="kv-stat-icon">👥</div>
+                <div class="kv-stat-content">
+                    <div class="kv-stat-label">Hodimlar</div>
+                    <div class="kv-stat-value">${Object.keys(staffData).length} nafar</div>
+                </div>
+            </div>
+            <div class="kv-stat-card">
+                <div class="kv-stat-icon">📅</div>
+                <div class="kv-stat-content">
+                    <div class="kv-stat-label">Oylar</div>
+                    <div class="kv-stat-value">${availableMonths.length} oy</div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="card" style="margin-bottom:15px; padding:15px;">
-        <div class="card-title" style="margin-bottom:12px; font-size:14px;">📈 Oylik dinamika (m²)</div>
-        <div style="height:220px;">
-            <canvas id="kvChartTrends"></canvas>
+        <div class="kv-charts-grid">
+            <div class="kv-chart-card">
+                <div class="kv-chart-title">📊 Holatlar bo'yicha (${filteredRecords.length} ta)</div>
+                <div class="kv-chart-container">
+                    <canvas id="kvChartStatus"></canvas>
+                </div>
+                <div class="kv-chart-legend" id="kvStatusLegend"></div>
+            </div>
+            <div class="kv-chart-card">
+                <div class="kv-chart-title">📈 Oylik dinamika (m²)</div>
+                <div class="kv-chart-container">
+                    <canvas id="kvChartTrends"></canvas>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="card" style="padding:15px;">
-        <div class="card-title" style="margin-bottom:12px; font-size:14px;">🏆 Top Hodimlar (m²)</div>
-        <div id="kvStaffRanking"></div>
+        <div class="kv-staff-section">
+            <div class="kv-section-title">🏆 Top Hodimlar (m² bo'yicha)</div>
+            <div id="kvStaffRanking" class="kv-staff-list"></div>
+        </div>
+
+        <div class="kv-records-section">
+            <div class="kv-section-title">📋 Amallar ro'yxati</div>
+            <div id="kvRecordsList" class="kv-records-list"></div>
+        </div>
     </div>
     `;
 
@@ -92,21 +264,53 @@ function initKvDashboard() {
     // --- Ranking List ---
     const rankingEl = document.getElementById('kvStaffRanking');
     const sortedStaff = Object.entries(staffData).sort((a, b) => b[1] - a[1]);
+    
     let rankingHtml = '';
-    sortedStaff.slice(0, 5).forEach(([name, val], idx) => {
-        const percent = (val / totalM2 * 100).toFixed(0);
+    sortedStaff.slice(0, 10).forEach(([name, val], idx) => {
+        const percent = totalM2 > 0 ? (val / totalM2 * 100).toFixed(1) : 0;
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
         rankingHtml += `
-        <div style="margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
-                <span style="font-weight:700; color:var(--navy);">${idx+1}. ${escapeHtml(name)}</span>
-                <span style="font-weight:800;">${val.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²</span>
+        <div class="kv-staff-item">
+            <div class="kv-staff-rank">${medal}</div>
+            <div class="kv-staff-info">
+                <div class="kv-staff-name">${escapeHtml(name)}</div>
+                <div class="kv-staff-bar">
+                    <div class="kv-staff-bar-fill" style="width:${percent}%"></div>
+                </div>
             </div>
-            <div style="height:6px; background:#E2E8F0; border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:${percent}%; background:var(--navy); border-radius:3px;"></div>
+            <div class="kv-staff-value">${val.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m² <span class="kv-staff-percent">${percent}%</span></div>
+        </div>`;
+    });
+    rankingEl.innerHTML = rankingHtml || '<p style="font-size:13px; color:#94a3b8; text-align:center; padding:20px;">Ma\'lumot yo\'q</p>';
+
+    // --- Records List ---
+    const recordsEl = document.getElementById('kvRecordsList');
+    const sortedRecords = [...filteredRecords].sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        return dateB.localeCompare(dateA);
+    });
+    
+    let recordsHtml = '';
+    sortedRecords.forEach(rec => {
+        const m2 = Number(rec.totalM2) || 0;
+        const statusBadge = getStatusBadge(rec.status);
+        recordsHtml += `
+        <div class="kv-record-item">
+            <div class="kv-record-main">
+                <div class="kv-record-order">${escapeHtml(rec.orderName || 'Noma\'lum')}</div>
+                <div class="kv-record-meta">
+                    <span>👤 ${escapeHtml(rec.staffName || 'Noma\'lum')}</span>
+                    <span>📅 ${rec.date || '—'}</span>
+                </div>
+            </div>
+            <div class="kv-record-right">
+                <div class="kv-record-m2">${m2.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²</div>
+                ${statusBadge}
             </div>
         </div>`;
     });
-    rankingEl.innerHTML = rankingHtml || '<p style="font-size:12px; color:var(--text-muted);">Ma\'lumot yo\'q</p>';
+    recordsEl.innerHTML = recordsHtml || '<p style="font-size:13px; color:#94a3b8; text-align:center; padding:20px;">Ma\'lumot yo\'q</p>';
 
     // --- Charts ---
     setTimeout(() => {
@@ -114,37 +318,80 @@ function initKvDashboard() {
     }, 100);
 }
 
+function getStatusBadge(status) {
+    const colors = {
+        'yangi': { bg: '#FEF3C7', text: '#92400E' },
+        'bajarildi': { bg: '#D1FAE5', text: '#065F46' },
+        'jarayonda': { bg: '#DBEAFE', text: '#1E40AF' },
+        'bekor': { bg: '#FEE2E2', text: '#991B1B' }
+    };
+    const c = colors[status] || colors['yangi'];
+    return `<span class="kv-status-badge" style="background:${c.bg}; color:${c.text};">${status || 'yangi'}</span>`;
+}
+
 function renderKvCharts(statusCounts, monthlyData) {
     if (kvChartStatus) kvChartStatus.destroy();
     if (kvChartTrends) kvChartTrends.destroy();
 
+    // Status ranglari
+    const statusColors = {
+        'yangi': '#FACC15',
+        'bajarildi': '#22C55E',
+        'jarayonda': '#3B82F6',
+        'bekor': '#94A3B8'
+    };
+
     // 1. Status Chart (Pie)
     const ctxStatus = document.getElementById('kvChartStatus');
-    if (ctxStatus) {
+    if (ctxStatus && Object.keys(statusCounts).length > 0) {
+        const labels = Object.keys(statusCounts).map(s => {
+            const label = s.charAt(0).toUpperCase() + s.slice(1);
+            const count = statusCounts[s];
+            return `${label} (${count})`;
+        });
+        const colors = Object.keys(statusCounts).map(s => statusColors[s] || '#94A3B8');
+        
         kvChartStatus = new Chart(ctxStatus, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(statusCounts).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                labels: labels,
                 datasets: [{
                     data: Object.values(statusCounts),
-                    backgroundColor: ['#FACC15', '#3B82F6', '#22C55E', '#94A3B8'],
-                    borderWidth: 0
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { 
+                            boxWidth: 12, 
+                            font: { size: 11 },
+                            padding: 15
+                        } 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = ((context.raw / total) * 100).toFixed(1);
+                                return ` ${context.label}: ${context.raw} ta (${pct}%)`;
+                            }
+                        }
+                    }
                 },
-                cutout: '70%'
+                cutout: '60%'
             }
         });
     }
 
-    // 2. Trends Chart (Line/Bar)
+    // 2. Trends Chart (Bar/Line)
     const ctxTrends = document.getElementById('kvChartTrends');
-    if (ctxTrends) {
+    if (ctxTrends && Object.keys(monthlyData).length > 0) {
         // Sort months YYYY-MM
         const sortedMonths = Object.keys(monthlyData).sort();
         const labels = sortedMonths.map(m => {
@@ -160,19 +407,34 @@ function renderKvCharts(statusCounts, monthlyData) {
                 datasets: [{
                     label: 'm²',
                     data: sortedMonths.map(m => monthlyData[m]),
-                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                    borderRadius: 4
+                    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                    borderRadius: 6,
+                    borderSkipped: 'bottom'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { display: true, color: '#E2E8F0' }, 
+                        ticks: { font: { size: 10 } } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { font: { size: 10 } } 
+                    }
                 },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.raw.toLocaleString()} m²`;
+                            }
+                        }
+                    }
                 }
             }
         });
