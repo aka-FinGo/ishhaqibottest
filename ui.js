@@ -22,7 +22,10 @@ window.onload = async () => {
             myCanAdd           = data.canAdd  !== false;
             myUsername         = data.username || '';
             adminContactId     = String(data.adminContactId || '').trim();
-            globalEmployeeList = data.employeeList || [];
+            const _empRaw = data.employeeList || {};
+            globalEmployeeList = Array.isArray(_empRaw)
+                ? _empRaw
+                : Object.values(_empRaw).filter(Boolean);
 
             // Populate kvadrat filters and forms
             if (typeof populateKvadratMeta === 'function') {
