@@ -111,14 +111,11 @@ async function saveWorkflowConfigUI() {
             steps: currentWorkflowSteps
         });
 
-        if (data.success) {
-            showToastMsg('✅ Oqim saqlandi! Ilovani yangilang.');
-            // Update local config so roles.js picks it up
-            myPermissions.workflowConfig = currentWorkflowSteps;
-            if (typeof updateTechnicalPositions === 'function') {
-                updateTechnicalPositions(currentWorkflowSteps);
-            }
-        } else {
+            if (data.success) {
+                showToastMsg('✅ Oqim saqlandi! Ilovani yangilang.');
+                // Update local config so roles.js picks it up
+                myPermissions.workflowConfig = currentWorkflowSteps;
+            } else {
             showToastMsg('❌ ' + (data.error || 'Xato'), true);
         }
     } catch (e) {
