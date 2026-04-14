@@ -14,10 +14,30 @@ let kvFilterYear = 'all';
 async function openKvDashboard() {
     // Agar ma'lumotlar yuklanmagan bo'lsa, avval yuklash
     if (!kvFullRecords || kvFullRecords.length === 0) {
+        const listContainer = document.getElementById('kvList');
+        if (listContainer) {
+            listContainer.innerHTML = `
+                <div class="skeleton skeleton-item"></div>
+                <div class="skeleton skeleton-item"></div>
+                <div class="skeleton skeleton-item"></div>`;
+        }
         await initKvadratTab();
     }
     switchTab('kvDashboardTab', null);
-    setTimeout(initKvDashboard, 100);
+    // DOM yangilanishini kutamiz
+    await new Promise(r => setTimeout(r, 50));
+    initKvDashboard();
+    populateKvFilters();
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+}
+
+// Sahifani yopish
+function closeKvDashboard() {
+    const kvDashboardTab = document.getElementById('kvDashboardTab');
+    if (kvDashboardTab) {
+        kvDashboardTab.style.display = 'none';
+    }
+    switchTab('kvadratTab', null);
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 }
 
@@ -32,7 +52,7 @@ function changeKvFilter() {
 
 // Filterlangan ma'lumotlarni olish
 function getFilteredKvRecords() {
-    if (!kvFullRecords || !kvFullRecords.length) return [];
+    if (!kvFullRecords || !Array.isArray(kvFullRecords) || !kvFullRecords.length) return [];
     
     return kvFullRecords.filter(rec => {
         // Hodim filter
@@ -60,7 +80,7 @@ function populateKvFilters() {
     const yearsSet = new Set();
     const staffSet = new Set();
     
-    if (kvFullRecords && kvFullRecords.length) {
+    if (kvFullRecords && Array.isArray(kvFullRecords) && kvFullRecords.length) {
         kvFullRecords.forEach(rec => {
             if (rec.date) {
                 const parts = rec.date.split('/');
@@ -100,8 +120,49 @@ function populateKvFilters() {
 }
 
 function initKvDashboard() {
-    const body = document.getElementById('kvDashboardBody');
-    if (!body) return;
+    const body = document.getElementById('kvDashboardMainBody');
+    if (!body) {
+        console.warn('kvDashboardMainBody elementi topilmadi!');
+        return;
+    }
+
+    // Agar kvFullRecords yuklanmagan bo'lsa, xabarni ko'rsatamiz
+    if (!kvFullRecords || !Array.isArray(kvFullRecords) || kvFullRecords.length === 0) {
+        body.innerHTML = `
+            <div class="kv-dashboard-container">
+                <div class="kv-filter-bar">
+                    <select id="kvFilterStaff" onchange="changeKvFilter()" class="kv-filter-select">
+                        <option value="all">Barcha hodimlar</option>
+                    </select>
+                    <select id="kvFilterMonth" onchange="changeKvFilter()" class="kv-filter-select">
+                        <option value="all">Barcha oylar</option>
+                        <option value="01">Yanvar</option>
+                        <option value="02">Fevral</option>
+                        <option value="03">Mart</option>
+                        <option value="04">Aprel</option>
+                        <option value="05">May</option>
+                        <option value="06">Iyun</option>
+                        <option value="07">Iyul</option>
+                        <option value="08">Avgust</option>
+                        <option value="09">Sentyabr</option>
+                        <option value="10">Oktyabr</option>
+                        <option value="11">Noyabr</option>
+                        <option value="12">Dekabr</option>
+                    </select>
+                    <select id="kvFilterYear" onchange="changeKvFilter()" class="kv-filter-select">
+                        <option value="all">Barcha yillar</option>
+                    </select>
+                </div>
+                <div class="empty-state" style="padding:60px 20px; text-align:center;">
+                    <div style="font-size:48px; margin-bottom:15px;">📊</div>
+                    <p style="font-size:16px; color:#64748b; font-weight:600;">Ma'lumotlar topilmadi</p>
+                    <p style="font-size:13px; color:#94a3b8; margin-top:8px;">Iltimos, kvadratlar tabiga qaytib ma'lumot qo'shing</p>
+                </div>
+            </div>
+        `;
+        populateKvFilters();
+        return;
+    }
 
     const filteredRecords = getFilteredKvRecords();
 
@@ -317,9 +378,11 @@ function initKvDashboard() {
     recordsEl.innerHTML = recordsHtml || '<p style="font-size:13px; color:#94a3b8; text-align:center; padding:20px;">Ma\'lumot yo\'q</p>';
 
     // --- Charts ---
-    setTimeout(() => {
+    try {
         renderKvCharts(statusCounts, monthlyData);
-    }, 100);
+    } catch (e) {
+        console.error('Chart render xato:', e);
+    }
 }
 
 function getStatusBadge(status) {
@@ -334,8 +397,13 @@ function getStatusBadge(status) {
 }
 
 function renderKvCharts(statusCounts, monthlyData) {
-    if (kvChartStatus) kvChartStatus.destroy();
-    if (kvChartTrends) kvChartTrends.destroy();
+    try {
+        if (kvChartStatus) {
+            try { kvChartStatus.destroy(); } catch (e) { console.warn('kvChartStatus destroy xato'); }
+        }
+        if (kvChartTrends) {
+            try { kvChartTrends.destroy(); } catch (e) { console.warn('kvChartTrends destroy xato'); }
+        }
 
     // Status ranglari
     const statusColors = {
@@ -442,5 +510,8 @@ function renderKvCharts(statusCounts, monthlyData) {
                 }
             }
         });
+    }
+    } catch (e) {
+        console.error('renderKvCharts xato:', e);
     }
 }
