@@ -1176,7 +1176,8 @@ function getHodimlar() {
       overrideCanEdit:     access.overrides.canEdit,
       overrideCanDelete:   access.overrides.canDelete,
       overrideCanExport:   access.overrides.canExport,
-      overrideCanViewDash: access.overrides.canViewDash
+      overrideCanViewDash: access.overrides.canViewDash,
+      positions:           String(rows[i][COL.LAVOZIM] || '').split(',').map(function(s){return s.trim();}).filter(Boolean)
     });
   }
   return { success: true, data: result };
@@ -1364,27 +1365,29 @@ function addHodim(data) {
     }
     var cfg = resolveRoleAndOverridesFromPayload_(data, null);
     var eff = cfg.effective;
-    empSheet.appendRow([
-      data.tgId        || '',
-      data.username    || 'Yangi Xodim',
-      eff.canAdd ? 1 : 0,
-      eff.isSuperAdmin ? 1 : 0,
-      eff.isDirektor ? 1 : 0,
-      (eff.isAdmin && !eff.isSuperAdmin) ? 1 : 0,
-      eff.permissions.canViewAll ? 1 : 0,
-      eff.permissions.canEdit ? 1 : 0,
-      eff.permissions.canDelete ? 1 : 0,
-      eff.permissions.canExport ? 1 : 0,
-      eff.permissions.canViewDash ? 1 : 0,
-      cfg.role,
-      overrideToCellValue_(cfg.overrides.canAdd),
-      overrideToCellValue_(cfg.overrides.canViewAll),
-      overrideToCellValue_(cfg.overrides.canEdit),
-      overrideToCellValue_(cfg.overrides.canDelete),
-      overrideToCellValue_(cfg.overrides.canExport),
-      overrideToCellValue_(cfg.overrides.canViewDash),
-      data.lavozim || ''
-    ]);
+    
+    var newRow = new Array(EMP_HEADERS.length).fill('');
+    newRow[COL.TG_ID]        = String(data.tgId || '').trim();
+    newRow[COL.USERNAME]     = data.username || 'Yangi Xodim';
+    newRow[COL.CAN_ADD]      = eff.canAdd ? 1 : 0;
+    newRow[COL.SUPER_ADMIN]  = eff.isSuperAdmin ? 1 : 0;
+    newRow[COL.DIREKTOR]     = eff.isDirektor ? 1 : 0;
+    newRow[COL.ADMIN]        = (eff.isAdmin && !eff.isSuperAdmin) ? 1 : 0;
+    newRow[COL.VIEW_ALL]     = eff.permissions.canViewAll ? 1 : 0;
+    newRow[COL.EDIT]         = eff.permissions.canEdit ? 1 : 0;
+    newRow[COL.DELETE]       = eff.permissions.canDelete ? 1 : 0;
+    newRow[COL.EXPORT]       = eff.permissions.canExport ? 1 : 0;
+    newRow[COL.VIEW_DASH]    = eff.permissions.canViewDash ? 1 : 0;
+    newRow[COL.ROLE]         = cfg.role;
+    newRow[COL.OVR_CAN_ADD]  = overrideToCellValue_(cfg.overrides.canAdd);
+    newRow[COL.OVR_VIEW_ALL] = overrideToCellValue_(cfg.overrides.canViewAll);
+    newRow[COL.OVR_EDIT]     = overrideToCellValue_(cfg.overrides.canEdit);
+    newRow[COL.OVR_DELETE]   = overrideToCellValue_(cfg.overrides.canDelete);
+    newRow[COL.OVR_EXPORT]   = overrideToCellValue_(cfg.overrides.canExport);
+    newRow[COL.OVR_VIEW_DASH]= overrideToCellValue_(cfg.overrides.canViewDash);
+    newRow[COL.LAVOZIM]      = data.lavozim || '';
+    
+    empSheet.appendRow(newRow);
     resetEmployeeCache_();
     return { success: true };
   });
@@ -1402,24 +1405,29 @@ function updateHodim(data) {
         var r = i + 1;
         var cfg = resolveRoleAndOverridesFromPayload_(data, rows[i]);
         var eff = cfg.effective;
-        empSheet.getRange(r, COL.USERNAME     + 1).setValue(data.username    || '');
-        empSheet.getRange(r, COL.CAN_ADD      + 1).setValue(eff.canAdd ? 1 : 0);
-        empSheet.getRange(r, COL.SUPER_ADMIN  + 1).setValue(eff.isSuperAdmin ? 1 : 0);
-        empSheet.getRange(r, COL.DIREKTOR     + 1).setValue(eff.isDirektor ? 1 : 0);
-        empSheet.getRange(r, COL.ADMIN        + 1).setValue((eff.isAdmin && !eff.isSuperAdmin) ? 1 : 0);
-        empSheet.getRange(r, COL.VIEW_ALL     + 1).setValue(eff.permissions.canViewAll ? 1 : 0);
-        empSheet.getRange(r, COL.EDIT         + 1).setValue(eff.permissions.canEdit ? 1 : 0);
-        empSheet.getRange(r, COL.DELETE       + 1).setValue(eff.permissions.canDelete ? 1 : 0);
-        empSheet.getRange(r, COL.EXPORT       + 1).setValue(eff.permissions.canExport ? 1 : 0);
-        empSheet.getRange(r, COL.VIEW_DASH    + 1).setValue(eff.permissions.canViewDash ? 1 : 0);
-        empSheet.getRange(r, COL.ROLE         + 1).setValue(cfg.role);
-        empSheet.getRange(r, COL.OVR_CAN_ADD  + 1).setValue(overrideToCellValue_(cfg.overrides.canAdd));
-        empSheet.getRange(r, COL.OVR_VIEW_ALL + 1).setValue(overrideToCellValue_(cfg.overrides.canViewAll));
-        empSheet.getRange(r, COL.OVR_EDIT     + 1).setValue(overrideToCellValue_(cfg.overrides.canEdit));
-        empSheet.getRange(r, COL.OVR_DELETE   + 1).setValue(overrideToCellValue_(cfg.overrides.canDelete));
-        empSheet.getRange(r, COL.OVR_EXPORT   + 1).setValue(overrideToCellValue_(cfg.overrides.canExport));
-        empSheet.getRange(r, COL.OVR_VIEW_DASH+ 1).setValue(overrideToCellValue_(cfg.overrides.canViewDash));
-        empSheet.getRange(r, COL.LAVOZIM      + 1).setValue(data.lavozim || '');
+
+        var updateRow = new Array(EMP_HEADERS.length);
+        updateRow[COL.TG_ID]        = String(data.tgId || '').trim();
+        updateRow[COL.USERNAME]     = data.username || '';
+        updateRow[COL.CAN_ADD]      = eff.canAdd ? 1 : 0;
+        updateRow[COL.SUPER_ADMIN]  = eff.isSuperAdmin ? 1 : 0;
+        updateRow[COL.DIREKTOR]     = eff.isDirektor ? 1 : 0;
+        updateRow[COL.ADMIN]        = (eff.isAdmin && !eff.isSuperAdmin) ? 1 : 0;
+        updateRow[COL.VIEW_ALL]     = eff.permissions.canViewAll ? 1 : 0;
+        updateRow[COL.EDIT]         = eff.permissions.canEdit ? 1 : 0;
+        updateRow[COL.DELETE]       = eff.permissions.canDelete ? 1 : 0;
+        updateRow[COL.EXPORT]       = eff.permissions.canExport ? 1 : 0;
+        updateRow[COL.VIEW_DASH]    = eff.permissions.canViewDash ? 1 : 0;
+        updateRow[COL.ROLE]         = cfg.role;
+        updateRow[COL.OVR_CAN_ADD]  = overrideToCellValue_(cfg.overrides.canAdd);
+        updateRow[COL.OVR_VIEW_ALL] = overrideToCellValue_(cfg.overrides.canViewAll);
+        updateRow[COL.OVR_EDIT]     = overrideToCellValue_(cfg.overrides.canEdit);
+        updateRow[COL.OVR_DELETE]   = overrideToCellValue_(cfg.overrides.canDelete);
+        updateRow[COL.OVR_EXPORT]   = overrideToCellValue_(cfg.overrides.canExport);
+        updateRow[COL.OVR_VIEW_DASH]= overrideToCellValue_(cfg.overrides.canViewDash);
+        updateRow[COL.LAVOZIM]      = data.lavozim || '';
+
+        empSheet.getRange(r, 1, 1, EMP_HEADERS.length).setValues([updateRow]);
         resetEmployeeCache_();
         return { success: true };
       }

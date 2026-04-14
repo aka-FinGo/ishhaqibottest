@@ -312,9 +312,9 @@ async function saveHodim(tgId) {
 
     const selectedPositions = [];
     TECHNICAL_POSITIONS.forEach(pos => {
-        const pid = `hpos_${tgId}_${pos.replace(/\s+/g, '_')}`;
+        const pid = `hpos_${tgId}_${pos.name.replace(/\s+/g, '_')}`;
         const el = document.getElementById(pid);
-        if (el && el.checked) selectedPositions.push(pos);
+        if (el && el.checked) selectedPositions.push(pos.name);
     });
     payload.lavozim = selectedPositions.join(',');
 
