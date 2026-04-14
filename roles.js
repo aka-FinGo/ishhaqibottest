@@ -63,9 +63,9 @@ function permToggle(tgId, field, val, label) {
     const id = `hp_${tgId}_${field}`;
     const checked = Number(val) === 1;
     return `<label class="perm-label ${checked ? 'checked' : ''}" onclick="togglePermLabel(this,'${id}')">
-        <input type="checkbox" id="${id}" ${boolToChecked(val)} onclick="event.stopPropagation();syncPermLabel(this)">
-        <span>${label}</span>
-    </label>`;
+    <input type="checkbox" id="${id}" ${boolToChecked(val)} style="pointer-events:none;">
+    <span>${label}</span>
+</label>`;
 }
 
 function togglePermLabel(lbl, cbId) {
@@ -248,7 +248,7 @@ async function loadHodimlar() {
                             
                             return `
                             <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; flex:1; min-width:110px; font-weight:500;" onclick="togglePermLabel(this,'${pid}')">
-                                <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos.name}" onclick="event.stopPropagation();syncPermLabel(this)">
+                                <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos.name}" style="pointer-events:none;">
                                 <span style="font-size:12px;">${pos.icon} ${pos.name}</span>
                             </label>`;
                         }).join('')}
