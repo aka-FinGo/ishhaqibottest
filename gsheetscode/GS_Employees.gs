@@ -243,8 +243,8 @@ function getInactiveUsers(days) {
   return { success:true, data: out };
 }
 
-function getReminderTextSetting() {
-  var text = getReminderTemplate_ ? getReminderTemplate_() : '';
+function getReminderTextSetting(tgId) {
+  var text = (typeof getReminderTemplate_ === 'function') ? getReminderTemplate_() : '';
   return { success:true, text: text };
 }
 
@@ -256,7 +256,7 @@ function setReminderTextSetting(text, actorTgId) {
 
 function sendUserReminder(tgId, actorTgId, reminderText) {
   var emp = getEmployee(tgId);
-  var res = sendSalaryReminderToUser(tgId, emp ? emp.username : '', reminderText);
+  var res = (typeof sendSalaryReminderToUser === 'function') ? sendSalaryReminderToUser(tgId, emp ? emp.username : '', reminderText) : { ok: false, description: 'Not implemented' };
   addAuditLog_(actorTgId, 'send_reminder', '', null, { tgId: tgId, ok: res.ok }, 'manual');
   return { success: res.ok, error: res.description };
 }
@@ -266,7 +266,7 @@ function sendInactiveReminders(days, actorTgId, reminderText) {
   var sent = 0;
   for (var i = 0; i < inactive.data.length; i++) {
     var u = inactive.data[i];
-    var res = sendSalaryReminderToUser(u.tgId, u.username, reminderText);
+    var res = (typeof sendSalaryReminderToUser === 'function') ? sendSalaryReminderToUser(u.tgId, u.username, reminderText) : { ok: false };
     if (res.ok) sent++;
     Utilities.sleep(100);
   }

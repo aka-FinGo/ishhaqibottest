@@ -186,13 +186,12 @@ function getAuditSheet_() {
   return sh;
 }
 
-function initUser(data) {
-  var tgId = String(data.telegramId || '').trim();
-  if (!tgId) return { success: false, error: 'TelegramId topilmadi' };
+function initUser(tgId, auth, data) {
+  var targetId = String(tgId || '').trim();
+  if (!targetId) return { success: false, error: 'TelegramId topilmadi' };
   
-  autoRegisterPendingUserIfMissing_(tgId, data, 'init');
+  autoRegisterPendingUserIfMissing_(targetId, data, 'init');
   
-  var auth = checkUserRoles(tgId);
   var dataSheet = getSheets().dataSheet;
   var values = dataSheet.getDataRange().getValues();
   var userRecords = [];
@@ -200,7 +199,7 @@ function initUser(data) {
   for (var i = values.length - 1; i > 0; i--) {
     var row = values[i];
     if (isDeletedRow_(row)) continue;
-    if (String(row[DATA_COL.TG_ID]) === tgId) {
+    if (String(row[DATA_COL.TG_ID]) === targetId) {
       userRecords.push({
         rowId: i + 1,
         amountUZS: Number(row[DATA_COL.AMOUNT_UZS]) || 0,
@@ -213,8 +212,8 @@ function initUser(data) {
     }
   }
 
-  var workflowConfig = getWorkflowConfig ? getWorkflowConfig() : [];
-  var allPositions = positions_get_all ? positions_get_all().data : [];
+  var workflowConfig = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
+  var allPositions = (typeof positions_get_all === 'function') ? positions_get_all().data : [];
 
   return {
     success: true,

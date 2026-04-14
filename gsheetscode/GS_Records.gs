@@ -72,7 +72,8 @@ function adminGetAll(options) {
   return { success: true, data: pageData, page: page, pageSize: pageSize, totalPages: totalPages, totalCount: totalCount, totalUZS: totalUZS, employees: employees, years: years };
 }
 
-function selfEditRecord(data, auth, actorTgId) {
+function selfEditRecord(data, actorTgId) {
+  var auth = checkUserRoles(actorTgId);
   if (!auth.canEdit) return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
   var rowId = Number(data.rowId);
   var writeResult = withWriteLock_(function () {
@@ -92,16 +93,17 @@ function selfEditRecord(data, auth, actorTgId) {
   return writeResult;
 }
 
-function selfDeleteRecord(data, auth, actorTgId) {
+function selfDeleteRecord(rowId, actorTgId, reason) {
+  var auth = checkUserRoles(actorTgId);
   if (!auth.canDelete) return { success: false, error: "Sizda o'chirish ruxsati yo'q!" };
-  var rowId = Number(data.rowId);
+  var rowIdNum = Number(rowId);
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
-    var rowData = dataSheet.getRange(rowId, 1, 1, 9).getValues()[0];
+    var rowData = dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0];
     if (isDeletedRow_(rowData)) return { success: false, error: "Ushbu amal allaqachon o'chirilgan." };
     if (String(rowData[DATA_COL.TG_ID]) !== String(actorTgId)) return { success: false, error: "Siz faqat o'zingizning amallaringizni o'chirishingiz mumkin!" };
-    dataSheet.getRange(rowId, DATA_COL.IS_DELETED + 1).setValue(1);
-    addAuditLog_(actorTgId, 'self_delete', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), data.reason);
+    dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
+    addAuditLog_(actorTgId, 'self_delete', rowIdNum, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0]), reason);
     return { success: true };
   });
   return writeResult;
@@ -124,13 +126,13 @@ function adminEditRecord(data, actorTgId) {
   return writeResult;
 }
 
-function adminDeleteRecord(data, actorTgId) {
-  var rowId = Number(data.rowId);
+function adminDeleteRecord(rowId, actorTgId, reason) {
+  var rowIdNum = Number(rowId);
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
-    var rowData = dataSheet.getRange(rowId, 1, 1, 9).getValues()[0];
-    dataSheet.getRange(rowId, DATA_COL.IS_DELETED + 1).setValue(1);
-    addAuditLog_(actorTgId, 'admin_delete', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), data.reason);
+    var rowData = dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0];
+    dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
+    addAuditLog_(actorTgId, 'admin_delete', rowIdNum, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0]), reason);
     return { success: true };
   });
   return writeResult;
