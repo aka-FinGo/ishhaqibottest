@@ -16,13 +16,16 @@ window.onload = async () => {
         });
 
         if (data.success) {
-            myFullRecords      = data.data || [];
-            myFilteredRecords  = [...myFullRecords];
-            myInList           = data.inList  || false;
-            myCanAdd           = data.canAdd  !== false;
-            myUsername         = data.username || '';
-            adminContactId     = String(data.adminContactId || '').trim();
+            myFullRecords = data.data || [];
+            myFilteredRecords = [...myFullRecords];
+            myInList = data.inList || false;
+            myCanAdd = data.canAdd !== false;
+            myUsername = data.username || '';
+            adminContactId = String(data.adminContactId || '').trim();
             const _empRaw = data.employeeList || {};
+            // _empRaw: { tgId: username } object (buildUsernameMap dan)
+            // window._kvEmpMap — tgId→name reverse lookup uchun saqlash
+            window._kvEmpMap = Array.isArray(_empRaw) ? {} : Object.assign({}, _empRaw);
             globalEmployeeList = Array.isArray(_empRaw)
                 ? _empRaw
                 : Object.values(_empRaw).filter(Boolean);
@@ -37,26 +40,26 @@ window.onload = async () => {
             document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
 
             // Rol aniqlash
-            if      (data.isSuperAdmin)                myRole = 'SuperAdmin';
-            else if (data.isAdmin)                     myRole = 'Admin';
+            if (data.isSuperAdmin) myRole = 'SuperAdmin';
+            else if (data.isAdmin) myRole = 'Admin';
             else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
-            else                                       myRole = 'User';
+            else myRole = 'User';
 
             // Ruhsatlar
             const asBool = function (v) {
                 return v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
             };
             if (myRole === 'SuperAdmin') {
-                myPermissions = { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true, positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [] };
+                myPermissions = { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true, positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [] };
             } else {
                 const p = data.permissions || {};
                 myPermissions = {
-                    canViewAll:  asBool(p.canViewAll),
-                    canEdit:     asBool(p.canEdit),
-                    canDelete:   asBool(p.canDelete),
-                    canExport:   asBool(p.canExport),
+                    canViewAll: asBool(p.canViewAll),
+                    canEdit: asBool(p.canEdit),
+                    canDelete: asBool(p.canDelete),
+                    canExport: asBool(p.canExport),
                     canViewDash: asBool(p.canViewDash),
-                    positions:   data.positions || [],
+                    positions: data.positions || [],
                     workflowConfig: data.workflowConfig || [],
                     allPositions: data.allPositions || []
                 };
@@ -88,7 +91,7 @@ window.onload = async () => {
         } else {
             showToastMsg('❌ ' + (data.error || 'Init xatosi'), true);
         }
-    } catch(e) {
+    } catch (e) {
         console.error('Init xato:', e);
         showToastMsg('❌ Server bilan bog\'lanib bo\'lmadi', true);
     }
@@ -97,9 +100,9 @@ window.onload = async () => {
 // ---- Tab almashtirish ----
 function switchTab(tabId, navId) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    
+
     const tabEl = document.getElementById(tabId);
-    if(tabEl) tabEl.classList.add('active');
+    if (tabEl) tabEl.classList.add('active');
 
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     if (navId !== 'nav-add') {
@@ -187,7 +190,7 @@ function initDashboardTab() {
     if (!canViewCompanyActions) {
         if (nav) nav.classList.add('hidden');
         const actionsArea = document.getElementById('dashboardActionsArea');
-        const chartsArea  = document.getElementById('dashboardChartsArea');
+        const chartsArea = document.getElementById('dashboardChartsArea');
         if (actionsArea) actionsArea.classList.add('hidden');
         if (chartsArea) chartsArea.classList.remove('hidden');
         loadDashboard();
@@ -243,17 +246,17 @@ function showPermWarning(title, desc) {
     const w = document.getElementById('permWarning');
     w.classList.remove('hidden');
     document.getElementById('permWarnTitle').innerText = title;
-    document.getElementById('permWarnDesc').innerText  = desc;
+    document.getElementById('permWarnDesc').innerText = desc;
     updateContactAdminButton();
     if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
 }
 
 // ---- Global toast ----
-function showToastMsg(msg, isErr=false) {
+function showToastMsg(msg, isErr = false) {
     let t = document.getElementById('toast');
-    if (!t) { t = document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
-    t.innerText  = msg;
-    t.className  = 'toast' + (isErr ? ' toast-err' : '');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+    t.innerText = msg;
+    t.className = 'toast' + (isErr ? ' toast-err' : '');
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
 }

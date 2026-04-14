@@ -184,9 +184,10 @@ function kvadratEdit(data, auth, actorTgId) {
       return { success: false, error: "Tahrirlashga ruxsat yo'q" };
     }
 
-    // Hodim ismini hodimlar ro'yxatidan yangilab olamiz
+    // Agar frontend ownerTgId yuborgan bo'lsa (admin boshqa hodim nomidan), uni ishlatamiz
+    var targetOwnerId = (data.ownerTgId && String(data.ownerTgId).trim()) ? String(data.ownerTgId).trim() : ownerTgId;
     var userMap = buildUsernameMap();
-    var resolvedName = resolveStaffName_(ownerTgId, data.staffName, userMap);
+    var resolvedName = resolveStaffName_(targetOwnerId, data.staffName, userMap);
 
     sh.getRange(row, KV_COL.TOTAL_M2    + 1).setValue(Number(data.totalM2) || 0);
     sh.getRange(row, KV_COL.ORDER_NAME  + 1).setValue(String(data.orderName || '').trim());

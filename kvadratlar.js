@@ -159,7 +159,7 @@ function renderKvList() {
 
         const isOwner = String(rec.ownerTgId) === String(telegramId);
         const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
-        
+
         const monthLabel = kvMonthLabel(rec.month);
         const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
 
@@ -168,7 +168,7 @@ function renderKvList() {
         const status = rec.status || 'yangi';
         const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
         const stepMatch = config.find(s => s.status === status);
-        
+
         let badgeColor = 'b-yellow'; // default
         if (status === 'yangi') badgeColor = 'b-yellow';
         else if (status.indexOf('yigi') !== -1) badgeColor = 'b-blue';
@@ -384,6 +384,7 @@ function closeKvModal() {
 
 /**
  * Save record (Add or Edit)
+ * staffName + ownerTgId yuboriladi — backend hodimlar ro'yxatidan ismni tasdiqlaydi.
  */
 async function saveKv() {
     const rowId = document.getElementById('kvRowId').value;
@@ -407,6 +408,17 @@ async function saveKv() {
         return;
     }
 
+    // ownerTgId: tanlangan hodimning tgId ni globalEmployeeList dan topamiz
+    // globalEmployeeList — { tgId: username } object (buildUsernameMap dan)
+    let ownerTgId = telegramId; // default: joriy foydalanuvchi
+    if (typeof globalEmployeeList !== 'undefined') {
+        // globalEmployeeList Object.values() bo'lganligi sababli
+        // tgId ni _MEMO usernameMap dan teskari topamiz
+        const empEntries = typeof window._kvEmpMap !== 'undefined' ? window._kvEmpMap : {};
+        const found = Object.entries(empEntries).find(([id, name]) => name === staffName);
+        if (found) ownerTgId = found[0];
+    }
+
     try {
         const action = rowId ? 'kvadrat_edit' : 'kvadrat_add';
         const data = await apiRequest({
@@ -415,6 +427,7 @@ async function saveKv() {
             orderName,
             totalM2,
             staffName,
+            ownerTgId,   // Backend uchun — hodimlar ro'yxatidan ism olishda ishlatiladi
             month: monthStr,
             year
         });
@@ -458,7 +471,7 @@ async function deleteKv(rowId) {
  */
 async function claimKvWork(rowId, claimType) {
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-    
+
     try {
         const data = await apiRequest({
             action: 'kvadrat_claim',
