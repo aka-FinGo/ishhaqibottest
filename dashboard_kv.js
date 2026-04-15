@@ -270,22 +270,118 @@ async function renderKvDashboardPage() {
             <div style="text-align:center;">
                 <div style="font-size:32px; margin-bottom:12px;">⏳</div>
                 <div style="font-size:14px; color:var(--text-muted);">Yuklanmoqda...</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">Ma'lumotlar serverdan olinmoqda</div>
             </div>
         </div>`;
 
     try {
         if (!kvFullRecords || !kvFullRecords.length) {
-            const data = await apiRequest({ action: 'kvadrat_get_all' });
+            console.log('KV Dashboard: Checking connectivity...');
+            const isOnline = await testConnectivity();
+            if (!isOnline) {
+                throw new Error('Internet aloqasi yo\'q. Wi-Fi yoki mobil internetni tekshiring.');
+            }
+
+            console.log('KV Dashboard: Loading data from server...');
+            const data = await apiRequest({ action: 'kvadrat_get_all' }, { timeoutMs: 30000 });
+            console.log('KV Dashboard: API response received');
+
             if (data && data.success && data.data) {
                 kvFullRecords = data.data;
+                console.log('KV Dashboard: Data loaded successfully, records:', kvFullRecords.length);
+            } else {
+                const errorMsg = data?.error || 'Server muvaffaqiyatsiz javob qaytardi';
+                console.error('KV Dashboard: Server error:', errorMsg);
+                throw new Error(errorMsg);
             }
+        } else {
+            console.log('KV Dashboard: Using cached data, records:', kvFullRecords.length);
         }
     } catch (e) {
-        container.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Ma'lumot yuklab bo'lmadi</p></div>`;
+        console.error('KV Dashboard: Error loading data:', e);
+
+        // Determine error type and provide helpful message
+        let errorTitle = 'Ma\'lumot yuklab bo\'lmadi';
+        let errorDetails = '';
+        let canRetry = true;
+
+        if (e.message.includes('Internet aloqasi yo\'q')) {
+            errorTitle = 'Internet yo\'q';
+            errorDetails = 'Internet bilan bog\'lanish yo\'q. Wi-Fi yoki mobil internetni yoqing.';
+        } else if (e.message.includes('vaqti tugadi') || e.message.includes('timeout') || e.message.includes('tugadi')) {
+            errorTitle = 'Vaqt tugadi';
+            errorDetails = 'Server juda sekin javob berdi. Internet tezligini tekshiring.';
+        } else if (e.message.includes('NetworkError') || e.message.includes('fetch')) {
+            errorTitle = 'Tarmoq xatosi';
+            errorDetails = 'Internet bilan bog\'lanishda muammo. Wi-Fi yoki mobil internetni tekshiring.';
+        } else if (e.message.includes('HTTP')) {
+            errorTitle = 'Server xatosi';
+            errorDetails = 'Server vaqtincha ishlamayapti. Keyinroq urinib ko\'ring.';
+            canRetry = false;
+        } else if (e.message.includes('CORS') || e.message.includes('Access')) {
+            errorTitle = 'Kirish cheklovi';
+            errorDetails = 'Brauzerda kirish cheklovi. Boshqa brauzerda yoki incognito rejimda urinib ko\'ring.';
+        }
+
+        // Show error with retry option
+        let buttonsHtml = '';
+        if (canRetry) {
+            buttonsHtml = '<button class="btn-main" onclick="renderKvDashboardPage()" style="padding:12px 24px; font-size:14px; margin-right:8px;">🔄 Qayta urinish</button>' +
+                         '<button class="btn-secondary" onclick="showKvDashboardHelp()" style="padding:12px 24px; font-size:14px;">❓ Yordam</button>';
+        } else {
+            buttonsHtml = '<button class="btn-secondary" onclick="switchTab(\'kvadratTab\', \'nav-kv\')" style="padding:12px 24px; font-size:14px;">📐 Ro\'yxatga qaytish</button>';
+        }
+
+        container.innerHTML = '<div class="empty-state">' +
+            '<div style="text-align:center; padding:40px;">' +
+                '<div style="font-size:48px; margin-bottom:16px;">❌</div>' +
+                '<div style="font-size:16px; font-weight:600; color:var(--red); margin-bottom:8px;">' + errorTitle + '</div>' +
+                '<div style="font-size:12px; color:var(--text-muted); margin-bottom:20px; max-width:350px; margin-left:auto; margin-right:auto;">' +
+                    escapeHtml(errorDetails || e.message || 'Noma\'lum xato yuz berdi.') +
+                '</div>' +
+                buttonsHtml +
+            '</div>' +
+        '</div>';
         return;
     }
 
     renderKvDashboard(container);
+}
+
+// Help function for dashboard errors
+function showKvDashboardHelp() {
+    const helpHtml = `
+        <div style="text-align:left; max-width:400px; margin:0 auto; font-size:14px; line-height:1.5;">
+            <h3 style="color:var(--navy); margin-bottom:12px;">🔧 Muammo hal qilish</h3>
+            <ul style="padding-left:20px;">
+                <li><b>Internet tekshiring:</b> Wi-Fi yoki mobil internet ishlayotganini tekshiring</li>
+                <li><b>Vaqtni kutib turing:</b> Server vaqtincha band bo'lishi mumkin</li>
+                <li><b>Brauzerni yangilang:</b> Ctrl+F5 bosib sahifani to'liq yangilang</li>
+                <li><b>Incognito rejim:</b> Yangi incognito oynada ochib ko'ring</li>
+                <li><b>Boshqa brauzer:</b> Chrome, Firefox yoki Edge'da urinib ko'ring</li>
+            </ul>
+            <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">
+                Agar muammo davom etsa, admin bilan bog'laning.
+            </p>
+        </div>
+    `;
+
+    // Simple alert for now, could be improved with a modal
+    alert('Yordam:\n\n1. Internet aloqasini tekshiring\n2. Bir necha daqiqa kutib qayta urining\n3. Brauzerni yangilang (Ctrl+F5)\n4. Incognito rejimda oching\n5. Boshqa brauzerda sinab ko\'ring\n\nAgar muammo davom etsa, admin bilan bog\'laning.');
+}
+
+// Test basic connectivity
+async function testConnectivity() {
+    try {
+        const response = await fetch('https://www.google.com/favicon.ico', {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-cache'
+        });
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 // Remove closeKvDashboard function since we're using separate page now
@@ -350,7 +446,12 @@ function renderKvDashboard(body) {
 
     // ── HTML ──────────────────────────────────────────────────
     body.innerHTML = `
-    <div class="dash-role-badge kv">📐 Kvadratlar Dashboard</div>
+    <div class="dash-role-badge kv">
+        📐 Kvadratlar Dashboard
+        <button class="btn-secondary" onclick="renderKvDashboardPage()" style="margin-left:auto; padding:4px 12px; font-size:11px; border-radius:12px;" title="Yangilash">
+            🔄
+        </button>
+    </div>
 
     ${kvSecTitle('📊 Umumiy Statistikalar')}
     <div class="dash-stats-grid">
