@@ -59,8 +59,40 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     padding-top: 4px;
+}
+
+.page-switcher {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.page-switcher-btn {
+    flex: 1;
+    min-width: 120px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--navy);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, color .2s, border-color .2s, transform .15s;
+}
+
+.page-switcher-btn:hover {
+    background: rgba(16,185,129,0.08);
+    border-color: var(--green);
+}
+
+.page-switcher-btn.active {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    border-color: transparent;
 }
 
 .page-header h2 {

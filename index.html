@@ -242,6 +242,10 @@
             <h2>📈 Dashboard</h2>
             <div class="header-avatar">📊</div>
         </div>
+        <div class="page-switcher">
+            <button class="page-switcher-btn active">Dashboard</button>
+            <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Kvadratlar</button>
+        </div>
 
         <div class="sub-tabs hidden" id="dashboardNav">
             <button class="sub-btn dash-sub-btn active" id="dashNavActions" onclick="switchDashboardSub('dashboardActionsArea',this)">📋 Amallar</button>
@@ -303,6 +307,10 @@
                 <div class="header-avatar">📐</div>
             </div>
         </div>
+        <div class="page-switcher">
+            <button class="page-switcher-btn" onclick="switchTab('dashboardTab','nav-dashboard')">Dashboard</button>
+            <button class="page-switcher-btn active">Kvadratlar</button>
+        </div>
 
         <div class="stats-grid">
             <div class="stat-card" style="background:var(--navy);color:#fff;grid-column:1/-1;">
@@ -342,7 +350,11 @@
             </div>
             <div class="header-avatar">📈</div>
         </div>
-        <div id="kvDashboardMainBody" style="padding:15px; background:#F1F5F9; min-height:calc(100vh - 180px);">
+        <div class="page-switcher">
+            <button class="page-switcher-btn active" onclick="switchTab('dashboardTab','nav-dashboard')">Dashboard</button>
+            <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Kvadratlar</button>
+        </div>
+        <div id="kvDashboardMainBody" style="padding:15px; background:#F1F5F9; min-height:calc(100vh - 220px);">
             <!-- Dashboard content will be rendered by dashboard_kv.js -->
         </div>
     </div>
