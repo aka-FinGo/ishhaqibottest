@@ -19,6 +19,48 @@ function kvMonthLabel(monthStr) {
     return (num >= 1 && num <= 12) ? KV_MONTHS_UZ[num] : (clean || '—');
 }
 
+/* ========== PROCESSING HELPERS ========== */
+let activeKvProc = null;
+
+function kvShowProc(msg) {
+    if (activeKvProc) kvHideProc();
+    const toast = document.createElement('div');
+    toast.className = 'kv-proc-toast';
+    toast.innerHTML = `<div class="kv-spinner"></div><span>${escapeHtml(msg)}</span>`;
+    document.body.appendChild(toast);
+    activeKvProc = toast;
+}
+
+function kvHideProc(isSuccess = null, finalMsg = null) {
+    if (!activeKvProc) return;
+    const toast = activeKvProc;
+    activeKvProc = null;
+
+    if (isSuccess !== null) {
+        toast.innerHTML = `<span>${isSuccess ? '✅' : '❌'}</span><span>${escapeHtml(finalMsg || (isSuccess ? 'Bajarildi' : 'Xatolik'))}</span>`;
+        toast.classList.add(isSuccess ? 'success' : 'error');
+        setTimeout(() => {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300);
+        }, 1500);
+    } else {
+        toast.remove();
+    }
+}
+
+async function kvRefreshAll(btn) {
+    if (btn) btn.classList.add('spinning');
+    kvShowProc('Ma\'lumotlar yangilanmoqda...');
+    try {
+        await initKvadratTab();
+        kvHideProc(true, 'Yangilandi');
+    } catch (e) {
+        kvHideProc(false, 'Yangilashda xato');
+    } finally {
+        if (btn) btn.classList.remove('spinning');
+    }
+}
+
 /**
  * Populates staff dropdowns and basic filters.
  */
@@ -46,7 +88,6 @@ function populateKvadratMeta(staffList) {
         });
     }
 
-    // Populate years for kvFilterYear
     const yearSel = document.getElementById('kvFilterYear');
     if (yearSel) {
         const currentYear = new Date().getFullYear();
@@ -58,8 +99,6 @@ function populateKvadratMeta(staffList) {
             yearSel.appendChild(opt);
         }
     }
-
-    // Populate month/year in add modal
     _initKvFormYears();
 }
 
@@ -78,7 +117,6 @@ function _initKvFormYears() {
             yearEl.appendChild(opt);
         }
     }
-
     const monthEl = document.getElementById('kvActionMonth');
     if (monthEl) monthEl.value = curMonth;
 }
@@ -89,10 +127,27 @@ function _initKvFormYears() {
 async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
+    
+    // Skeleton table rows
     listContainer.innerHTML = `
-        <div class="skeleton skeleton-item"></div>
-        <div class="skeleton skeleton-item"></div>
-        <div class="skeleton skeleton-item"></div>`;
+    <div class="kv-table-wrap">
+        <table class="kv-table">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>ID</th>
+                    <th>Oy</th>
+                    <th>m²</th>
+                    <th>Buyurtma nomi / Mijoz</th>
+                    <th>Hodim</th>
+                    <th>ST</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${Array(5).fill('<tr><td colspan="7"><div class="skeleton" style="height:25px; margin:5px 0;"></div></td></tr>').join('')}
+            </tbody>
+        </table>
+    </div>`;
 
     try {
         const data = await apiRequest({ action: 'kvadrat_get_all' });
@@ -104,20 +159,14 @@ async function initKvadratTab() {
         }
     } catch (e) {
         console.error("initKvadratTab error:", e);
-        const listEl = document.getElementById('kvList');
-        if (listEl) listEl.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
+        listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
     }
-
     updateKvFabVisibility();
 }
 
-/**
- * Shows/hides "+" button for Kvadrat Tab based on Loyihachi position.
- */
 function updateKvFabVisibility() {
     const fab = document.getElementById('nav-add');
     if (!fab) return;
-
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab && activeTab.id === 'kvadratTab') {
         const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
@@ -127,7 +176,6 @@ function updateKvFabVisibility() {
         fab.style.opacity = isLoyihachi ? '1' : '0';
         fab.style.transition = 'opacity 0.2s';
     } else {
-        // Normal behavior for other tabs where FAB goes to addTab
         fab.style.visibility = 'visible';
         fab.style.pointerEvents = 'auto';
         fab.style.opacity = '1';
@@ -135,7 +183,7 @@ function updateKvFabVisibility() {
 }
 
 /**
- * Renders the filtered list of measurements.
+ * Renders the filtered list of measurements as a table.
  */
 function renderKvList() {
     const container = document.getElementById('kvList');
@@ -153,78 +201,62 @@ function renderKvList() {
     }
 
     let totalM2 = 0;
-    let html = '';
+    let rowsHtml = '';
+    let lastDate = '';
 
     kvFilteredRecords.forEach((rec, idx) => {
         totalM2 += Number(rec.totalM2) || 0;
 
-        const isOwner = String(rec.ownerTgId) === String(telegramId);
-        const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
-
-        const monthLabel = kvMonthLabel(rec.month);
-        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
-
-        // Status colors & labels based on dynamic config
-        let statusHtml = '';
-        const status = rec.status || 'yangi';
-        const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
-        const stepMatch = config.find(s => s.status === status);
-
-        let badgeColor = 'b-yellow'; // default
-        if (status === 'yangi') badgeColor = 'b-yellow';
-        else if (status.indexOf('yigi') !== -1) badgeColor = 'b-blue';
-        else if (status.indexOf('tayyor') !== -1 || status.indexOf('landi') !== -1) badgeColor = 'b-green';
-
-        statusHtml = `<span class="kv-badge ${badgeColor}">${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span>`;
-
-        // Quick action button logic (DYNAMIC)
-        let actionBtn = '';
-        const myPoss = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
-        const currentStepIdx = Number(rec.currentStep) || 1;
-        const nextStep = config.find(s => s.index === currentStepIdx + 1);
-
-        if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
-            let btnClass = 'b-blue';
-            if (nextStep.status.indexOf('tayyor') !== -1 || nextStep.status.indexOf('landi') !== -1) btnClass = 'b-green';
-            actionBtn = `<button class="kv-claim-btn ${btnClass}" onclick="event.stopPropagation();claimKvWork(${rec.rowId})">${escapeHtml(nextStep.action)}</button>`;
+        // Group by Date rows
+        if (rec.date !== lastDate) {
+            rowsHtml += `<tr class="kv-date-row"><td colspan="7">📅 ${escapeHtml(rec.date)}</td></tr>`;
+            lastDate = rec.date;
         }
 
-        html += `
-        <div class="history-item kv-item" onclick="showKvDetailModal(${idx})" style="cursor:pointer;">
-            <div class="item-header">
-                <span class="item-name" style="display:flex;align-items:center;gap:6px;">
-                    <span style="background:#EFF6FF;color:#1D4ED8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">
-                        №${rec.no || '—'}
-                    </span>
-                    ${statusHtml}
-                </span>
-                <span class="item-date">📅 ${escapeHtml(rec.date || '—')}</span>
-            </div>
-            <div style="font-size:15px;font-weight:700;color:var(--navy);margin:6px 0 4px;">
-                📌 ${escapeHtml(rec.orderName || '—')}
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-size:13px;color:var(--text-muted);">👤 ${escapeHtml(rec.staffName || '—')}</span>
-                <div style="display:flex; align-items:center; gap:8px;">
-                     ${actionBtn}
-                     <span style="background:#0F172A;color:#fff;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:800;">
-                        ${m2Val} m²
-                     </span>
-                </div>
-            </div>
-            <div class="item-edit-hint">→ batafsil tarix</div>
-        </div>`;
+        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        const monthClean = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
+        
+        // Status indicator
+        const status = rec.status || 'yangi';
+        let stIcon = '🟡';
+        if (status.indexOf('yigi') !== -1) stIcon = '🔵';
+        else if (status.indexOf('tayyor') !== -1 || status.indexOf('landi') !== -1) stIcon = '🟢';
+
+        rowsHtml += `
+        <tr class="kv-data-row" onclick="showKvDetailModal(${idx})">
+            <td class="kv-col-seq">${idx + 1}</td>
+            <td class="kv-col-no">${rec.no || '—'}</td>
+            <td class="kv-col-oy">${monthClean || '—'}</td>
+            <td class="kv-col-m2">${m2Val}</td>
+            <td class="kv-col-name">${escapeHtml(rec.orderName || '—')}</td>
+            <td class="kv-col-hodim"><span class="kv-worker-chip" style="background:#F1F5F9; color:#475569;">${escapeHtml(rec.staffName || '—')}</span></td>
+            <td class="kv-col-st" title="${escapeHtml(status)}">${stIcon}</td>
+        </tr>`;
     });
 
-    container.innerHTML = html;
+    container.innerHTML = `
+    <div class="kv-table-wrap">
+        <table class="kv-table">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>ID</th>
+                    <th>Oy</th>
+                    <th style="text-align:right;">m²</th>
+                    <th>Buyurtma nomi / Mijoz</th>
+                    <th>Hodim</th>
+                    <th>ST</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml}
+            </tbody>
+        </table>
+    </div>`;
+
     if (totalDisplay) totalDisplay.innerText = totalM2.toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
-
-    // Render workflow-based worker stats bar
-    if (typeof renderKvWorkerStats === 'function') {
-        renderKvWorkerStats(kvFilteredRecords);
-    }
+    if (typeof renderKvWorkerStats === 'function') renderKvWorkerStats(kvFilteredRecords);
 }
-
 
 /**
  * Show detail modal for a kvadrat record
@@ -234,11 +266,8 @@ function showKvDetailModal(idx) {
     if (!rec) return;
 
     const isOwner = String(rec.ownerTgId) === String(telegramId);
-    const canManage = isOwner || myRole === 'Admin' || myRole === 'SuperAdmin';
-    const monthLabel = kvMonthLabel(rec.month);
     const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
 
-    // Workflow actions in modal (DYNAMIC)
     let claimBtnHtml = '';
     const status = rec.status || 'yangi';
     const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
@@ -250,7 +279,6 @@ function showKvDetailModal(idx) {
         claimBtnHtml = `<button class="btn-main" style="background:var(--navy);margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
-    // Build History View
     let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
@@ -291,7 +319,7 @@ function showKvDetailModal(idx) {
         ${claimBtnHtml}
         
         <div class="admin-actions" style="display:flex; gap:10px; margin-top:10px;">
-            ${myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1;" onclick="closeKvDetailModal();openEditKvModal(${idx})">✏️ Tahrirlash</button>` : ''}
+            ${myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1;" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : ''}
             ${myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; color:var(--red);" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : ''}
         </div>
 
@@ -306,37 +334,27 @@ function closeKvDetailModal() {
     document.getElementById('kvDetailModal').classList.add('hidden');
 }
 
-/**
- * Applies current filters to the full records.
- */
 function applyKvFilters() {
     const month = document.getElementById('kvFilterMonth')?.value || 'all';
     const year = document.getElementById('kvFilterYear')?.value || 'all';
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
 
     kvFilteredRecords = kvFullRecords.filter(rec => {
-        // Month filter: rec.month is "_01", "_02" etc
         if (month !== 'all') {
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             if (cleanMonth !== month) return false;
         }
-        // Year filter: rec.date is "DD/MM/YYYY"
         if (year !== 'all') {
             if (!String(rec.date || '').endsWith(String(year))) return false;
         }
-        // Staff filter
         if (staff !== 'all') {
             if (rec.staffName !== staff) return false;
         }
         return true;
     });
-
-    renderKvList(); // renderKvList internally calls renderKvWorkerStats
+    renderKvList();
 }
 
-/**
- * Open Add/Edit modal
- */
 function openKvModal(rowId = null) {
     const modal = document.getElementById('kvadratModal');
     const title = document.getElementById('kvModalTitle');
@@ -353,13 +371,9 @@ function openKvModal(rowId = null) {
             document.getElementById('kvOrderName').value = rec.orderName || '';
             document.getElementById('kvTotalM2Input').value = rec.totalM2 || '';
             document.getElementById('kvStaffSelect').value = rec.staffName || '';
-
-            // Parse month from rec.month like "_03" → "03"
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             const monthEl = document.getElementById('kvActionMonth');
             if (monthEl && cleanMonth) monthEl.value = cleanMonth.padStart(2, '0');
-
-            // Parse year from rec.date "DD/MM/YYYY"
             const yearEl = document.getElementById('kvActionYear');
             if (yearEl && rec.date) {
                 const parts = String(rec.date).split('/');
@@ -372,15 +386,12 @@ function openKvModal(rowId = null) {
             showToastMsg('❌ Faqat "Loyihachi" buyurtma qo\'sha oladi', true);
             return;
         }
-
         title.innerText = '📐 Yangi o\'lchov kiritish';
-        // Auto-select current user
         if (typeof globalEmployeeList !== 'undefined' && globalEmployeeList.includes(myUsername)) {
             const sel = document.getElementById('kvStaffSelect');
             if (sel) sel.value = myUsername;
         }
     }
-
     modal.classList.remove('hidden');
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 }
@@ -389,10 +400,6 @@ function closeKvModal() {
     document.getElementById('kvadratModal').classList.add('hidden');
 }
 
-/**
- * Save record (Add or Edit)
- * staffName + ownerTgId yuboriladi — backend hodimlar ro'yxatidan ismni tasdiqlaydi.
- */
 async function saveKv() {
     const rowId = document.getElementById('kvRowId').value;
     const orderName = (document.getElementById('kvOrderName').value || '').trim();
@@ -402,97 +409,62 @@ async function saveKv() {
     const year = document.getElementById('kvActionYear')?.value || '';
     const monthStr = (year && month) ? `_${month}` : '';
 
-    if (!orderName) {
-        showToastMsg('❌ Buyurtma nomini kiriting', true);
-        return;
-    }
-    if (totalM2 <= 0) {
-        showToastMsg('❌ m² miqdorini kiriting', true);
-        return;
-    }
-    if (!staffName) {
-        showToastMsg('❌ Hodimni tanlang', true);
+    if (!orderName || totalM2 <= 0 || !staffName) {
+        showToastMsg('❌ Ma\'lumotlarni to\'liq kiriting', true);
         return;
     }
 
-    // ownerTgId: tanlangan hodimning tgId ni globalEmployeeList dan topamiz
-    // globalEmployeeList — { tgId: username } object (buildUsernameMap dan)
-    let ownerTgId = telegramId; // default: joriy foydalanuvchi
-    if (typeof globalEmployeeList !== 'undefined') {
-        // globalEmployeeList Object.values() bo'lganligi sababli
-        // tgId ni _MEMO usernameMap dan teskari topamiz
-        const empEntries = typeof window._kvEmpMap !== 'undefined' ? window._kvEmpMap : {};
-        const found = Object.entries(empEntries).find(([id, name]) => name === staffName);
+    let ownerTgId = telegramId;
+    if (typeof window._kvEmpMap !== 'undefined') {
+        const found = Object.entries(window._kvEmpMap).find(([id, name]) => name === staffName);
         if (found) ownerTgId = found[0];
     }
 
+    kvShowProc('Saqlanmoqda...');
     try {
         const action = rowId ? 'kvadrat_edit' : 'kvadrat_add';
         const data = await apiRequest({
-            action,
-            rowId: rowId || undefined,
-            orderName,
-            totalM2,
-            staffName,
-            ownerTgId,   // Backend uchun — hodimlar ro'yxatidan ism olishda ishlatiladi
-            month: monthStr,
-            year
+            action, rowId: rowId || undefined, orderName, totalM2, staffName, ownerTgId, month: monthStr, year
         });
-
         if (data.success) {
-            showToastMsg('✅ Saqlandi!');
+            kvHideProc(true, 'Saqlandi');
             closeKvModal();
             initKvadratTab();
         } else {
-            showToastMsg('❌ ' + (data.error || 'Saqlashda xato'), true);
+            kvHideProc(false, data.error || 'Saqlashda xato');
         }
     } catch (e) {
-        showToastMsg('❌ Tarmoq xatosi', true);
+        kvHideProc(false, 'Tarmoq xatosi');
     }
 }
 
-/**
- * Delete record
- */
 async function deleteKv(rowId) {
-    if (document.activeElement) document.activeElement.blur();
-    await new Promise(r => setTimeout(r, 50));
-
-    if (!confirm("Ushbu o'lchovni o'chirishga ishonchingiz komilmi?")) return;
-
+    if (!confirm("O'chirishga ishonchingiz komilmi?")) return;
+    kvShowProc('O\'chirilmoqda...');
     try {
         const data = await apiRequest({ action: 'kvadrat_delete', rowId });
         if (data.success) {
-            showToastMsg("✅ O'chirildi");
+            kvHideProc(true, 'O\'chirildi');
             initKvadratTab();
         } else {
-            showToastMsg('❌ ' + (data.error || "O'chirishda xato"), true);
+            kvHideProc(false, data.error || 'Xato');
         }
     } catch (e) {
-        showToastMsg('❌ Tarmoq xatosi', true);
+        kvHideProc(false, 'Tarmoq xatosi');
     }
 }
 
-/**
- * Claims work (Yig'uvchi or Qadoqlovchi)
- */
-async function claimKvWork(rowId, claimType) {
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
+async function claimKvWork(rowId) {
+    kvShowProc('Bajarilmoqda...');
     try {
-        const data = await apiRequest({
-            action: 'kvadrat_claim',
-            rowId,
-            claimType
-        });
-
+        const data = await apiRequest({ action: 'kvadrat_claim', rowId });
         if (data.success) {
-            showToastMsg('✅ Muvaffaqiyatli belgilandi!');
+            kvHideProc(true, 'Bajarildi!');
             initKvadratTab();
         } else {
-            showToastMsg('❌ ' + (data.error || 'Xato yuz berdi'), true);
+            kvHideProc(false, data.error || 'Xato');
         }
     } catch (e) {
-        showToastMsg('❌ Tarmoq xatosi', true);
+        kvHideProc(false, 'Tarmoq xatosi');
     }
 }
