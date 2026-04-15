@@ -103,8 +103,9 @@ async function initKvadratTab() {
             listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
         }
     } catch (e) {
+        console.error("initKvadratTab error:", e);
         const listEl = document.getElementById('kvList');
-        if (listEl) listEl.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi</p></div>`;
+        if (listEl) listEl.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
     }
 
     updateKvFabVisibility();
