@@ -2,6 +2,7 @@
 // dashboard_kv.js — Kvadratlar Dashboard Logic
 // ============================================================
 
+let kvFullRecords = []; // Global records cache
 let kvChartStatus = null;
 let kvChartTrends = null;
 let kvChartSteps = null;
