@@ -392,7 +392,12 @@ function applyKvFilters() {
             if (!staffMatch && Array.isArray(rec.logs)) {
                 var logNames = rec.logs.map(function(log) {
                     if (!log || !log.uid) return '';
+                    if (String(log.uid) === String(rec.ownerTgId)) return rec.staffName;
                     var mapped = (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)]) || '';
+                    if (!mapped && typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
+                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                        if (emp) mapped = emp.username;
+                    }
                     return mapped || String(log.uid);
                 });
                 staffMatch = logNames.some(function(name) { return name === staff; });

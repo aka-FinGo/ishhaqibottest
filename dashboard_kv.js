@@ -122,15 +122,21 @@ function kvMkLine(id, labels, datasets) {
  * Resolves a Telegram UID to a display name.
  * Uses window._kvEmpMap {tgId: username} for reverse lookup.
  */
-function _resolveKvName(uid, fallbackStaffName) {
-    if (!uid) return fallbackStaffName || "Noma'lum";
+function _resolveKvName(uid, rec) {
+    if (!uid) return (rec && rec.staffName) ? rec.staffName : "Noma'lum";
     const map = window._kvEmpMap || {};
     if (map[uid]) return map[uid];
-    // Check globalEmployeeList array
+    
     if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-        // Can't reverse-lookup from array of names, so fall back
+        const emp = globalEmployeeList.find(e => String(e.tgId) === String(uid));
+        if (emp && emp.username) return emp.username;
     }
-    return fallbackStaffName || String(uid);
+    
+    if (rec && rec.ownerTgId && String(uid) === String(rec.ownerTgId)) {
+        return rec.staffName;
+    }
+    
+    return String(uid);
 }
 
 /**
@@ -156,7 +162,7 @@ function _aggregateWorkerM2(records) {
         logs.forEach(log => {
             const uid = String(log.uid || '').trim();
             if (!uid) return;
-            const name = _resolveKvName(uid, rec.staffName);
+            const name = _resolveKvName(uid, rec);
             if (credited.has(name)) return;
             credited.add(name);
             workerM2[name] = (workerM2[name] || 0) + m2;
