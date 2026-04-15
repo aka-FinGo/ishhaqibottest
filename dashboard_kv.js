@@ -4,6 +4,118 @@
 
 let kvChartStatus = null;
 let kvChartTrends = null;
+let kvChartSteps = null;
+let kvChartWorkers = null;
+
+const _kvCharts = {};
+function destroyKvChart(id) { if (_kvCharts[id]) { _kvCharts[id].destroy(); delete _kvCharts[id]; } }
+
+const KV_MONTHS_UZ = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
+const KV_PALETTE   = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+
+const KV_BF = { family: "'Plus Jakarta Sans',sans-serif" };
+const KV_TC = { font: { ...KV_BF, size: 11 }, color: '#64748B' };
+const KV_TU = { callbacks: { label: c => ` ${c.dataset.label || ''}: ${Number(c.raw).toLocaleString()} m²` } };
+const KV_tickCb = v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v;
+
+// Helper functions for pro dashboard
+function kvSCard(icon, label, val, sub = '', ac = '') {
+    return `<div class="dash-stat-card" style="${ac ? 'border-top:3px solid ' + ac : ''}">
+        <div class="dash-stat-icon">${icon}</div>
+        <div class="dash-stat-body">
+            <div class="dash-stat-label">${label}</div>
+            <div class="dash-stat-value">${val}</div>
+            ${sub ? `<div class="dash-stat-sub">${sub}</div>` : ''}
+        </div></div>`;
+}
+
+function kvCCard(title, id, h = 220) {
+    return `<div class="dash-chart-card">
+        <div class="dash-chart-title">${title}</div>
+        <div style="position:relative;height:${h}px;"><canvas id="${id}"></canvas></div>
+    </div>`;
+}
+
+function kvSecTitle(t) { return `<div class="dash-section-title">${t}</div>`; }
+
+function kvMkDonut(id, labels, vals, colors) {
+    destroyKvChart(id);
+    const ctx = document.getElementById(id); if (!ctx) return;
+    const total = vals.reduce((s, v) => s + v, 0);
+    if (!total) return;
+    _kvCharts[id] = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 8 }] },
+        options: {
+            cutout: '70%',
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 14, font: { ...KV_BF, size: 11, weight: '600' }, color: '#334155', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
+                tooltip: { callbacks: { label: c => ` ${c.label}: ${Number(c.raw).toLocaleString()} ta` } }
+            }
+        }
+    });
+}
+
+function kvMkBar(id, labels, datasets, stacked = false) {
+    destroyKvChart(id);
+    const ctx = document.getElementById(id); if (!ctx) return;
+    _kvCharts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 800, easing: 'easeOutQuart' },
+            scales: {
+                x: { stacked, grid: { display: false }, ticks: KV_TC },
+                y: { stacked, grid: { color: '#F1F5F9' }, ticks: { ...KV_TC, callback: KV_tickCb } }
+            },
+            plugins: {
+                legend: { display: datasets.length > 1, labels: { font: { ...KV_BF, size: 11 }, color: '#334155', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
+                tooltip: KV_TU
+            }
+        }
+    });
+}
+
+function kvMkHBar(id, labels, vals, colors) {
+    destroyKvChart(id);
+    const ctx = document.getElementById(id); if (!ctx) return;
+    _kvCharts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderRadius: 6, borderSkipped: 'start' }] },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            animation: { duration: 800, easing: 'easeOutQuart' },
+            scales: {
+                x: { grid: { color: '#F1F5F9' }, ticks: { ...KV_TC, callback: KV_tickCb } },
+                y: { grid: { display: false }, ticks: { font: { ...KV_BF, size: 12, weight: '600' }, color: '#0F172A' } }
+            },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${Number(c.raw).toLocaleString()} m²` } } }
+        }
+    });
+}
+
+function kvMkLine(id, labels, datasets) {
+    destroyKvChart(id);
+    const ctx = document.getElementById(id); if (!ctx) return;
+    _kvCharts[id] = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            scales: {
+                x: { grid: { display: false }, ticks: KV_TC },
+                y: { grid: { color: '#F1F5F9' }, ticks: { ...KV_TC, callback: KV_tickCb } }
+            },
+            plugins: {
+                legend: { display: datasets.length > 1, labels: { font: { ...KV_BF, size: 11 }, color: '#334155', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
+                tooltip: KV_TU
+            }
+        }
+    });
+}
 
 /**
  * Resolves a Telegram UID to a display name.
@@ -228,104 +340,47 @@ function renderKvDashboard(body) {
         .filter(([k]) => k.indexOf('tayyor') !== -1 || k.indexOf('landi') !== -1)
         .reduce((s, [, v]) => s + v, 0);
 
+    // Additional metrics
+    const avgM2PerOrder = kvFullRecords.length ? (totalM2 / kvFullRecords.length).toFixed(1) : 0;
+    const topMonth = Object.entries(monthlyM2).sort((a, b) => b[1] - a[1])[0];
+    const topMonthLabel = topMonth ? (() => {
+        const [y, m] = topMonth[0].split('-');
+        return `${KV_MONTHS_UZ[parseInt(m) - 1]} ${y}`;
+    })() : '—';
+
     // ── HTML ──────────────────────────────────────────────────
     body.innerHTML = `
-    <!-- Quick Stats -->
-    <div class="stats-grid" style="margin-bottom:14px;">
-        <div class="stat-card" style="background:#fff; border:1px solid var(--border);">
-            <div class="stat-label">Jami buyurtma</div>
-            <div class="stat-value" style="color:var(--navy); font-size:26px;">${kvFullRecords.length}</div>
-        </div>
-        <div class="stat-card" style="background:#fff; border:1px solid var(--border);">
-            <div class="stat-label">Jami m²</div>
-            <div class="stat-value" style="color:var(--navy); font-size:22px;">${totalM2.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²</div>
-        </div>
+    <div class="dash-role-badge kv">📐 Kvadratlar Dashboard</div>
+
+    ${kvSecTitle('📊 Umumiy Statistikalar')}
+    <div class="dash-stats-grid">
+        ${kvSCard('📦', 'Jami Buyurtma', kvFullRecords.length + ' ta', '', '#10B981')}
+        ${kvSCard('📏', 'Jami m²', totalM2.toLocaleString('uz-UZ', {maximumFractionDigits:1}) + ' m²', '', '#3B82F6')}
+        ${kvSCard('📈', 'O\'rtacha m²/buyurtma', avgM2PerOrder + ' m²', '', '#F59E0B')}
+        ${kvSCard('🏆', 'Eng Faol Oy', topMonthLabel, '', '#EC4899')}
     </div>
 
-    <div class="stats-grid" style="margin-bottom:14px;">
-        <div class="stat-card" style="background:#DCFCE7; border:1px solid #BBF7D0;">
-            <div class="stat-label" style="color:#166534;">Yakunlangan</div>
-            <div class="stat-value" style="color:#15803D; font-size:26px;">✅ ${completed}</div>
-        </div>
-        <div class="stat-card" style="background:#FEF9C3; border:1px solid #FDE68A;">
-            <div class="stat-label" style="color:#854D0E;">Jarayonda</div>
-            <div class="stat-value" style="color:#92400E; font-size:26px;">⏳ ${kvFullRecords.length - completed}</div>
-        </div>
+    <div class="dash-stats-grid" style="margin-bottom:14px;">
+        ${kvSCard('✅', 'Yakunlangan', completed + ' ta', '', '#10B981')}
+        ${kvSCard('⏳', 'Jarayonda', (kvFullRecords.length - completed) + ' ta', '', '#F59E0B')}
     </div>
 
-    <!-- Status Pie Chart -->
-    <div class="card" style="margin-bottom:14px; padding:14px; background:#fff; border:1px solid var(--border);">
-        <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:12px;">📊 Holat bo'yicha taqsimot</div>
-        <div style="height:190px; display:flex; justify-content:center;">
-            <canvas id="kvDashChartStatus"></canvas>
-        </div>
+    ${kvCCard('📊 Holat bo\'yicha taqsimot', 'kvDashChartStatus', 200)}
+    ${kvCCard('🔄 Ish oqimi bosqichlari', 'kvDashChartSteps', 200)}
+    ${kvCCard('📈 Oylik dinamika (m²)', 'kvDashChartTrends', 220)}
+
+    ${kvSecTitle('🏆 Hodimlar Samaradorligi')}
+    <div class="dash-stats-grid">
+        ${kvSCard('👥', 'Faol Hodimlar', Object.keys(workerM2).length + ' nafar', '', '#8B5CF6')}
+        ${kvSCard('📐', 'Jami Ish m²', workerGrandTotal.toLocaleString('uz-UZ', {maximumFractionDigits:1}) + ' m²', 'Barcha qatnashuvchilar', '#14B8A6')}
     </div>
-
-    <!-- Workflow Step Distribution -->
-    <div class="card" style="margin-bottom:14px; padding:14px; background:#fff; border:1px solid var(--border);">
-        <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:12px;">🔄 Ish oqimi bosqichlari</div>
-        <div style="height:190px; display:flex; justify-content:center;">
-            <canvas id="kvDashChartSteps"></canvas>
-        </div>
-    </div>
-
-    <!-- Monthly Trend Chart -->
-    <div class="card" style="margin-bottom:14px; padding:14px; background:#fff; border:1px solid var(--border);">
-        <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:12px;">📈 Oylik dinamika (m²)</div>
-        <div style="height:200px;">
-            <canvas id="kvDashChartTrends"></canvas>
-        </div>
-    </div>
-
-    <!-- Worker Stats (by workflow participation) -->
-    <div class="card" style="padding:14px; background:#fff; border:1px solid var(--border); margin-bottom:14px;">
-        <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:4px;">🏆 Xodimlar samaradorligi</div>
-        <div style="font-size:11px; color:var(--text-muted); margin-bottom:14px;">Ish oqimida qatnashgan har bir hodimga buyurtma m² hisoblanadi</div>
-        <div id="kvDashStaffRanking"></div>
-    </div>
-
-    <!-- Worker Comparison Chart -->
-    <div class="card" style="padding:14px; background:#fff; border:1px solid var(--border); margin-bottom:20px;">
-        <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:12px;">📐 Hodimlar taqqoslash (m²)</div>
-        <div style="height:220px;">
-            <canvas id="kvDashChartWorkers"></canvas>
-        </div>
-    </div>`;
-
-    // ── Staff Ranking ─────────────────────────────────────────
-    const rankEl = document.getElementById('kvDashStaffRanking');
-    if (rankEl) {
-        const sorted = Object.entries(workerM2).sort((a, b) => b[1] - a[1]);
-        const maxM2 = sorted.length ? sorted[0][1] : 1;
-        rankEl.innerHTML = sorted.map(([name, val], i) => {
-            const pct = maxM2 > 0 ? Math.round(val / maxM2 * 100) : 0;
-            const orders = workerOrders[name] || 0;
-            const medals = ['🥇', '🥈', '🥉'];
-            const icon = medals[i] || `${i+1}.`;
-            return `
-            <div style="margin-bottom:14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:4px;">
-                    <span style="font-weight:700; color:var(--navy);">${icon} ${escapeHtml(name)}</span>
-                    <span style="font-weight:800; color:var(--navy);">
-                        ${val.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²
-                        <span style="color:var(--text-muted); font-size:11px; font-weight:500;">(${orders} ta)</span>
-                    </span>
-                </div>
-                <div style="height:8px; background:#E2E8F0; border-radius:10px; overflow:hidden;">
-                    <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, #0F172A, #3B82F6); border-radius:10px; transition:width .5s;"></div>
-                </div>
-            </div>`;
-        }).join('') || '<p style="font-size:12px; color:var(--text-muted);">Ma\'lumot yo\'q</p>';
-    }
+    ${kvCCard('🏅 Top Hodimlar (m²)', 'kvDashChartWorkers', Math.max(200, Object.keys(workerM2).length * 50))}`;
 
     // ── Charts ────────────────────────────────────────────────
-    setTimeout(() => _renderKvCharts(statusCounts, monthlyM2, workerM2), 80);
+    setTimeout(() => _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts), 80);
 }
 
-function _renderKvCharts(statusCounts, monthlyM2, workerM2) {
-    if (kvChartStatus) { kvChartStatus.destroy(); kvChartStatus = null; }
-    if (kvChartTrends) { kvChartTrends.destroy(); kvChartTrends = null; }
-
+function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
     const STATUS_COLORS = { 'yangi': '#FACC15', 'tayyor': '#22C55E' };
     const DEFAULT_COLORS = ['#3B82F6','#22C55E','#FACC15','#F97316','#8B5CF6','#EC4899','#94A3B8'];
 
@@ -341,94 +396,10 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2) {
             return DEFAULT_COLORS[i % DEFAULT_COLORS.length];
         });
 
-        kvChartStatus = new Chart(ctxStatus, {
-            type: 'doughnut',
-            data: {
-                labels,
-                datasets: [{ data: Object.values(statusCounts), backgroundColor: bgColors, borderWidth: 0, hoverOffset: 6 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
-                    tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} ta` } }
-                }
-            }
-        });
+        kvMkDonut('kvDashChartStatus', labels, Object.values(statusCounts), bgColors);
     }
 
-    // 2. Bar — Monthly m²
-    const ctxTrends = document.getElementById('kvDashChartTrends');
-    if (ctxTrends && typeof Chart !== 'undefined') {
-        const MONTH_SHORT = ['', 'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyu', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
-        const sortedKeys = Object.keys(monthlyM2).sort();
-        const labels = sortedKeys.map(k => {
-            const [y, mm] = k.split('-');
-            return (MONTH_SHORT[parseInt(mm)] || mm) + " '" + (y || '').slice(2);
-        });
-
-        kvChartTrends = new Chart(ctxTrends, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'm²',
-                    data: sortedKeys.map(k => parseFloat(monthlyM2[k].toFixed(1))),
-                    backgroundColor: 'rgba(15,23,42,0.82)',
-                    borderRadius: 6,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // 3. Horizontal Bar — Worker comparison
-    const ctxWorkers = document.getElementById('kvDashChartWorkers');
-    if (ctxWorkers && typeof Chart !== 'undefined' && workerM2) {
-        const sorted = Object.entries(workerM2).sort((a, b) => b[1] - a[1]).slice(0, 8);
-        const WORKER_COLORS = ['#0F172A','#1E40AF','#7C3AED','#DB2777','#EA580C','#059669','#CA8A04','#475569'];
-
-        // Destroy previous if exists
-        const prevChart = Chart.getChart(ctxWorkers);
-        if (prevChart) prevChart.destroy();
-
-        new Chart(ctxWorkers, {
-            type: 'bar',
-            data: {
-                labels: sorted.map(([n]) => n.length > 12 ? n.slice(0,11) + '…' : n),
-                datasets: [{
-                    label: 'm²',
-                    data: sorted.map(([, v]) => parseFloat(v.toFixed(1))),
-                    backgroundColor: sorted.map((_, i) => WORKER_COLORS[i % WORKER_COLORS.length]),
-                    borderRadius: 4,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 } } },
-                    y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' } } }
-                },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // 4. Doughnut — Workflow Steps
+    // 2. Doughnut — Workflow Steps
     const ctxSteps = document.getElementById('kvDashChartSteps');
     if (ctxSteps && typeof Chart !== 'undefined') {
         const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
@@ -446,24 +417,34 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2) {
             return colors.bg;
         });
 
-        const prevChart = Chart.getChart(ctxSteps);
-        if (prevChart) prevChart.destroy();
+        kvMkDonut('kvDashChartSteps', labels, Object.values(stepCounts), bgColors);
+    }
 
-        new Chart(ctxSteps, {
-            type: 'doughnut',
-            data: {
-                labels,
-                datasets: [{ data: Object.values(stepCounts), backgroundColor: bgColors, borderWidth: 0, hoverOffset: 6 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
-                    tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} ta` } }
-                }
-            }
+    // 3. Bar — Monthly m²
+    const ctxTrends = document.getElementById('kvDashChartTrends');
+    if (ctxTrends && typeof Chart !== 'undefined') {
+        const MONTH_SHORT = ['', 'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyu', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+        const sortedKeys = Object.keys(monthlyM2).sort();
+        const labels = sortedKeys.map(k => {
+            const [y, mm] = k.split('-');
+            return (MONTH_SHORT[parseInt(mm)] || mm) + " '" + (y || '').slice(2);
         });
+
+        kvMkBar('kvDashChartTrends', labels, [{
+            label: 'm²',
+            data: sortedKeys.map(k => parseFloat(monthlyM2[k].toFixed(1))),
+            backgroundColor: 'rgba(15,23,42,0.82)',
+            borderRadius: 6,
+            borderSkipped: false
+        }]);
+    }
+
+    // 4. Horizontal Bar — Worker comparison
+    const ctxWorkers = document.getElementById('kvDashChartWorkers');
+    if (ctxWorkers && typeof Chart !== 'undefined' && workerM2) {
+        const sorted = Object.entries(workerM2).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        const WORKER_COLORS = ['#0F172A','#1E40AF','#7C3AED','#DB2777','#EA580C','#059669','#CA8A04','#475569'];
+
+        kvMkHBar('kvDashChartWorkers', sorted.map(([n]) => n.length > 12 ? n.slice(0,11) + '…' : n), sorted.map(([, v]) => parseFloat(v.toFixed(1))), sorted.map((_, i) => WORKER_COLORS[i % WORKER_COLORS.length]));
     }
 }

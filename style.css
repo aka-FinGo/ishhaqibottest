@@ -810,6 +810,7 @@ textarea { resize: vertical; min-height: 80px; }
 .dash-role-badge.user    { background:#ECFDF5; color:#065F46; }
 .dash-role-badge.admin   { background:#EFF6FF; color:#1D4ED8; }
 .dash-role-badge.boss    { background:#FFF7ED; color:#92400E; }
+.dash-role-badge.kv      { background:#F0F9FF; color:#0C4A6E; }
 
 /* Section title */
 .dash-section-title {
