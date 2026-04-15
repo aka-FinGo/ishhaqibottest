@@ -135,16 +135,14 @@ async function initKvadratTab() {
             <thead>
                 <tr>
                     <th>№</th>
-                    <th>ID</th>
+                    <th>Buyurtma №</th>
                     <th>Oy</th>
                     <th>m²</th>
-                    <th>Buyurtma nomi / Mijoz</th>
-                    <th>Hodim</th>
                     <th>ST</th>
                 </tr>
             </thead>
             <tbody>
-                ${Array(5).fill('<tr><td colspan="7"><div class="skeleton" style="height:25px; margin:5px 0;"></div></td></tr>').join('')}
+                ${Array(5).fill('<tr><td colspan="5"><div class="skeleton" style="height:25px; margin:5px 0;"></div></tr>').join('')}
             </tbody>
         </table>
     </div>`;
@@ -209,7 +207,7 @@ function renderKvList() {
 
         // Group by Date rows
         if (rec.date !== lastDate) {
-            rowsHtml += `<tr class="kv-date-row"><td colspan="7">📅 ${escapeHtml(rec.date)}</td></tr>`;
+            rowsHtml += `<tr class="kv-date-row"><td colspan="5">📅 ${escapeHtml(rec.date)}</td></tr>`;
             lastDate = rec.date;
         }
 
@@ -230,8 +228,6 @@ function renderKvList() {
             <td class="kv-col-no">${escapeHtml(String(rec.no || '—'))}</td>
             <td class="kv-col-oy">${monthClean || '—'}</td>
             <td class="kv-col-m2">${m2Val}</td>
-            <td class="kv-col-name">${escapeHtml(rec.orderName || '—')}</td>
-            <td class="kv-col-hodim"><span class="kv-worker-chip" style="background:#F1F5F9; color:#475569;">${escapeHtml(rec.staffName || '—')}</span></td>
             <td class="kv-col-st" title="${escapeHtml(status)}"><span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:${phaseColors.bg}; border:1px solid ${phaseColors.color};"></span>${stIcon}</span></td>
         </tr>`;
     });
@@ -245,8 +241,6 @@ function renderKvList() {
                     <th>Buyurtma №</th>
                     <th>Oy</th>
                     <th style="text-align:right;">m²</th>
-                    <th>Buyurtma nomi / Mijoz</th>
-                    <th>Hodim</th>
                     <th>ST</th>
                 </tr>
             </thead>
@@ -361,7 +355,16 @@ function applyKvFilters() {
             if (!String(rec.date || '').endsWith(String(year))) return false;
         }
         if (staff !== 'all') {
-            if (rec.staffName !== staff) return false;
+            var staffMatch = (rec.staffName === staff);
+            if (!staffMatch && Array.isArray(rec.logs)) {
+                var logNames = rec.logs.map(function(log) {
+                    if (!log || !log.uid) return '';
+                    var mapped = (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)]) || '';
+                    return mapped || String(log.uid);
+                });
+                staffMatch = logNames.some(function(name) { return name === staff; });
+            }
+            if (!staffMatch) return false;
         }
         return true;
     });
