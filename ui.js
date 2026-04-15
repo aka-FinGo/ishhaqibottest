@@ -68,6 +68,7 @@ window.onload = async () => {
 
             // Populate kvadrat filters and forms after permissions are loaded
             if (typeof populateKvadratMeta === 'function') {
+                console.log("Populating kvadrat metadata with employee list:", globalEmployeeList);
                 populateKvadratMeta(globalEmployeeList);
             }
 
@@ -110,7 +111,10 @@ function switchTab(tabId, navId) {
 
     if (tabId === 'adminTab') initAdminTab();
     if (tabId === 'dashboardTab') initDashboardTab();
-    if (tabId === 'kvadratTab') initKvadratTab();
+    if (tabId === 'kvadratTab') {
+        console.log("Switching to kvadrat tab, initializing...");
+        initKvadratTab();
+    }
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
 
     if (tabId === 'addTab') {

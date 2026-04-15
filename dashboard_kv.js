@@ -2,7 +2,7 @@
 // dashboard_kv.js — Kvadratlar Dashboard Logic
 // ============================================================
 
-let kvFullRecords = []; // Global records cache
+let kvDashboardRecords = []; // Global records cache
 let kvChartStatus = null;
 let kvChartTrends = null;
 let kvChartSteps = null;
@@ -177,10 +177,10 @@ function _aggregateWorkerM2(records) {
 /**
  * Gets worker m² for a specific staff filter value.
  * @param {string} staffName
- * @param {Array} [records] — defaults to kvFullRecords
+ * @param {Array} [records] — defaults to kvDashboardRecords
  */
 function getWorkerM2ForStaff(staffName, records) {
-    const recs = records || kvFullRecords || [];
+    const recs = records || kvDashboardRecords || [];
     if (!recs.length) return 0;
     const { workerM2 } = _aggregateWorkerM2(recs);
     return workerM2[staffName] || 0;
@@ -276,7 +276,7 @@ async function renderKvDashboardPage() {
         </div>`;
 
     try {
-        if (!kvFullRecords || !kvFullRecords.length) {
+        if (!kvDashboardRecords || !kvDashboardRecords.length) {
             console.log('KV Dashboard: Checking connectivity...');
             const isOnline = await testConnectivity();
             if (!isOnline) {
@@ -288,15 +288,15 @@ async function renderKvDashboardPage() {
             console.log('KV Dashboard: API response received');
 
             if (data && data.success && data.data) {
-                kvFullRecords = data.data;
-                console.log('KV Dashboard: Data loaded successfully, records:', kvFullRecords.length);
+                kvDashboardRecords = data.data;
+                console.log('KV Dashboard: Data loaded successfully, records:', kvDashboardRecords.length);
             } else {
                 const errorMsg = data?.error || 'Server muvaffaqiyatsiz javob qaytardi';
                 console.error('KV Dashboard: Server error:', errorMsg);
                 throw new Error(errorMsg);
             }
         } else {
-            console.log('KV Dashboard: Using cached data, records:', kvFullRecords.length);
+            console.log('KV Dashboard: Using cached data, records:', kvDashboardRecords.length);
         }
     } catch (e) {
         console.error('KV Dashboard: Error loading data:', e);
@@ -392,7 +392,7 @@ async function testConnectivity() {
 // }
 
 function renderKvDashboard(body) {
-    if (!kvFullRecords || !kvFullRecords.length) {
+    if (!kvDashboardRecords || !kvDashboardRecords.length) {
         body.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">📏</div>
@@ -407,7 +407,7 @@ function renderKvDashboard(body) {
     const monthlyM2 = {};
     const stepCounts = {};
 
-    kvFullRecords.forEach(rec => {
+    kvDashboardRecords.forEach(rec => {
         const m2 = Number(rec.totalM2) || 0;
         totalM2 += m2;
 
@@ -428,7 +428,7 @@ function renderKvDashboard(body) {
     });
 
     // Worker m² — aggregated by workflow participation
-    const { workerM2, workerOrders } = _aggregateWorkerM2(kvFullRecords);
+    const { workerM2, workerOrders } = _aggregateWorkerM2(kvDashboardRecords);
 
     // Grand total of all worker m² (will be > totalM2 because multiple workers share same orders)
     const workerGrandTotal = Object.values(workerM2).reduce((s, v) => s + v, 0);
@@ -438,7 +438,7 @@ function renderKvDashboard(body) {
         .reduce((s, [, v]) => s + v, 0);
 
     // Additional metrics
-    const avgM2PerOrder = kvFullRecords.length ? (totalM2 / kvFullRecords.length).toFixed(1) : 0;
+    const avgM2PerOrder = kvDashboardRecords.length ? (totalM2 / kvDashboardRecords.length).toFixed(1) : 0;
     const topMonth = Object.entries(monthlyM2).sort((a, b) => b[1] - a[1])[0];
     const topMonthLabel = topMonth ? (() => {
         const [y, m] = topMonth[0].split('-');
@@ -456,7 +456,7 @@ function renderKvDashboard(body) {
 
     ${kvSecTitle('📊 Umumiy Statistikalar')}
     <div class="dash-stats-grid">
-        ${kvSCard('📦', 'Jami Buyurtma', kvFullRecords.length + ' ta', '', '#10B981')}
+        ${kvSCard('📦', 'Jami Buyurtma', kvDashboardRecords.length + ' ta', '', '#10B981')}
         ${kvSCard('📏', 'Jami m²', totalM2.toLocaleString('uz-UZ', {maximumFractionDigits:1}) + ' m²', '', '#3B82F6')}
         ${kvSCard('📈', 'O\'rtacha m²/buyurtma', avgM2PerOrder + ' m²', '', '#F59E0B')}
         ${kvSCard('🏆', 'Eng Faol Oy', topMonthLabel, '', '#EC4899')}
@@ -464,7 +464,7 @@ function renderKvDashboard(body) {
 
     <div class="dash-stats-grid" style="margin-bottom:14px;">
         ${kvSCard('✅', 'Yakunlangan', completed + ' ta', '', '#10B981')}
-        ${kvSCard('⏳', 'Jarayonda', (kvFullRecords.length - completed) + ' ta', '', '#F59E0B')}
+        ${kvSCard('⏳', 'Jarayonda', (kvDashboardRecords.length - completed) + ' ta', '', '#F59E0B')}
     </div>
 
     ${kvCCard('📊 Holat bo\'yicha taqsimot', 'kvDashChartStatus', 200)}

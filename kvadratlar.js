@@ -106,6 +106,7 @@ function populateKvadratMeta(staffList) {
             ? myPermissions.workflowConfig
             : [];
         processSelect.innerHTML = '<option value="all">Barcha jarayonlar</option>';
+        console.log("Populating process filter with workflow config:", workflowConfig);
         workflowConfig.forEach((step, idx) => {
             const stepIndex = String(step.index || idx + 1);
             const label = escapeHtml(step.status || step.action || `Bosqich ${idx + 1}`);
@@ -114,6 +115,8 @@ function populateKvadratMeta(staffList) {
             opt.textContent = label;
             processSelect.appendChild(opt);
         });
+        // Ensure the process filter is set to "all" by default
+        processSelect.value = 'all';
     }
 
     _initKvFormYears();
@@ -165,11 +168,15 @@ async function initKvadratTab() {
     </div>`;
 
     try {
+        console.log("Loading kvadrat data from server...");
         const data = await apiRequest({ action: 'kvadrat_get_all' });
+        console.log("Received kvadrat data:", data);
         if (data.success) {
             kvFullRecords = data.data || [];
+            console.log("Loaded kvadrat records:", kvFullRecords.length);
             applyKvFilters();
         } else {
+            console.error("Failed to load kvadrat data:", data.error);
             listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
         }
     } catch (e) {
@@ -205,6 +212,8 @@ function renderKvList() {
     const totalDisplay = document.getElementById('kvTotalM2');
     if (!container) return;
 
+    console.log("Rendering KV list, filtered records:", kvFilteredRecords.length);
+    
     if (!kvFilteredRecords.length) {
         container.innerHTML = `
             <div class="empty-state">
@@ -367,6 +376,9 @@ function applyKvFilters() {
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
 
+    console.log("Applying filters:", { month, year, staff, process });
+    console.log("Full records count:", kvFullRecords.length);
+
     kvFilteredRecords = kvFullRecords.filter(rec => {
         if (month !== 'all') {
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
@@ -392,6 +404,8 @@ function applyKvFilters() {
         }
         return true;
     });
+    
+    console.log("Filtered records count:", kvFilteredRecords.length);
     renderKvList();
 }
 
