@@ -51,18 +51,18 @@ function showDetailModal(r, mode) {
         const canDel = myRole === 'SuperAdmin' || myPermissions.canDelete;
         const canEd  = myRole === 'SuperAdmin' || myPermissions.canEdit;
         actionBtns = `
-        <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-            ${canEd  ? `<button class="edit-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
+        <div style="display:flex;gap:8px;margin-bottom:14px;margin-top:0;">
+            ${canEd  ? `<button class="edit-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
                 onclick="closeDetailModal();openEdit(${rowId})">✏️ Tahrirlash</button>` : ''}
-            ${canDel ? `<button class="del-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
+            ${canDel ? `<button class="del-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
                 onclick="closeDetailModal();deleteRecord(${rowId})">🗑 O'chirish</button>` : ''}
         </div>`;
     } else if (mode === 'self') {
         actionBtns = `
-        <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-            <button class="edit-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
+        <div style="display:flex;gap:8px;margin-bottom:14px;margin-top:0;">
+            <button class="edit-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
                 onclick="closeDetailModal();openSelfEdit(${rowId})">✏️ Tahrirlash</button>
-            <button class="del-btn" style="flex:1;padding:13px;border-radius:10px;font-size:14px;"
+            <button class="del-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
                 onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑 O'chirish</button>
         </div>`;
     }
@@ -75,12 +75,12 @@ function showDetailModal(r, mode) {
             <div class="detail-date">📅 yozildi: ${safeDate}</div>
             ${safePeriod ? `<div class="detail-date" style="margin-top:4px;color:var(--text-main);font-weight:600;">🔄 Davr: ${safePeriod}</div>` : ''}
         </div>
+        ${actionBtns}
         <div class="detail-card">
             ${nameRow}
             ${amountRows}
         </div>
-        <button class="btn-secondary" style="margin-top:12px;" onclick="closeDetailModal()">✕ Yopish</button>
-        ${actionBtns}`;
+        <button class="btn-secondary" style="margin-top:12px;" onclick="closeDetailModal()">✕ Yopish</button>`;
 
     document.getElementById('detailModal').classList.remove('hidden');
 }
