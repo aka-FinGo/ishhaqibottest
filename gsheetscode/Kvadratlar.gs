@@ -38,9 +38,9 @@ function getKvadratSheet() {
       .setBackground("#1e293b")
       .setFontColor("#ffffff");
     sh.getRange("A:A").setNumberFormat("dd/MM/yyyy");
+    sh.getRange("B:B").setNumberFormat("@");
     sh.getRange("C:C").setNumberFormat("@");
     sh.getRange("D:D").setNumberFormat("0.00");
-    sh.getRange("B:B").setNumberFormat("0");
   }
   return sh;
 }
@@ -94,9 +94,14 @@ function kvadratAdd(data, auth, actorTgId) {
     var userMap = buildUsernameMap();
     var resolvedStaffName = resolveStaffName_(actorTgId, data.staffName, userMap);
 
+    var orderNo = String(data.no || '').trim();
+    if (!orderNo) {
+      orderNo = String(nextNo);
+    }
+
     sh.appendRow([
       today,
-      nextNo,
+      orderNo,
       "'" + monthStr,          // Force text with apostrophe
       Number(data.totalM2) || 0,
       String(data.orderName || '').trim(),
@@ -148,7 +153,7 @@ function kvadratGetAll(options) {
     records.push({
       rowId:      i + 1,
       date:       formatDateCell(row[KV_COL.DATE]),
-      no:         Number(row[KV_COL.NO]) || '',
+      no:         String(row[KV_COL.NO] || ''),
       month:      cleanMonth,                          // "_03" etc
       totalM2:    Number(row[KV_COL.TOTAL_M2]) || 0,
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
@@ -199,6 +204,9 @@ function kvadratEdit(data, auth, actorTgId) {
     var resolvedName = resolveStaffName_(targetOwnerId, data.staffName, userMap);
 
     sh.getRange(row, KV_COL.TOTAL_M2    + 1).setValue(Number(data.totalM2) || 0);
+    if (typeof data.no !== 'undefined') {
+      sh.getRange(row, KV_COL.NO + 1).setValue(String(data.no || '').trim());
+    }
     sh.getRange(row, KV_COL.ORDER_NAME  + 1).setValue(String(data.orderName || '').trim());
     sh.getRange(row, KV_COL.STAFF_NAME  + 1).setValue(resolvedName); // Hodimlar ro'yxatidan olingan ism
 

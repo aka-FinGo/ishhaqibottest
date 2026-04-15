@@ -227,7 +227,7 @@ function renderKvList() {
         rowsHtml += `
         <tr class="kv-data-row" onclick="showKvDetailModal(${idx})">
             <td class="kv-col-seq">${idx + 1}</td>
-            <td class="kv-col-no">${rec.no || '—'}</td>
+            <td class="kv-col-no">${escapeHtml(String(rec.no || '—'))}</td>
             <td class="kv-col-oy">${monthClean || '—'}</td>
             <td class="kv-col-m2">${m2Val}</td>
             <td class="kv-col-name">${escapeHtml(rec.orderName || '—')}</td>
@@ -242,7 +242,7 @@ function renderKvList() {
             <thead>
                 <tr>
                     <th>№</th>
-                    <th>ID</th>
+                    <th>Buyurtma №</th>
                     <th>Oy</th>
                     <th style="text-align:right;">m²</th>
                     <th>Buyurtma nomi / Mijoz</th>
@@ -303,7 +303,14 @@ function showKvDetailModal(idx) {
         <div class="detail-header">
             <span class="detail-badge uzs" style="background:#EFF6FF;color:#1D4ED8;">📐 Ish Oqimi Tarixi</span>
             <div class="detail-comment">📌 ${escapeHtml(rec.orderName || '—')}</div>
-            <div class="detail-date">📅 №${rec.no || '—'} | Sana: ${escapeHtml(rec.date || '—')}</div>
+            <div class="detail-date">📅 №${escapeHtml(String(rec.no || '—'))} | Sana: ${escapeHtml(rec.date || '—')}</div>
+        </div>
+        
+        <div class="detail-card" style="margin-bottom:15px; background:#F8FAFC;">
+            <div class="detail-row">
+                <span class="detail-key">Mas'ul hodim</span>
+                <span class="detail-val">${escapeHtml(rec.staffName || '—')}</span>
+            </div>
         </div>
         
         <div class="card" style="margin-bottom:15px; background:#F8FAFC;">
@@ -374,6 +381,7 @@ function openKvModal(rowId = null) {
         title.innerText = '✏️ Tahrirlash';
         const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
         if (rec) {
+            document.getElementById('kvOrderNumber').value = rec.no || '';
             document.getElementById('kvOrderName').value = rec.orderName || '';
             document.getElementById('kvTotalM2Input').value = rec.totalM2 || '';
             document.getElementById('kvStaffSelect').value = rec.staffName || '';
@@ -408,6 +416,7 @@ function closeKvModal() {
 
 async function saveKv() {
     const rowId = document.getElementById('kvRowId').value;
+    const orderNumber = (document.getElementById('kvOrderNumber').value || '').trim();
     const orderName = (document.getElementById('kvOrderName').value || '').trim();
     const totalM2 = parseFloat(document.getElementById('kvTotalM2Input').value) || 0;
     const staffName = document.getElementById('kvStaffSelect').value;
@@ -415,7 +424,7 @@ async function saveKv() {
     const year = document.getElementById('kvActionYear')?.value || '';
     const monthStr = (year && month) ? `_${month}` : '';
 
-    if (!orderName || totalM2 <= 0 || !staffName) {
+    if (!orderNumber || !orderName || totalM2 <= 0 || !staffName) {
         showToastMsg('❌ Ma\'lumotlarni to\'liq kiriting', true);
         return;
     }
@@ -430,7 +439,15 @@ async function saveKv() {
     try {
         const action = rowId ? 'kvadrat_edit' : 'kvadrat_add';
         const data = await apiRequest({
-            action, rowId: rowId || undefined, orderName, totalM2, staffName, ownerTgId, month: monthStr, year
+            action,
+            rowId: rowId || undefined,
+            no: orderNumber,
+            orderName,
+            totalM2,
+            staffName,
+            ownerTgId,
+            month: monthStr,
+            year
         });
         if (data.success) {
             kvHideProc(true, 'Saqlandi');
