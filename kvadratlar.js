@@ -299,6 +299,11 @@ function showKvDetailModal(idx) {
             <div class="detail-comment">📌 ${escapeHtml(rec.orderName || '—')}</div>
             <div class="detail-date">📅 №${escapeHtml(String(rec.no || '—'))} | Sana: ${escapeHtml(rec.date || '—')}</div>
         </div>
+
+        <div class="admin-actions" style="display:flex; gap:8px; margin-bottom:14px;">
+            ${myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; font-size:13px; padding:10px;" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : ''}
+            ${myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; color:var(--red); font-size:13px; padding:10px;" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : ''}
+        </div>
         
         <div class="detail-card" style="margin-bottom:15px; background:#F8FAFC;">
             <div class="detail-row">
@@ -324,11 +329,6 @@ function showKvDetailModal(idx) {
         </div>
 
         ${claimBtnHtml}
-        
-        <div class="admin-actions" style="display:flex; gap:10px; margin-top:10px;">
-            ${myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1;" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : ''}
-            ${myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; color:var(--red);" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : ''}
-        </div>
 
         <button class="btn-secondary" style="margin-top:12px; width:100%;" onclick="closeKvDetailModal()">✕ Yopish</button>
     `;
