@@ -292,17 +292,17 @@ function showKvDetailModal(idx) {
         </div>`;
     });
 
+    const editBtn = myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="kv-edit-btn" style="flex:1; padding:11px; border-radius:10px; background:#FEF3C7; color:#92400E; border:1.5px solid #FCD34D; font-weight:700; font-size:13px; cursor:pointer;" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : '';
+    const deleteBtn = myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="kv-delete-btn" style="flex:1; padding:11px; border-radius:10px; background:#FEE2E2; color:#991B1B; border:1.5px solid #FECACA; font-weight:700; font-size:13px; cursor:pointer;" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : '';
+    const buttonsRow = (editBtn || deleteBtn) ? `<div style="display:flex; gap:8px; margin-bottom:12px;">${editBtn}${deleteBtn}</div>` : '';
+
     document.getElementById('kvDetailModalBody').innerHTML = `
         <div class="modal-drag"></div>
+        ${buttonsRow}
         <div class="detail-header">
             <span class="detail-badge uzs" style="background:#EFF6FF;color:#1D4ED8;">📐 Ish Oqimi Tarixi</span>
             <div class="detail-comment">📌 ${escapeHtml(rec.orderName || '—')}</div>
             <div class="detail-date">📅 №${escapeHtml(String(rec.no || '—'))} | Sana: ${escapeHtml(rec.date || '—')}</div>
-        </div>
-
-        <div class="admin-actions" style="display:flex; gap:8px; margin-bottom:14px;">
-            ${myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; font-size:13px; padding:10px;" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : ''}
-            ${myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="btn-secondary" style="flex:1; color:var(--red); font-size:13px; padding:10px;" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : ''}
         </div>
         
         <div class="detail-card" style="margin-bottom:15px; background:#F8FAFC;">

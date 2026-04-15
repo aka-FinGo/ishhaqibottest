@@ -185,20 +185,18 @@ function initAdminTab() {
 }
 
 function initDashboardTab() {
-    const nav = document.getElementById('dashboardNav');
     if (!canViewCompanyActions) {
-        if (nav) nav.classList.add('hidden');
         const actionsArea = document.getElementById('dashboardActionsArea');
         const chartsArea = document.getElementById('dashboardChartsArea');
         if (actionsArea) actionsArea.classList.add('hidden');
         if (chartsArea) chartsArea.classList.remove('hidden');
+        document.getElementById('dashTopCharts').classList.add('active');
+        document.getElementById('dashTopActions').classList.remove('active');
         loadDashboard();
         return;
     }
 
-    if (nav) nav.classList.remove('hidden');
-    const btnActions = document.getElementById('dashNavActions');
-    switchDashboardSub('dashboardActionsArea', btnActions || null);
+    switchDashboardSub('dashboardActionsArea', document.getElementById('dashTopActions'));
 }
 
 function switchDashboardSub(areaId, btn) {

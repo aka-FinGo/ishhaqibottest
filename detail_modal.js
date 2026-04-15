@@ -50,32 +50,28 @@ function showDetailModal(r, mode) {
     if (mode === 'admin' || mode === true) {
         const canDel = myRole === 'SuperAdmin' || myPermissions.canDelete;
         const canEd  = myRole === 'SuperAdmin' || myPermissions.canEdit;
-        actionBtns = `
-        <div style="display:flex;gap:8px;margin-bottom:14px;margin-top:0;">
-            ${canEd  ? `<button class="edit-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
-                onclick="closeDetailModal();openEdit(${rowId})">✏️ Tahrirlash</button>` : ''}
-            ${canDel ? `<button class="del-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
-                onclick="closeDetailModal();deleteRecord(${rowId})">🗑 O'chirish</button>` : ''}
-        </div>`;
+        const editBtn = canEd  ? `<button class="edit-btn" style="flex:1;padding:11px;border-radius:10px;font-size:13px;background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:700;cursor:pointer;"
+                onclick="closeDetailModal();openEdit(${rowId})">✏️ Tahrirlash</button>` : '';
+        const deleteBtn = canDel ? `<button class="del-btn" style="flex:1;padding:11px;border-radius:10px;font-size:13px;background:#FEE2E2;color:#991B1B;border:1.5px solid #FECACA;font-weight:700;cursor:pointer;"
+                onclick="closeDetailModal();deleteRecord(${rowId})">🗑 O'chirish</button>` : '';
+        actionBtns = (editBtn || deleteBtn) ? `<div style="display:flex;gap:8px;margin-bottom:12px;margin-top:0;">${editBtn}${deleteBtn}</div>` : '';
     } else if (mode === 'self') {
-        actionBtns = `
-        <div style="display:flex;gap:8px;margin-bottom:14px;margin-top:0;">
-            <button class="edit-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
-                onclick="closeDetailModal();openSelfEdit(${rowId})">✏️ Tahrirlash</button>
-            <button class="del-btn" style="flex:1;padding:10px;border-radius:10px;font-size:13px;"
-                onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑 O'chirish</button>
-        </div>`;
+        const editBtn = `<button class="edit-btn" style="flex:1;padding:11px;border-radius:10px;font-size:13px;background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:700;cursor:pointer;"
+                onclick="closeDetailModal();openSelfEdit(${rowId})">✏️ Tahrirlash</button>`;
+        const deleteBtn = `<button class="del-btn" style="flex:1;padding:11px;border-radius:10px;font-size:13px;background:#FEE2E2;color:#991B1B;border:1.5px solid #FECACA;font-weight:700;cursor:pointer;"
+                onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑 O'chirish</button>`;
+        actionBtns = `<div style="display:flex;gap:8px;margin-bottom:12px;margin-top:0;">${editBtn}${deleteBtn}</div>`;
     }
 
     document.getElementById('detailModalBody').innerHTML = `
         <div class="modal-drag"></div>
+        ${actionBtns}
         <div class="detail-header">
             ${currencyBadge}
             <div class="detail-comment">${safeComment}</div>
             <div class="detail-date">📅 yozildi: ${safeDate}</div>
             ${safePeriod ? `<div class="detail-date" style="margin-top:4px;color:var(--text-main);font-weight:600;">🔄 Davr: ${safePeriod}</div>` : ''}
         </div>
-        ${actionBtns}
         <div class="detail-card">
             ${nameRow}
             ${amountRows}
