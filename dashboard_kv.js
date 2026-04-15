@@ -196,6 +196,7 @@ function renderKvDashboard(body) {
     let totalM2 = 0;
     const statusCounts = {};
     const monthlyM2 = {};
+    const stepCounts = {};
 
     kvFullRecords.forEach(rec => {
         const m2 = Number(rec.totalM2) || 0;
@@ -211,6 +212,10 @@ function renderKvDashboard(body) {
                 monthlyM2[key] = (monthlyM2[key] || 0) + m2;
             }
         }
+
+        // Aggregate by workflow step
+        const step = Number(rec.currentStep) || 1;
+        stepCounts[step] = (stepCounts[step] || 0) + 1;
     });
 
     // Worker m² — aggregated by workflow participation
@@ -253,6 +258,14 @@ function renderKvDashboard(body) {
         <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:12px;">📊 Holat bo'yicha taqsimot</div>
         <div style="height:190px; display:flex; justify-content:center;">
             <canvas id="kvDashChartStatus"></canvas>
+        </div>
+    </div>
+
+    <!-- Workflow Step Distribution -->
+    <div class="card" style="margin-bottom:14px; padding:14px; background:#fff; border:1px solid var(--border);">
+        <div style="font-weight:700; font-size:13px; color:var(--navy); margin-bottom:12px;">🔄 Ish oqimi bosqichlari</div>
+        <div style="height:190px; display:flex; justify-content:center;">
+            <canvas id="kvDashChartSteps"></canvas>
         </div>
     </div>
 
@@ -411,6 +424,45 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2) {
                     y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' } } }
                 },
                 plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // 4. Doughnut — Workflow Steps
+    const ctxSteps = document.getElementById('kvDashChartSteps');
+    if (ctxSteps && typeof Chart !== 'undefined') {
+        const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+        const totalSteps = config.length >= 2 ? config.length : 3;
+
+        const labels = Object.keys(stepCounts).map(step => {
+            const stepNum = Number(step);
+            const stepCfg = config.find(s => s.index === stepNum);
+            return stepCfg ? stepCfg.status || `Bosqich ${stepNum}` : `Bosqich ${stepNum}`;
+        });
+
+        const bgColors = Object.keys(stepCounts).map(step => {
+            const stepNum = Number(step) - 1;
+            const colors = getWorkflowStepColors(stepNum, totalSteps);
+            return colors.bg;
+        });
+
+        const prevChart = Chart.getChart(ctxSteps);
+        if (prevChart) prevChart.destroy();
+
+        new Chart(ctxSteps, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{ data: Object.values(stepCounts), backgroundColor: bgColors, borderWidth: 0, hoverOffset: 6 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
+                    tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} ta` } }
+                }
             }
         });
     }
