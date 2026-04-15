@@ -155,26 +155,6 @@ function renderKvList() {
     let totalM2 = 0;
     let html = '';
 
-    // If staff filter is active, show worker's workflow-based m²
-    const staffFilter = document.getElementById('kvFilterStaff');
-    const selectedStaff = staffFilter ? staffFilter.value : 'all';
-
-    if (selectedStaff !== 'all' && typeof getWorkerM2ForStaff === 'function') {
-        const workerTotal = getWorkerM2ForStaff(selectedStaff);
-        html += `
-        <div style="background:linear-gradient(135deg,#0F172A,#1E40AF); color:#fff; border-radius:14px; padding:14px 16px; margin-bottom:14px;">
-            <div style="font-size:11px; opacity:0.7; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-                👤 ${escapeHtml(selectedStaff)} — Ish oqimi bo'yicha jami
-            </div>
-            <div style="font-size:28px; font-weight:800;">
-                ${workerTotal.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²
-            </div>
-            <div style="font-size:11px; opacity:0.6; margin-top:4px;">
-                Ushbu hodim qatnashgan barcha buyurtmalar m² yig'indisi
-            </div>
-        </div>`;
-    }
-
     kvFilteredRecords.forEach((rec, idx) => {
         totalM2 += Number(rec.totalM2) || 0;
 
@@ -238,6 +218,11 @@ function renderKvList() {
 
     container.innerHTML = html;
     if (totalDisplay) totalDisplay.innerText = totalM2.toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+
+    // Render workflow-based worker stats bar
+    if (typeof renderKvWorkerStats === 'function') {
+        renderKvWorkerStats(kvFilteredRecords);
+    }
 }
 
 
@@ -346,7 +331,7 @@ function applyKvFilters() {
         return true;
     });
 
-    renderKvList();
+    renderKvList(); // renderKvList internally calls renderKvWorkerStats
 }
 
 /**

@@ -63,12 +63,78 @@ function _aggregateWorkerM2(records) {
 
 /**
  * Gets worker m² for a specific staff filter value.
- * Used by renderKvList to show filtered worker stats.
+ * @param {string} staffName
+ * @param {Array} [records] — defaults to kvFullRecords
  */
-function getWorkerM2ForStaff(staffName) {
-    if (!kvFullRecords || !kvFullRecords.length) return 0;
-    const { workerM2 } = _aggregateWorkerM2(kvFullRecords);
+function getWorkerM2ForStaff(staffName, records) {
+    const recs = records || kvFullRecords || [];
+    if (!recs.length) return 0;
+    const { workerM2 } = _aggregateWorkerM2(recs);
     return workerM2[staffName] || 0;
+}
+
+/**
+ * Renders the worker stats bar inside #kvWorkerStatsBar on the Kvadrat tab.
+ * Uses the FILTERED records so stats match active filters.
+ * @param {Array} records — typically kvFilteredRecords
+ */
+function renderKvWorkerStats(records) {
+    const bar = document.getElementById('kvWorkerStatsBar');
+    if (!bar) return;
+
+    if (!records || !records.length) {
+        bar.innerHTML = '';
+        return;
+    }
+
+    const { workerM2, workerOrders } = _aggregateWorkerM2(records);
+    const sorted = Object.entries(workerM2).sort((a, b) => b[1] - a[1]);
+    if (!sorted.length) { bar.innerHTML = ''; return; }
+
+    const maxM2 = sorted[0][1] || 1;
+
+    // Check if a specific staff is selected
+    const staffFilterEl = document.getElementById('kvFilterStaff');
+    const selectedStaff = staffFilterEl ? staffFilterEl.value : 'all';
+
+    if (selectedStaff !== 'all') {
+        // Single worker highlight card
+        const val = workerM2[selectedStaff] || 0;
+        const orders = workerOrders[selectedStaff] || 0;
+        bar.innerHTML = `
+        <div style="background:linear-gradient(135deg,#0F172A,#1E40AF); color:#fff; border-radius:14px; padding:14px 16px; margin-bottom:4px;">
+            <div style="font-size:11px; opacity:0.7; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">👤 ${escapeHtml(selectedStaff)} — Ish oqimi bo'yicha</div>
+            <div style="display:flex; align-items:baseline; gap:10px;">
+                <div style="font-size:28px; font-weight:800;">${val.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m²</div>
+                <div style="font-size:13px; opacity:0.7;">${orders} ta buyurtma</div>
+            </div>
+        </div>`;
+        return;
+    }
+
+    // All workers — compact list
+    const medals = ['🥇','🥈','🥉'];
+    const rows = sorted.map(([name, val], i) => {
+        const pct = Math.round(val / maxM2 * 100);
+        const orders = workerOrders[name] || 0;
+        const icon = medals[i] || `${i+1}.`;
+        return `
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">
+                <span style="font-weight:700; color:var(--navy);">${icon} ${escapeHtml(name)}</span>
+                <span style="font-weight:800; color:var(--navy);">${val.toLocaleString('uz-UZ', {maximumFractionDigits:1})} m² <span style="color:var(--text-muted); font-weight:400;">(${orders} ta)</span></span>
+            </div>
+            <div style="height:6px; background:#E2E8F0; border-radius:10px; overflow:hidden;">
+                <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#0F172A,#3B82F6); border-radius:10px;"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    bar.innerHTML = `
+    <div class="card" style="padding:12px 14px; margin-bottom:4px; background:#fff; border:1px solid var(--border);">
+        <div style="font-weight:700; font-size:12px; color:var(--navy); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.4px;">📐 Hodimlar ish oqimi bo'yicha</div>
+        ${rows}
+    </div>`;
 }
 
 /**
