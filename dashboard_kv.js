@@ -282,23 +282,17 @@ async function renderKvDashboardPage() {
         </div>`;
 
     try {
-        if (!kvDashboardRecords || !kvDashboardRecords.length) {
-            console.log('KV Dashboard: Loading data from server...');
-
-            console.log('KV Dashboard: Loading data from server...');
+        // Agar kvadratlar.js allaqachon ma'lumot yuklagan bo'lsa, undan foydalanish
+        if (typeof kvFullRecords !== 'undefined' && kvFullRecords.length) {
+            kvDashboardRecords = kvFullRecords;
+        } else if (!kvDashboardRecords || !kvDashboardRecords.length) {
+            console.log('KV Dashboard: Serverdan yuklanmoqda...');
             const data = await apiRequest({ action: 'kvadrat_get_all' }, { timeoutMs: 30000 });
-            console.log('KV Dashboard: API response received');
-
             if (data && data.success && data.data) {
                 kvDashboardRecords = data.data;
-                console.log('KV Dashboard: Data loaded successfully, records:', kvDashboardRecords.length);
             } else {
-                const errorMsg = data?.error || 'Server muvaffaqiyatsiz javob qaytardi';
-                console.error('KV Dashboard: Server error:', errorMsg);
-                throw new Error(errorMsg);
+                throw new Error((data && data.error) || 'Server muvaffaqiyatsiz javob qaytardi');
             }
-        } else {
-            console.log('KV Dashboard: Using cached data, records:', kvDashboardRecords.length);
         }
     } catch (e) {
         console.error('KV Dashboard: Error loading data:', e);

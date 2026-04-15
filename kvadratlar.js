@@ -173,6 +173,10 @@ async function initKvadratTab() {
         console.log("Received kvadrat data:", data);
         if (data.success) {
             kvFullRecords = data.data || [];
+            // Dashboard cache ni ham yangilash (ikki marta API so'rovdan saqlanish)
+            if (typeof kvDashboardRecords !== 'undefined') {
+                kvDashboardRecords = kvFullRecords;
+            }
             console.log("Loaded kvadrat records:", kvFullRecords.length);
             applyKvFilters();
         } else {
