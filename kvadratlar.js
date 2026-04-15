@@ -216,7 +216,9 @@ function renderKvList() {
         const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         const monthClean = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
         
-        // Status indicator
+        const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
+        const currentStepIdx = Number(rec.currentStep) || 1;
+        const phaseColors = getWorkflowStepColors(Math.max(0, currentStepIdx - 1), config.length || 1);
         const status = rec.status || 'yangi';
         let stIcon = '🟡';
         if (status.indexOf('yigi') !== -1) stIcon = '🔵';
@@ -230,7 +232,7 @@ function renderKvList() {
             <td class="kv-col-m2">${m2Val}</td>
             <td class="kv-col-name">${escapeHtml(rec.orderName || '—')}</td>
             <td class="kv-col-hodim"><span class="kv-worker-chip" style="background:#F1F5F9; color:#475569;">${escapeHtml(rec.staffName || '—')}</span></td>
-            <td class="kv-col-st" title="${escapeHtml(status)}">${stIcon}</td>
+            <td class="kv-col-st" title="${escapeHtml(status)}"><span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:${phaseColors.bg}; border:1px solid ${phaseColors.color};"></span>${stIcon}</span></td>
         </tr>`;
     });
 
@@ -276,18 +278,22 @@ function showKvDetailModal(idx) {
     const nextStep = config.find(s => s.index === currentStepIdx + 1);
 
     if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
-        claimBtnHtml = `<button class="btn-main" style="background:var(--navy);margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
+        const nextStepIdx = Number(nextStep.index || currentStepIdx + 1) - 1;
+        const nextColors = getWorkflowStepColors(nextStepIdx, config.length || 1);
+        claimBtnHtml = `<button class="btn-main" style="background:${nextColors.bg}; color:${nextColors.color}; margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
     let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
         const stepCfg = config.find(s => s.index === log.step);
+        const stepIdx = stepCfg ? (Number(stepCfg.index || 1) - 1) : 0;
+        const phaseColors = getWorkflowStepColors(stepIdx, config.length || 1);
         const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => e.tgId == log.uid)?.username || log.uid);
         historyHtml += `
-        <div style="border-left:2px solid var(--border); padding-left:12px; margin-bottom:12px; position:relative;">
-            <div style="width:10px; height:10px; border-radius:50%; background:var(--navy); position:absolute; left:-6px; top:4px;"></div>
-            <div style="font-size:12px; font-weight:700; color:var(--navy);">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
+        <div style="border-left:2px solid ${phaseColors.bg}; padding-left:12px; margin-bottom:12px; position:relative;">
+            <div style="width:10px; height:10px; border-radius:50%; background:${phaseColors.bg}; position:absolute; left:-6px; top:4px;"></div>
+            <div style="font-size:12px; font-weight:700; color:${phaseColors.color};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
             <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
         </div>`;
     });

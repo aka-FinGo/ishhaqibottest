@@ -4,6 +4,24 @@
 
 let currentWorkflowSteps = [];
 
+function getWorkflowStepColors(idx, total) {
+    const position = total <= 2 ? (idx === 0 ? 'start' : 'end')
+        : idx === 0 ? 'start'
+        : idx === total - 1 ? 'end'
+        : 'middle';
+
+    switch (position) {
+        case 'start':
+            return { bg: '#FDE68A', color: '#92400E', label: 'Boshlanish' };
+        case 'middle':
+            return { bg: '#FECACA', color: '#991B1B', label: 'O‘rta bosqich' };
+        case 'end':
+            return { bg: '#DCFCE7', color: '#166534', label: 'Yakun' };
+        default:
+            return { bg: '#E2E8F0', color: '#475569', label: 'Bosqich' };
+    }
+}
+
 function initWorkflowAdmin() {
     currentWorkflowSteps = JSON.parse(JSON.stringify(myPermissions.workflowConfig || []));
     renderWorkflowSteps();
@@ -30,12 +48,15 @@ function renderWorkflowSteps() {
 
     let html = configButton;
     currentWorkflowSteps.forEach((step, idx) => {
+        const phaseColors = getWorkflowStepColors(idx, currentWorkflowSteps.length);
         html += `
-        <div class="card" style="margin-bottom:10px; border:1px solid var(--border); background:#fff; padding:12px;">
+        <div class="card" style="margin-bottom:10px; border:1px solid ${phaseColors.bg}; background:#fff; padding:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="background:var(--navy); color:#fff; padding:2px 10px; border-radius:15px; font-size:12px; font-weight:700;">
-                    Bosqich ${idx + 1} ${step.isStart ? '(Boshlang\'ich)' : ''}
+                <span style="background:${phaseColors.bg}; color:${phaseColors.color}; padding:2px 10px; border-radius:15px; font-size:12px; font-weight:700;">
+                    Bosqich ${idx + 1} ${step.isStart ? '(Boshlang\'ich)' : step.isEnd ? '(Yakun)' : ''}
                 </span>
+                <span style="font-size:11px; font-weight:700; color:${phaseColors.color};">${phaseColors.label}</span>
+            </div>
                 <div style="display:flex; gap:5px;">
                     <button class="del-icon-btn" style="background:#F1F5F9; color:#64748B;" onclick="moveWorkflowStep(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
                     <button class="del-icon-btn" style="background:#F1F5F9; color:#64748B;" onclick="moveWorkflowStep(${idx}, 1)" ${idx === currentWorkflowSteps.length - 1 ? 'disabled' : ''}>▼</button>
