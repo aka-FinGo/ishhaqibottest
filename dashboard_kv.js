@@ -283,11 +283,7 @@ async function renderKvDashboardPage() {
 
     try {
         if (!kvDashboardRecords || !kvDashboardRecords.length) {
-            console.log('KV Dashboard: Checking connectivity...');
-            const isOnline = await testConnectivity();
-            if (!isOnline) {
-                throw new Error('Internet aloqasi yo\'q. Wi-Fi yoki mobil internetni tekshiring.');
-            }
+            console.log('KV Dashboard: Loading data from server...');
 
             console.log('KV Dashboard: Loading data from server...');
             const data = await apiRequest({ action: 'kvadrat_get_all' }, { timeoutMs: 30000 });
