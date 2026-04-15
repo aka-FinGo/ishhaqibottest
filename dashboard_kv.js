@@ -269,8 +269,12 @@ async function openKvDashboard() {
  * Renders the full dashboard page (standalone tab).
  */
 async function renderKvDashboardPage() {
+    console.log('KV Dashboard: renderKvDashboardPage is called');
     const container = document.getElementById('kvDashboardMainBody');
-    if (!container) return;
+    if (!container) {
+        console.error('KV Dashboard: kvDashboardMainBody element not found');
+        return;
+    }
 
     container.innerHTML = `
         <div style="display:flex; justify-content:center; padding:40px;">
