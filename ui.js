@@ -207,10 +207,15 @@ function switchDashboardSub(areaId, btn) {
         if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.dash-sub-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#dashboardTab .page-switcher-btn').forEach(b => b.classList.remove('active'));
 
     const target = document.getElementById(areaId);
     if (target) target.classList.remove('hidden');
     if (btn) btn.classList.add('active');
+
+    const topBtnId = areaId === 'dashboardActionsArea' ? 'dashTopActions' : 'dashTopCharts';
+    const topBtn = document.getElementById(topBtnId);
+    if (topBtn) topBtn.classList.add('active');
 
     if (areaId === 'dashboardActionsArea') loadAdminData();
     if (areaId === 'dashboardChartsArea') loadDashboard();

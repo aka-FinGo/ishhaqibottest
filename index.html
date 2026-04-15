@@ -243,8 +243,8 @@
             <div class="header-avatar">📊</div>
         </div>
         <div class="page-switcher">
-            <button class="page-switcher-btn active">Dashboard</button>
-            <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Kvadratlar</button>
+            <button id="dashTopCharts" class="page-switcher-btn" onclick="switchDashboardSub('dashboardChartsArea', this)">Dashboard</button>
+            <button id="dashTopActions" class="page-switcher-btn active" onclick="switchDashboardSub('dashboardActionsArea', this)">Amallar</button>
         </div>
 
         <div class="sub-tabs hidden" id="dashboardNav">
@@ -298,18 +298,18 @@
     <div id="kvadratTab" class="tab-content">
         <div class="page-header">
             <div>
-                <h2>📏 Kvadratlar</h2>
-                <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">O'lchovlar va buyurtmalar</div>
+                <h2>🧾 Buyurtmalar</h2>
+                <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">Buyurtma №, Oy va m²</div>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)">🔄</button>
-                <button class="btn-secondary" style="margin:0; padding:8px 12px; font-size:13px;" onclick="openKvDashboard()">📊 Dashboard</button>
-                <div class="header-avatar">📐</div>
+                <button class="btn-secondary" style="margin:0; padding:8px 12px; font-size:13px;" onclick="openKvDashboard()">📊 Dashboard kv</button>
+                <div class="header-avatar">🧾</div>
             </div>
         </div>
         <div class="page-switcher">
-            <button class="page-switcher-btn" onclick="switchTab('dashboardTab','nav-dashboard')">Dashboard</button>
-            <button class="page-switcher-btn active">Kvadratlar</button>
+            <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">Dashboard kv</button>
+            <button class="page-switcher-btn active">Buyurtmalar</button>
         </div>
 
         <div class="stats-grid">
@@ -346,13 +346,13 @@
     <div id="kvDashboardTab" class="tab-content">
         <div class="page-header">
             <div>
-                <h2>📊 Kvadrat Dashboard</h2>
+                <h2>📊 Dashboard kv</h2>
             </div>
             <div class="header-avatar">📈</div>
         </div>
         <div class="page-switcher">
-            <button class="page-switcher-btn active" onclick="switchTab('dashboardTab','nav-dashboard')">Dashboard</button>
-            <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Kvadratlar</button>
+            <button class="page-switcher-btn active">Dashboard kv</button>
+            <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Buyurtmalar</button>
         </div>
         <div id="kvDashboardMainBody" style="padding:15px; background:#F1F5F9; min-height:calc(100vh - 220px);">
             <!-- Dashboard content will be rendered by dashboard_kv.js -->
@@ -503,7 +503,7 @@
         <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
     </div>
     <div class="nav-item" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
-        <span class="nav-icon">📐</span><span>Kvadratlar</span>
+        <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
     </div>
     <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
         <span class="nav-icon">👑</span><span>Admin</span>

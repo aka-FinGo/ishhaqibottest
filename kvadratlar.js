@@ -432,6 +432,16 @@ async function saveKv() {
         return;
     }
 
+    const duplicateOrder = (kvFullRecords || []).some(rec => {
+        if (!rec || !rec.no) return false;
+        if (String(rec.rowId) === String(rowId)) return false;
+        return String(rec.no || '').trim().toLowerCase() === String(orderNumber).trim().toLowerCase();
+    });
+    if (duplicateOrder) {
+        showToastMsg('❌ Bu Buyurtma № oldin qoshilgan. Iltimos, boshqa raqam kiriting.', true);
+        return;
+    }
+
     let ownerTgId = telegramId;
     if (typeof window._kvEmpMap !== 'undefined') {
         const found = Object.entries(window._kvEmpMap).find(([id, name]) => name === staffName);
