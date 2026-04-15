@@ -99,6 +99,23 @@ function populateKvadratMeta(staffList) {
             yearSel.appendChild(opt);
         }
     }
+
+    const processSelect = document.getElementById('kvFilterProcess');
+    if (processSelect) {
+        const workflowConfig = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig))
+            ? myPermissions.workflowConfig
+            : [];
+        processSelect.innerHTML = '<option value="all">Barcha jarayonlar</option>';
+        workflowConfig.forEach((step, idx) => {
+            const stepIndex = String(step.index || idx + 1);
+            const label = escapeHtml(step.status || step.action || `Bosqich ${idx + 1}`);
+            const opt = document.createElement('option');
+            opt.value = stepIndex;
+            opt.textContent = label;
+            processSelect.appendChild(opt);
+        });
+    }
+
     _initKvFormYears();
 }
 
@@ -214,9 +231,10 @@ function renderKvList() {
         const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         const monthClean = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
         
-        const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
+        const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+        const totalSteps = config.length >= 2 ? config.length : 3;
         const currentStepIdx = Number(rec.currentStep) || 1;
-        const phaseColors = getWorkflowStepColors(Math.max(0, currentStepIdx - 1), config.length || 1);
+        const phaseColors = getWorkflowStepColors(Math.max(0, currentStepIdx - 1), totalSteps);
         const status = rec.status || 'yangi';
         let stIcon = '🟡';
         if (status.indexOf('yigi') !== -1) stIcon = '🔵';
@@ -266,23 +284,25 @@ function showKvDetailModal(idx) {
 
     let claimBtnHtml = '';
     const status = rec.status || 'yangi';
-    const config = (typeof myPermissions !== 'undefined' && myPermissions.workflowConfig) || [];
-    const myPoss = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+    const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+    const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
     const currentStepIdx = Number(rec.currentStep) || 1;
     const nextStep = config.find(s => s.index === currentStepIdx + 1);
 
     if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
+        const totalSteps = config.length >= 2 ? config.length : 3;
         const nextStepIdx = Number(nextStep.index || currentStepIdx + 1) - 1;
-        const nextColors = getWorkflowStepColors(nextStepIdx, config.length || 1);
+        const nextColors = getWorkflowStepColors(nextStepIdx, totalSteps);
         claimBtnHtml = `<button class="btn-main" style="background:${nextColors.bg}; color:${nextColors.color}; margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
     let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
+        const totalSteps = config.length >= 2 ? config.length : 3;
         const stepCfg = config.find(s => s.index === log.step);
         const stepIdx = stepCfg ? (Number(stepCfg.index || 1) - 1) : 0;
-        const phaseColors = getWorkflowStepColors(stepIdx, config.length || 1);
+        const phaseColors = getWorkflowStepColors(stepIdx, totalSteps);
         const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => e.tgId == log.uid)?.username || log.uid);
         historyHtml += `
         <div style="border-left:2px solid ${phaseColors.bg}; padding-left:12px; margin-bottom:12px; position:relative;">
@@ -345,6 +365,7 @@ function applyKvFilters() {
     const month = document.getElementById('kvFilterMonth')?.value || 'all';
     const year = document.getElementById('kvFilterYear')?.value || 'all';
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
+    const process = document.getElementById('kvFilterProcess')?.value || 'all';
 
     kvFilteredRecords = kvFullRecords.filter(rec => {
         if (month !== 'all') {
@@ -365,6 +386,9 @@ function applyKvFilters() {
                 staffMatch = logNames.some(function(name) { return name === staff; });
             }
             if (!staffMatch) return false;
+        }
+        if (process !== 'all') {
+            if (!rec.currentStep || String(rec.currentStep) !== String(process)) return false;
         }
         return true;
     });

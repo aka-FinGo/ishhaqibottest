@@ -28,11 +28,6 @@ window.onload = async () => {
                 ? _empRaw
                 : Object.values(_empRaw).filter(Boolean);
 
-            // Populate kvadrat filters and forms
-            if (typeof populateKvadratMeta === 'function') {
-                populateKvadratMeta(globalEmployeeList);
-            }
-
             // Greeting — laqab bo'lsa uni ko'rsat
             const displayName = myUsername || firstName;
             document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
@@ -70,6 +65,11 @@ window.onload = async () => {
 
             canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
             canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
+
+            // Populate kvadrat filters and forms after permissions are loaded
+            if (typeof populateKvadratMeta === 'function') {
+                populateKvadratMeta(globalEmployeeList);
+            }
 
             // Admin panel (SuperAdmin va Admin)
             if (myRole === 'SuperAdmin' || myRole === 'Admin') {
