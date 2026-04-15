@@ -138,17 +138,22 @@ function renderKvWorkerStats(records) {
 }
 
 /**
- * Opens the dashboard modal and loads data.
+ * Opens the dashboard page as a separate tab view.
  */
 async function openKvDashboard() {
-    const modal = document.getElementById('kvDashboardModal');
-    if (!modal) return;
-    modal.classList.remove('hidden');
+    switchTab('kvDashboardTab', 'nav-kvadrat');
+    renderKvDashboardPage();
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+}
 
-    const body = document.getElementById('kvDashboardBody');
-    if (!body) return;
+/**
+ * Renders the full dashboard page (standalone tab).
+ */
+async function renderKvDashboardPage() {
+    const container = document.getElementById('kvDashboardMainBody');
+    if (!container) return;
 
-    body.innerHTML = `
+    container.innerHTML = `
         <div style="display:flex; justify-content:center; padding:40px;">
             <div style="text-align:center;">
                 <div style="font-size:32px; margin-bottom:12px;">⏳</div>
@@ -156,9 +161,6 @@ async function openKvDashboard() {
             </div>
         </div>`;
 
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-    // Fetch data if not loaded yet
     try {
         if (!kvFullRecords || !kvFullRecords.length) {
             const data = await apiRequest({ action: 'kvadrat_get_all' });
@@ -167,17 +169,18 @@ async function openKvDashboard() {
             }
         }
     } catch (e) {
-        body.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Ma'lumot yuklab bo'lmadi</p></div>`;
+        container.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Ma'lumot yuklab bo'lmadi</p></div>`;
         return;
     }
 
-    renderKvDashboard(body);
+    renderKvDashboard(container);
 }
 
-function closeKvDashboard() {
-    const modal = document.getElementById('kvDashboardModal');
-    if (modal) modal.classList.add('hidden');
-}
+// Remove closeKvDashboard function since we're using separate page now
+// function closeKvDashboard() {
+//     const modal = document.getElementById('kvDashboardModal');
+//     if (modal) modal.classList.add('hidden');
+// }
 
 function renderKvDashboard(body) {
     if (!kvFullRecords || !kvFullRecords.length) {

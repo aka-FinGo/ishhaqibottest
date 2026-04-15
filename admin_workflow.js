@@ -13,12 +13,22 @@ function renderWorkflowSteps() {
     const container = document.getElementById('workflowList');
     if (!container) return;
 
+    // Add button for start/end stage configuration
+    const configButton = `
+        <div style="margin-bottom: 15px;">
+            <button id="stageConfigBtn" class="btn-primary" style="width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: 600;">
+                Boshlanish / Yakunlash bosqichi
+            </button>
+        </div>
+    `;
+
     if (!currentWorkflowSteps.length) {
-        container.innerHTML = `<div class="empty-state" style="padding:20px;"><p>Oqim bo'sh. Qadamlar qo'shing.</p></div>`;
+        container.innerHTML = configButton + `<div class="empty-state" style="padding:20px;"><p>Oqim bo'sh. Qadamlar qo'shing.</p></div>`;
+        attachStageConfigHandler();
         return;
     }
 
-    let html = '';
+    let html = configButton;
     currentWorkflowSteps.forEach((step, idx) => {
         html += `
         <div class="card" style="margin-bottom:10px; border:1px solid var(--border); background:#fff; padding:12px;">
@@ -66,6 +76,7 @@ function renderWorkflowSteps() {
     });
 
     container.innerHTML = html;
+    attachStageConfigHandler();
 }
 
 function updateStepData(idx, field, val) {
@@ -121,4 +132,85 @@ async function saveWorkflowConfigUI() {
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);
     }
+}
+
+function attachStageConfigHandler() {
+    const btn = document.getElementById('stageConfigBtn');
+    if (btn) {
+        btn.addEventListener('click', showStageConfigDialog);
+    }
+}
+
+function showStageConfigDialog() {
+    // Create and show dialog for stage configuration
+    const dialog = document.createElement('div');
+    dialog.id = 'stageConfigDialog';
+    dialog.className = 'modal';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+    
+    dialog.innerHTML = `
+        <div class="card" style="width: 90%; max-width: 500px; background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: var(--navy);">Boshlanish / Yakunlash bosqichi</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Qaysi jarayondan keyin boshlanish va yakunlash bosqichi tugashi kerakligini belgilang:</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Boshlanish bosqichi:</label>
+                <select id="startStageSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+                    <option value="">Tanlanmagan</option>
+                    ${currentWorkflowSteps.map((step, idx) => 
+                        `<option value="${idx}" ${step.isStart ? 'selected' : ''}>${step.position || `Bosqich ${idx + 1}`}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Yakunlash bosqichi:</label>
+                <select id="endStageSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+                    <option value="">Tanlanmagan</option>
+                    ${currentWorkflowSteps.map((step, idx) => 
+                        `<option value="${idx}" ${step.isEnd ? 'selected' : ''}>${step.position || `Bosqich ${idx + 1}`}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="saveStageConfig" class="btn-primary" style="flex: 1; padding: 12px; background: #10B981; color: white; border: none; border-radius: 10px; font-weight: 600;">Saqlash</button>
+                <button id="cancelStageConfig" class="btn-secondary" style="flex: 1; padding: 12px; background: #EF4444; color: white; border: none; border-radius: 10px; font-weight: 600;">Bekor qilish</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Add event listeners
+    document.getElementById('saveStageConfig').addEventListener('click', saveStageConfig);
+    document.getElementById('cancelStageConfig').addEventListener('click', () => {
+        document.body.removeChild(dialog);
+    });
+}
+
+function saveStageConfig() {
+    const startStage = document.getElementById('startStageSelect').value;
+    const endStage = document.getElementById('endStageSelect').value;
+    
+    // Update workflow steps with start/end flags
+    currentWorkflowSteps.forEach((step, idx) => {
+        step.isStart = idx == startStage;
+        step.isEnd = idx == endStage;
+    });
+    
+    // Save to localStorage or send to server
+    myPermissions.workflowConfig = currentWorkflowSteps;
+    localStorage.setItem('myPermissions', JSON.stringify(myPermissions));
+    
+    // Close dialog
+    const dialog = document.getElementById('stageConfigDialog');
+    if (dialog) {
+        document.body.removeChild(dialog);
+    }
+    
+    // Re-render workflow steps
+    renderWorkflowSteps();
+    
+    alert('Sozlamalar saqlandi!');
 }

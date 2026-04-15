@@ -111,6 +111,7 @@ function switchTab(tabId, navId) {
     if (tabId === 'adminTab') initAdminTab();
     if (tabId === 'dashboardTab') initDashboardTab();
     if (tabId === 'kvadratTab') initKvadratTab();
+    if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
 
     if (tabId === 'addTab') {
         checkAddPermission();
