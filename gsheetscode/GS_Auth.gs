@@ -161,7 +161,7 @@ function roleDefaults_(roleKey) {
   if (role === 'ADMIN') {
     return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:false, canViewDash:false } };
   }
-  return { canAdd: true, permissions: { canViewAll:false, canEdit:false, canDelete:false, canExport:false, canViewDash:false } };
+  return { canAdd: true, permissions: { canViewAll:false, canEdit:true, canDelete:true, canExport:false, canViewDash:false } };
 }
 
 function deriveLegacyRoleFromRow_(row) {
