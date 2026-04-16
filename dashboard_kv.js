@@ -11,8 +11,27 @@ let kvChartWorkers = null;
 const _kvCharts = {};
 function destroyKvChart(id) { if (_kvCharts[id]) { _kvCharts[id].destroy(); delete _kvCharts[id]; } }
 
-const KV_PALETTE   = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+const KV_PALETTE = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316','#0EA5E9','#64748B'];
+const KV_STEP_PALETTE = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316','#0EA5E9','#64748B'];
+const KV_STATUS_PALETTE = ['#22C55E','#F59E0B','#3B82F6','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316','#0EA5E9','#64748B'];
 const KV_MONTHS_SHORT = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
+
+function getPaletteColor(index, palette = KV_PALETTE) {
+    return palette[index % palette.length];
+}
+
+function getWorkflowStepColors(positionIndex) {
+    return { bg: getPaletteColor(positionIndex, KV_STEP_PALETTE) };
+}
+
+function getStatusColor(statusLabel, positionIndex) {
+    const norm = String(statusLabel || '').toLowerCase();
+    if (norm.includes('yangi') || norm.includes('new')) return '#FACC15';
+    if (norm.includes('tayyor') || norm.includes('ready')) return '#22C55E';
+    if (norm.includes('qadoq') || norm.includes('qadoqlanm') || norm.includes('packed')) return '#3B82F6';
+    if (norm.includes('bajar') || norm.includes('done') || norm.includes('finished')) return '#EF4444';
+    return getPaletteColor(positionIndex, KV_STATUS_PALETTE);
+}
 
 const KV_BF = { family: "'Plus Jakarta Sans',sans-serif" };
 const KV_TC = { font: { ...KV_BF, size: 11 }, color: '#64748B' };
@@ -503,21 +522,13 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
     console.log('KV Charts: workerM2:', workerM2);
     console.log('KV Charts: stepCounts:', stepCounts);
 
-    const STATUS_COLORS = { 'yangi': '#FACC15', 'tayyor': '#22C55E' };
-    const DEFAULT_COLORS = ['#3B82F6','#22C55E','#FACC15','#F97316','#8B5CF6','#EC4899','#94A3B8'];
-
     // 1. Doughnut — Status
     const ctxStatus = document.getElementById('kvDashChartStatus');
     console.log('KV Charts: Status canvas element:', ctxStatus);
     if (ctxStatus && typeof Chart !== 'undefined') {
-        const labels = Object.keys(statusCounts).map(s => s.charAt(0).toUpperCase() + s.slice(1));
-        const bgColors = Object.keys(statusCounts).map((s, i) => {
-            for (const [k, c] of Object.entries(STATUS_COLORS)) {
-                if (s.indexOf(k) !== -1) return c;
-            }
-            if (s.indexOf('yig') !== -1) return '#3B82F6';
-            return DEFAULT_COLORS[i % DEFAULT_COLORS.length];
-        });
+        const statusKeys = Object.keys(statusCounts);
+        const labels = statusKeys.map(s => s.charAt(0).toUpperCase() + s.slice(1));
+        const bgColors = statusKeys.map((s, i) => getStatusColor(s, i));
 
         kvMkDonut('kvDashChartStatus', labels, Object.values(statusCounts), bgColors);
         console.log('KV Charts: Status chart created');
@@ -530,21 +541,17 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
     console.log('KV Charts: Steps canvas element:', ctxSteps);
     if (ctxSteps && typeof Chart !== 'undefined') {
         const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
-        const totalSteps = config.length >= 2 ? config.length : 3;
+        const stepKeys = Object.keys(stepCounts).sort((a,b) => Number(a) - Number(b));
 
-        const labels = Object.keys(stepCounts).map(step => {
+        const labels = stepKeys.map(step => {
             const stepNum = Number(step);
             const stepCfg = config.find(s => s.index === stepNum);
             return stepCfg ? stepCfg.status || `Bosqich ${stepNum}` : `Bosqich ${stepNum}`;
         });
 
-        const bgColors = Object.keys(stepCounts).map(step => {
-            const stepNum = Number(step) - 1;
-            const colors = getWorkflowStepColors(stepNum, totalSteps);
-            return colors.bg;
-        });
+        const bgColors = stepKeys.map((step, index) => getWorkflowStepColors(index).bg);
 
-        kvMkDonut('kvDashChartSteps', labels, Object.values(stepCounts), bgColors);
+        kvMkDonut('kvDashChartSteps', labels, stepKeys.map(k => stepCounts[k]), bgColors);
         console.log('KV Charts: Steps chart created');
     } else {
         console.error('KV Charts: Steps chart not created - canvas or Chart.js missing');
