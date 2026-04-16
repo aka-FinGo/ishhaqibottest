@@ -50,13 +50,147 @@ function boolToChecked(v) {
     return Number(v) === 1 ? 'checked' : '';
 }
 
-function toggleHodimPerms(tgId) {
-    const btn  = document.getElementById('hbtn_' + tgId);
-    const body = document.getElementById('hbody_' + tgId);
-    if (!btn || !body) return;
-    const isOpen = body.classList.toggle('open');
-    btn.classList.toggle('open', isOpen);
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+function showAddHodimModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1000;';
+    modal.innerHTML = `
+        <div class="card" style="width:90%;max-width:400px;background:#fff;border-radius:15px;padding:20px;">
+            <h3 style="margin:0 0 20px 0;color:var(--navy);">➕ Yangi Hodim Qo'shish</h3>
+            <div style="margin-bottom:15px;">
+                <label style="font-weight:600;display:block;margin-bottom:5px;">Telegram ID</label>
+                <input type="text" id="newHodimTgId" placeholder="Masalan: 123456789" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:16px;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:600;display:block;margin-bottom:5px;">Username (ixtiyoriy)</label>
+                <input type="text" id="newHodimUsername" placeholder="@username" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:16px;">
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-main" onclick="addNewHodim()" style="flex:1;padding:12px;border-radius:10px;font-weight:600;">✅ Qo'shish</button>
+                <button class="btn-secondary" onclick="this.closest('.modal').remove()" style="flex:1;padding:12px;border-radius:10px;font-weight:600;">❌ Bekor</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('newHodimTgId').focus();
+}
+
+async function addNewHodim() {
+    const tgId = document.getElementById('newHodimTgId').value.trim();
+    const username = document.getElementById('newHodimUsername').value.trim();
+
+    if (!tgId || !/^\d+$/.test(tgId)) {
+        showToastMsg('❌ Telegram ID raqamlardan iborat bo\'lishi kerak', true);
+        return;
+    }
+
+    try {
+        const data = await apiRequest({
+            action: 'add_hodim',
+            tgId: tgId,
+            username: username || null
+        });
+
+        if (data.success) {
+            showToastMsg('✅ Hodim muvaffaqiyatli qo\'shildi!');
+            document.querySelector('.modal').remove();
+            loadHodimlar(); // Ro'yxatni yangilash
+        } else {
+            showToastMsg('❌ ' + (data.error || 'Xato'), true);
+        }
+    } catch (e) {
+        showToastMsg('❌ Tarmoq xatosi', true);
+    }
+}
+
+function openHodimSettings(tgId) {
+    // Avval hodim ma'lumotlarini olish
+    apiRequest({ action:'get_hodimlar' }).then(data => {
+        if (!data.success) {
+            showToastMsg('❌ Hodim ma\'lumotlari yuklanmadi', true);
+            return;
+        }
+
+        const hodim = data.data.find(h => String(h.tgId) === tgId);
+        if (!hodim) {
+            showToastMsg('❌ Hodim topilmadi', true);
+            return;
+        }
+
+        showHodimSettingsModal(hodim);
+    });
+}
+
+function showHodimSettingsModal(h) {
+    const safeTgId = String(h.tgId || '').replace(/[^\d]/g, '');
+    const safeUsername = escapeHtml(h.username || '');
+    const role = normalizeRoleKey(h.role);
+    const isConfigLocked = Number(h.isConfigSuperAdmin) === 1;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1000;';
+    modal.innerHTML = `
+        <div class="card" style="width:95%;max-width:500px;max-height:90vh;overflow-y:auto;background:#fff;border-radius:15px;padding:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;color:var(--navy);">⚙️ Hodim Sozlamalari</h3>
+                <button onclick="this.closest('.modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">×</button>
+            </div>
+
+            <div style="margin-bottom:20px;text-align:center;">
+                <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px;">
+                    ${isConfigLocked ? '🔒' : '👤'}
+                </div>
+                <div style="font-weight:600;font-size:16px;color:var(--navy);">${safeUsername}</div>
+                <div style="font-size:12px;color:var(--text-muted);">ID: ${safeTgId}</div>
+            </div>
+
+            ${isConfigLocked ? `<div style="font-size:12px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin-bottom:15px;">🔒 Bu akkaunt CONFIG dagi SUPER_ADMIN_ID. Rol/ruxsatni faqat Google Sheetsdan o'zgartirasiz.</div>` : ''}
+
+            <div class="input-group" style="margin-bottom:15px;">
+                <label>Rol</label>
+                <select id="hrole_${safeTgId}" onchange="onHodimRoleChanged('${safeTgId}')" ${isConfigLocked ? 'disabled' : ''}>
+                    ${ROLE_OPTIONS.map(opt => `<option value="${opt.key}" ${opt.key === role ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="input-group" style="margin-bottom:15px;">
+                <label>Lavozimlar (Workflow)</label>
+                <div class="positions-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;">
+                    ${TECHNICAL_POSITIONS.map(pos => {
+                        const pid = `hpos_${safeTgId}_${pos.name.replace(/\s+/g, '_')}`;
+                        const isChecked = (h.positions || []).indexOf(pos.name) !== -1;
+                        return `
+                            <label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0; padding:8px; border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.2s;" onclick="togglePermLabel(this,'${pid}')">
+                                <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos.name}" style="pointer-events:none;">
+                                <span style="font-size:12px;">${pos.icon} ${pos.name}</span>
+                            </label>`;
+                    }).join('')}
+                </div>
+            </div>
+
+            <div class="hodim-perms-grid" style="margin-bottom:20px;">
+                ${permToggle(safeTgId, 'canAdd',      h.canAdd,      '➕ Amal qo\'shish')}
+                ${permToggle(safeTgId, 'canViewAll',  h.canViewAll,  '👁 Barchasini ko\'rish')}
+                ${permToggle(safeTgId, 'canViewDash', h.canViewDash, '📈 Dashboard')}
+                ${permToggle(safeTgId, 'canExport',   h.canExport,   '📥 Excel')}
+                ${permToggle(safeTgId, 'canEdit',     h.canEdit,     '✏️ Tahrirlash')}
+                ${permToggle(safeTgId, 'canDelete',   h.canDelete,   '🗑 O\'chirish')}
+            </div>
+
+            <div style="display:flex;gap:10px;">
+                <button class="btn-main" id="hsave_${safeTgId}" onclick="saveHodim('${safeTgId}');this.closest('.modal').remove();" style="flex:1;padding:12px;border-radius:10px;font-weight:600;" ${isConfigLocked ? 'disabled' : ''}>💾 Saqlash</button>
+                <button class="btn-secondary" onclick="deleteHodim('${safeTgId}')" style="flex:1;padding:12px;border-radius:10px;font-weight:600;background:#EF4444;color:white;border:1px solid #EF4444;" ${isConfigLocked ? 'disabled' : ''}>🗑 O'chirish</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Rol o'zgarishini qo'llash
+    applyRoleConstraintsToCard(safeTgId, false);
+    if (isConfigLocked) {
+        lockConfigSuperAdminCard(safeTgId);
+    }
 }
 
 function permToggle(tgId, field, val, label) {
@@ -178,26 +312,50 @@ async function loadHodimlar() {
             return;
         }
 
+        // Hodim qo'shish tugmasi
+        let html = `
+        <div class="hodim-add-section" style="margin-bottom:20px;">
+            <button class="btn-main" onclick="showAddHodimModal()" style="width:100%; padding:14px; font-size:16px; border-radius:12px;">
+                ➕ Yangi Hodim Qo'shish
+            </button>
+        </div>
+
+        <div class="hodimlar-grid">`;
+
         if (!data.data.length) {
-            list.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>Hali hodim qo'shilmagan</p></div>`;
-            return;
+            html += `<div class="empty-state"><div class="empty-icon">👥</div><p>Hali hodim qo'shilmagan</p></div>`;
+        } else {
+            data.data.forEach(function (h) {
+                const safeTgId = String(h.tgId || '').replace(/[^\d]/g, '');
+                const safeUsername = escapeHtml(h.username || '—');
+                const role = normalizeRoleKey(h.role);
+                const roleBadge = roleBadgeHtml(role);
+                const isConfigLocked = Number(h.isConfigSuperAdmin) === 1;
+                const lockIcon = isConfigLocked ? '🔒' : '';
+
+                html += `
+                <div class="hodim-card" onclick="openHodimSettings('${safeTgId}')" style="cursor:pointer; border:1px solid var(--border); border-radius:12px; padding:16px; background:#fff; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                    <div class="hodim-avatar" style="text-align:center; margin-bottom:12px;">
+                        <div style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin:0 auto 8px;">
+                            ${lockIcon || '👤'}
+                        </div>
+                        <div style="font-weight:600; font-size:14px; color:var(--navy);">${safeUsername}</div>
+                    </div>
+                    <div class="hodim-info" style="text-align:center;">
+                        ${roleBadge}
+                        ${isConfigLocked ? '<div style="font-size:11px; color:#92400E; margin-top:4px;">🔒 Config Lock</div>' : ''}
+                    </div>
+                </div>`;
+            });
         }
 
-        let html = '';
-        data.data.forEach(function (h) {
-            const safeTgId = String(h.tgId || '').replace(/[^\d]/g, '');
-            const safeUsername = escapeHtml(h.username || '—');
-            const safeUsernameValue = escapeHtml(h.username || '');
-            const role = normalizeRoleKey(h.role);
-            const roleBadge = roleBadgeHtml(role);
-            const isConfigLocked = Number(h.isConfigSuperAdmin) === 1;
-            const lockBadge = isConfigLocked
-                ? '<span class="role-badge" style="background:#FEF3C7;color:#92400E;">🔒 Config Lock</span>'
-                : '';
+        html += `</div>`;
+        list.innerHTML = html;
 
-            html += `
-            <div class="role-item" style="flex-direction:column;align-items:stretch;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    } catch {
+        list.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Yuklanmadi</p></div>`;
+    }
+}
                     <div style="flex:1;min-width:0;">
                         <div class="role-item-name">${safeUsername}</div>
                         <div class="role-item-id">ID: ${safeTgId || '—'}</div>
@@ -374,11 +532,33 @@ async function addHodim() {
 }
 
 async function deleteHodim(tgId) {
-    if (!confirm("Bu hodimni ro'yxatdan o'chirishga ishonchingiz komilmi?")) return;
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1001;';
+    modal.innerHTML = `
+        <div class="card" style="width:90%;max-width:350px;background:#fff;border-radius:15px;padding:20px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:15px;">⚠️</div>
+            <h3 style="margin:0 0 10px 0;color:var(--navy);">Hodimni o'chirish</h3>
+            <p style="color:var(--text-muted);margin-bottom:20px;">Bu hodimni ro'yxatdan o'chirishga ishonchingiz komilmi?</p>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-secondary" onclick="this.closest('.modal').remove()" style="flex:1;padding:12px;border-radius:10px;font-weight:600;">❌ Bekor</button>
+                <button class="btn-main" onclick="confirmDeleteHodim('${tgId}')" style="flex:1;padding:12px;border-radius:10px;font-weight:600;background:#EF4444;border:1px solid #EF4444;">🗑 O'chirish</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function confirmDeleteHodim(tgId) {
     try {
         const data = await apiRequest({ action:'delete_hodim', tgId });
-        if (data.success) loadHodimlar();
-        else showToastMsg('❌ ' + (data.error || "Xato"), true);
+        if (data.success) {
+            showToastMsg('✅ Hodim o\'chirildi');
+            document.querySelectorAll('.modal').forEach(m => m.remove());
+            loadHodimlar();
+        } else {
+            showToastMsg('❌ ' + (data.error || "Xato"), true);
+        }
     } catch {
         showToastMsg('❌ Server xatosi', true);
     }
