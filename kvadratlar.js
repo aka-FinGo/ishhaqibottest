@@ -495,7 +495,9 @@ async function saveKv() {
         if (found) ownerTgId = found[0];
     }
 
-    kvShowProc('Saqlanmoqda...');
+    const saveBtn = document.querySelector('#kvForm .btn-main[type="submit"]');
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
+
     try {
         const action = rowId ? 'kvadrat_edit' : 'kvadrat_add';
         const data = await apiRequest({
@@ -510,14 +512,16 @@ async function saveKv() {
             year
         });
         if (data.success) {
-            kvHideProc(true, 'Saqlandi');
+            showToastMsg('✅ Saqlandi');
             closeKvModal();
             initKvadratTab();
         } else {
-            kvHideProc(false, data.error || 'Saqlashda xato');
+            showToastMsg('❌ ' + (data.error || 'Saqlashda xato'), true);
         }
     } catch (e) {
-        kvHideProc(false, 'Tarmoq xatosi');
+        showToastMsg('❌ Tarmoq xatosi', true);
+    } finally {
+        setButtonLoading(saveBtn, false);
     }
 }
 
