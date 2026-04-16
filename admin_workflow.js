@@ -210,28 +210,39 @@ function showStageConfigDialog() {
     });
 }
 
-function saveStageConfig() {
-    const startStage = document.getElementById('startStageSelect').value;
-    const endStage = document.getElementById('endStageSelect').value;
-    
+async function saveStageConfig() {
+    const startStage = parseInt(document.getElementById('startStageSelect').value, 10);
+    const endStage = parseInt(document.getElementById('endStageSelect').value, 10);
+
     // Update workflow steps with start/end flags
     currentWorkflowSteps.forEach((step, idx) => {
-        step.isStart = idx == startStage;
-        step.isEnd = idx == endStage;
+        step.isStart = !Number.isNaN(startStage) && idx === startStage;
+        step.isEnd = !Number.isNaN(endStage) && idx === endStage;
     });
-    
-    // Save to localStorage or send to server
-    myPermissions.workflowConfig = currentWorkflowSteps;
-    localStorage.setItem('myPermissions', JSON.stringify(myPermissions));
-    
-    // Close dialog
+
+    if (typeof myPermissions !== 'undefined') {
+        myPermissions.workflowConfig = currentWorkflowSteps;
+        localStorage.setItem('myPermissions', JSON.stringify(myPermissions));
+    }
+
+    try {
+        const data = await apiRequest({
+            action: 'workflow_save_config',
+            steps: currentWorkflowSteps
+        });
+        if (!data.success) {
+            showToastMsg && showToastMsg('❌ ' + (data.error || 'Sozlamalarni saqlashda xato'), true);
+            return;
+        }
+        showToastMsg && showToastMsg('✅ Sozlamalar saqlandi!');
+    } catch (e) {
+        showToastMsg && showToastMsg('❌ Tarmoq xatosi', true);
+    }
+
     const dialog = document.getElementById('stageConfigDialog');
     if (dialog) {
         document.body.removeChild(dialog);
     }
-    
-    // Re-render workflow steps
+
     renderWorkflowSteps();
-    
-    alert('Sozlamalar saqlandi!');
 }

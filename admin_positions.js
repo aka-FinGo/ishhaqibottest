@@ -89,9 +89,12 @@ async function savePositionsUI() {
             if (typeof updateTechnicalPositions === 'function') {
                 updateTechnicalPositions(validPositions);
             }
-            // Update workflow dropdowns if needed
-            if (typeof initWorkflowUI === 'function' && typeof currentWorkflowSteps !== 'undefined') {
-                initWorkflowUI(currentWorkflowSteps);
+            if (typeof myPermissions !== 'undefined') {
+                myPermissions.allPositions = validPositions;
+            }
+            // Refresh workflow UI if available
+            if (typeof initWorkflowAdmin === 'function') {
+                initWorkflowAdmin();
             }
         } else {
             showToastMsg("❌ " + (data.error || "Saqlashda xato"), true);
