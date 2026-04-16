@@ -148,6 +148,11 @@ function showHodimSettingsModal(h) {
             ${isConfigLocked ? `<div style="font-size:12px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin-bottom:15px;">🔒 Bu akkaunt CONFIG dagi SUPER_ADMIN_ID. Rol/ruxsatni faqat Google Sheetsdan o'zgartirasiz.</div>` : ''}
 
             <div class="input-group" style="margin-bottom:15px;">
+                <label>👤 Hodim Ismi (UserName)</label>
+                <input type="text" id="uname_${safeTgId}" value="${safeUsername}" placeholder="Masalan: Ali (Haydovchi)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);background:#FAFBFD;">
+            </div>
+
+            <div class="input-group" style="margin-bottom:15px;">
                 <label>Rol</label>
                 <select id="hrole_${safeTgId}" onchange="onHodimRoleChanged('${safeTgId}')" ${isConfigLocked ? 'disabled' : ''}>
                     ${ROLE_OPTIONS.map(opt => `<option value="${opt.key}" ${opt.key === role ? 'selected' : ''}>${opt.label}</option>`).join('')}
