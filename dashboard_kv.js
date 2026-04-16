@@ -151,15 +151,19 @@ function _aggregateWorkerM2(records) {
     const workerM2 = {};   // workerName → total m²
     const workerOrders = {}; // workerName → count of orders
 
+    if (!Array.isArray(records)) return { workerM2, workerOrders };
+
     records.forEach(rec => {
+        if (!rec) return;
         const m2 = Number(rec.totalM2) || 0;
         if (m2 <= 0) return;
 
-        const logs = rec.logs || [];
+        const logs = Array.isArray(rec.logs) ? rec.logs : [];
         const credited = new Set(); // avoid double-crediting same person on same order
 
         // Credit each unique participant from the workflow logs
         logs.forEach(log => {
+            if (!log) return;
             const uid = String(log.uid || '').trim();
             if (!uid) return;
             const name = _resolveKvName(uid, rec);
@@ -407,25 +411,28 @@ function renderKvDashboard(body) {
     const monthlyM2 = {};
     const stepCounts = {};
 
-    kvDashboardRecords.forEach(rec => {
-        const m2 = Number(rec.totalM2) || 0;
-        totalM2 += m2;
+    if (Array.isArray(kvDashboardRecords)) {
+        kvDashboardRecords.forEach(rec => {
+            if (!rec) return;
+            const m2 = Number(rec.totalM2) || 0;
+            totalM2 += m2;
 
-        const st = (rec.status || 'yangi').toLowerCase();
-        statusCounts[st] = (statusCounts[st] || 0) + 1;
+            const st = String(rec.status || 'yangi').toLowerCase();
+            statusCounts[st] = (statusCounts[st] || 0) + 1;
 
-        if (rec.date) {
-            const parts = rec.date.split('/');
-            if (parts.length === 3) {
-                const key = `${parts[2]}-${parts[1]}`;
-                monthlyM2[key] = (monthlyM2[key] || 0) + m2;
+            if (rec.date && typeof rec.date === 'string') {
+                const parts = rec.date.split('/');
+                if (parts.length === 3) {
+                    const key = `${parts[2]}-${parts[1]}`;
+                    monthlyM2[key] = (monthlyM2[key] || 0) + m2;
+                }
             }
-        }
 
-        // Aggregate by workflow step
-        const step = Number(rec.currentStep) || 1;
-        stepCounts[step] = (stepCounts[step] || 0) + 1;
-    });
+            // Aggregate by workflow step
+            const step = Number(rec.currentStep) || 1;
+            stepCounts[step] = (stepCounts[step] || 0) + 1;
+        });
+    }
 
     // Worker m² — aggregated by workflow participation
     const { workerM2, workerOrders } = _aggregateWorkerM2(kvDashboardRecords);
@@ -438,11 +445,11 @@ function renderKvDashboard(body) {
         .reduce((s, [, v]) => s + v, 0);
 
     // Additional metrics
-    const avgM2PerOrder = kvDashboardRecords.length ? (totalM2 / kvDashboardRecords.length).toFixed(1) : 0;
+    const avgM2PerOrder = (Array.isArray(kvDashboardRecords) && kvDashboardRecords.length) ? (totalM2 / kvDashboardRecords.length).toFixed(1) : 0;
     const topMonth = Object.entries(monthlyM2).sort((a, b) => b[1] - a[1])[0];
     const topMonthLabel = topMonth ? (() => {
         const [y, m] = topMonth[0].split('-');
-        return `${KV_MONTHS_UZ[parseInt(m) - 1]} ${y}`;
+        return `${KV_MONTHS_UZ[parseInt(m) - 1] || ''} ${y}`;
     })() : '—';
 
     // ── HTML ──────────────────────────────────────────────────
