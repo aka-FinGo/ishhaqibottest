@@ -85,6 +85,8 @@ async function savePositionsUI() {
 
         if (data.success) {
             showToastMsg("✅ Lavozimlar muvaffaqiyatli saqlandi!");
+            // Yangi lavozimlarni lokal state'ga yangilash
+            currentPositionsPool = validPositions;
             // Update global state
             if (typeof updateTechnicalPositions === 'function') {
                 updateTechnicalPositions(validPositions);
@@ -92,6 +94,8 @@ async function savePositionsUI() {
             if (typeof myPermissions !== 'undefined') {
                 myPermissions.allPositions = validPositions;
             }
+            // Re-render positions list
+            renderPositionsList();
             // Refresh workflow UI if available
             if (typeof initWorkflowAdmin === 'function') {
                 initWorkflowAdmin();
