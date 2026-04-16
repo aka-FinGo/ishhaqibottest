@@ -11,8 +11,8 @@ let kvChartWorkers = null;
 const _kvCharts = {};
 function destroyKvChart(id) { if (_kvCharts[id]) { _kvCharts[id].destroy(); delete _kvCharts[id]; } }
 
-const KV_MONTHS_UZ = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
 const KV_PALETTE   = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+const KV_MONTHS_SHORT = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
 
 const KV_BF = { family: "'Plus Jakarta Sans',sans-serif" };
 const KV_TC = { font: { ...KV_BF, size: 11 }, color: '#64748B' };
@@ -449,7 +449,7 @@ function renderKvDashboard(body) {
     const topMonth = Object.entries(monthlyM2).sort((a, b) => b[1] - a[1])[0];
     const topMonthLabel = topMonth ? (() => {
         const [y, m] = topMonth[0].split('-');
-        return `${KV_MONTHS_UZ[parseInt(m) - 1] || ''} ${y}`;
+        return `${KV_MONTHS_SHORT[parseInt(m) - 1] || ''} ${y}`;
     })() : '—';
 
     // ── HTML ──────────────────────────────────────────────────
@@ -486,15 +486,23 @@ function renderKvDashboard(body) {
     ${kvCCard('🏅 Top Hodimlar (m²)', 'kvDashChartWorkers', Math.max(200, Object.keys(workerM2).length * 50))}`;
 
     // ── Charts ────────────────────────────────────────────────
-    setTimeout(() => _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts), 80);
+    setTimeout(() => _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts), 200);
 }
 
 function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
+    console.log('KV Charts: Starting to render charts');
+    console.log('KV Charts: Chart.js available:', typeof Chart !== 'undefined');
+    console.log('KV Charts: statusCounts:', statusCounts);
+    console.log('KV Charts: monthlyM2:', monthlyM2);
+    console.log('KV Charts: workerM2:', workerM2);
+    console.log('KV Charts: stepCounts:', stepCounts);
+
     const STATUS_COLORS = { 'yangi': '#FACC15', 'tayyor': '#22C55E' };
     const DEFAULT_COLORS = ['#3B82F6','#22C55E','#FACC15','#F97316','#8B5CF6','#EC4899','#94A3B8'];
 
     // 1. Doughnut — Status
     const ctxStatus = document.getElementById('kvDashChartStatus');
+    console.log('KV Charts: Status canvas element:', ctxStatus);
     if (ctxStatus && typeof Chart !== 'undefined') {
         const labels = Object.keys(statusCounts).map(s => s.charAt(0).toUpperCase() + s.slice(1));
         const bgColors = Object.keys(statusCounts).map((s, i) => {
@@ -506,10 +514,14 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
         });
 
         kvMkDonut('kvDashChartStatus', labels, Object.values(statusCounts), bgColors);
+        console.log('KV Charts: Status chart created');
+    } else {
+        console.error('KV Charts: Status chart not created - canvas or Chart.js missing');
     }
 
     // 2. Doughnut — Workflow Steps
     const ctxSteps = document.getElementById('kvDashChartSteps');
+    console.log('KV Charts: Steps canvas element:', ctxSteps);
     if (ctxSteps && typeof Chart !== 'undefined') {
         const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
         const totalSteps = config.length >= 2 ? config.length : 3;
@@ -527,12 +539,16 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
         });
 
         kvMkDonut('kvDashChartSteps', labels, Object.values(stepCounts), bgColors);
+        console.log('KV Charts: Steps chart created');
+    } else {
+        console.error('KV Charts: Steps chart not created - canvas or Chart.js missing');
     }
 
     // 3. Bar — Monthly m²
     const ctxTrends = document.getElementById('kvDashChartTrends');
+    console.log('KV Charts: Trends canvas element:', ctxTrends);
     if (ctxTrends && typeof Chart !== 'undefined') {
-        const MONTH_SHORT = ['', 'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyu', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+        const MONTH_SHORT = KV_MONTHS_SHORT;
         const sortedKeys = Object.keys(monthlyM2).sort();
         const labels = sortedKeys.map(k => {
             const [y, mm] = k.split('-');
@@ -546,14 +562,21 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
             borderRadius: 6,
             borderSkipped: false
         }]);
+        console.log('KV Charts: Trends chart created');
+    } else {
+        console.error('KV Charts: Trends chart not created - canvas or Chart.js missing');
     }
 
     // 4. Horizontal Bar — Worker comparison
     const ctxWorkers = document.getElementById('kvDashChartWorkers');
+    console.log('KV Charts: Workers canvas element:', ctxWorkers);
     if (ctxWorkers && typeof Chart !== 'undefined' && workerM2) {
         const sorted = Object.entries(workerM2).sort((a, b) => b[1] - a[1]).slice(0, 8);
         const WORKER_COLORS = ['#0F172A','#1E40AF','#7C3AED','#DB2777','#EA580C','#059669','#CA8A04','#475569'];
 
         kvMkHBar('kvDashChartWorkers', sorted.map(([n]) => n.length > 12 ? n.slice(0,11) + '…' : n), sorted.map(([, v]) => parseFloat(v.toFixed(1))), sorted.map((_, i) => WORKER_COLORS[i % WORKER_COLORS.length]));
+        console.log('KV Charts: Workers chart created');
+    } else {
+        console.error('KV Charts: Workers chart not created - canvas or Chart.js missing');
     }
 }
