@@ -76,7 +76,9 @@ async function savePositionsUI() {
         return;
     }
 
-    showLoading(true);
+    const saveBtn = document.querySelector('button[onclick*="savePositionsUI"]');
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
+
     try {
         const data = await apiRequest({
             action: 'positions_save_all',
@@ -106,6 +108,6 @@ async function savePositionsUI() {
     } catch (e) {
         showToastMsg("❌ Tarmoq xatosi", true);
     } finally {
-        showLoading(false);
+        setButtonLoading(saveBtn, false);
     }
 }

@@ -170,6 +170,10 @@ async function exportAdminExcel() {
         showToastMsg("❌ Kompaniya eksport ruxsati yo'q", true);
         return;
     }
+
+    const exportBtn = document.getElementById('companyExportBtn');
+    setButtonLoading(exportBtn, true, 'Eksport qilinmoqda...');
+
     const empSelect = document.getElementById('filterEmployee');
     const empVal    = empSelect ? empSelect.value : 'all';
     const baseName  = empVal !== 'all'
@@ -183,5 +187,7 @@ async function exportAdminExcel() {
         exportToBot(exportData, baseName, "all");
     } catch (err) {
         showToastMsg('❌ ' + (err.message || 'Eksport xatosi'), true);
+    } finally {
+        setButtonLoading(exportBtn, false);
     }
 }

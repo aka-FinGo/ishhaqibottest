@@ -148,6 +148,9 @@ async function saveEdit() {
         amountUZS = parseFloat(document.getElementById('editAmountUZS').value) || 0;
     }
 
+    const saveBtn = document.querySelector('#editForm .btn-main[type="submit"]');
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
+
     closeModal();
     if (currentEditScope === 'admin') {
         document.getElementById('adminList').innerHTML = `
@@ -178,6 +181,7 @@ async function saveEdit() {
     } catch {
         showToastMsg('❌ Server xatosi', true);
     } finally {
+        setButtonLoading(saveBtn, false);
         if (currentEditScope === 'admin') {
             loadAdminData();
         }

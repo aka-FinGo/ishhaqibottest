@@ -84,6 +84,7 @@ async function addNewHodim() {
         return;
     }
 
+    setButtonLoading(document.querySelector('.modal .btn-main'), true, 'Qo\'shilmoqda...');
     try {
         const data = await apiRequest({
             action: 'add_hodim',
@@ -100,6 +101,8 @@ async function addNewHodim() {
         }
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);
+    } finally {
+        setButtonLoading(document.querySelector('.modal .btn-main'), false);
     }
 }
 
@@ -369,6 +372,9 @@ async function saveHodim(tgId) {
         return;
     }
 
+    const saveBtn = document.getElementById(`hsave_${tgId}`);
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
+
     const payload = {
         action: 'update_hodim',
         telegramId,
@@ -398,6 +404,8 @@ async function saveHodim(tgId) {
         if (data.success) loadHodimlar();
     } catch {
         showToastMsg('❌ Server xatosi', true);
+    } finally {
+        setButtonLoading(saveBtn, false);
     }
 }
 
@@ -466,6 +474,9 @@ async function deleteHodim(tgId) {
 }
 
 async function confirmDeleteHodim(tgId) {
+    const deleteBtn = document.querySelector('.modal .btn-main');
+    setButtonLoading(deleteBtn, true, 'O\'chirilmoqda...');
+
     try {
         const data = await apiRequest({ action:'delete_hodim', tgId });
         if (data.success) {
@@ -477,5 +488,7 @@ async function confirmDeleteHodim(tgId) {
         }
     } catch {
         showToastMsg('❌ Server xatosi', true);
+    } finally {
+        setButtonLoading(deleteBtn, false);
     }
 }

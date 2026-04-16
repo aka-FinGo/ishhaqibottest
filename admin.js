@@ -212,7 +212,10 @@ async function saveReminderTextSettings() {
         setNotifyStatus('❗ Xabar matni bo\'sh bo\'lmasin', true, 'admin');
         return;
     }
-    setNotifyStatus('⏳ Matn saqlanmoqda...', false, 'admin');
+
+    const saveBtn = document.querySelector('button[onclick*="saveReminderTextSettings"]');
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
+
     try {
         const data = await apiRequest({ action: 'set_reminder_text', text: text });
         if (!data.success) {
@@ -223,6 +226,8 @@ async function saveReminderTextSettings() {
         setNotifyStatus('✅ Default xabar matni saqlandi', false, 'admin');
     } catch {
         setNotifyStatus('❌ Server xatosi', true, 'admin');
+    } finally {
+        setButtonLoading(saveBtn, false);
     }
 }
 
@@ -277,12 +282,20 @@ async function confirmReminderSend() {
         setNotifyStatus('❗ Tasdiqlash uchun tayyorlangan amal yo\'q', true, 'admin');
         return;
     }
-    if (pendingReminderSend.type === 'single') {
-        await sendUserReminderFromPanel('admin', pendingReminderSend.messageText);
-    } else {
-        await sendInactiveRemindersFromPanel('admin', pendingReminderSend.messageText);
+
+    const confirmBtn = document.querySelector('button[onclick*="confirmReminderSend"]');
+    setButtonLoading(confirmBtn, true, 'Yuborilmoqda...');
+
+    try {
+        if (pendingReminderSend.type === 'single') {
+            await sendUserReminderFromPanel('admin', pendingReminderSend.messageText);
+        } else {
+            await sendInactiveRemindersFromPanel('admin', pendingReminderSend.messageText);
+        }
+    } finally {
+        setButtonLoading(confirmBtn, false);
+        cancelReminderSend();
     }
-    cancelReminderSend();
 }
 
 async function sendUserReminderFromPanel(scope, messageText) {
@@ -339,7 +352,9 @@ async function sendInactiveRemindersFromPanel(scope, messageText) {
 
 async function runSystemSelfCheck(scope) {
     const statusScope = scope === 'admin' ? 'admin_service' : 'dashboard';
-    setNotifyStatus('⏳ Self-check ishlayapti...', false, statusScope);
+    const selfCheckBtn = scope === 'admin' ? document.getElementById('selfCheckBtnAdmin') : document.getElementById('selfCheckBtnDashboard');
+    setButtonLoading(selfCheckBtn, true, 'Tekshirilmoqda...');
+
     try {
         const data = await apiRequest({ action: 'self_check' });
         if (!data.success) {
@@ -358,6 +373,8 @@ async function runSystemSelfCheck(scope) {
         }
     } catch {
         setNotifyStatus('❌ Server xatosi', true, statusScope);
+    } finally {
+        setButtonLoading(selfCheckBtn, false);
     }
 }
 

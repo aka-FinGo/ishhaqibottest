@@ -137,21 +137,26 @@ async function saveWorkflowConfigUI() {
         return;
     }
 
+    const saveBtn = document.querySelector('button[onclick*="saveWorkflowConfigUI"]');
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
+
     try {
         const data = await apiRequest({
             action: 'workflow_save_config',
             steps: currentWorkflowSteps
         });
 
-            if (data.success) {
-                showToastMsg('✅ Oqim saqlandi! Ilovani yangilang.');
-                // Update local config so roles.js picks it up
-                myPermissions.workflowConfig = currentWorkflowSteps;
-            } else {
+        if (data.success) {
+            showToastMsg('✅ Oqim saqlandi! Ilovani yangilang.');
+            // Update local config so roles.js picks it up
+            myPermissions.workflowConfig = currentWorkflowSteps;
+        } else {
             showToastMsg('❌ ' + (data.error || 'Xato'), true);
         }
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);
+    } finally {
+        setButtonLoading(saveBtn, false);
     }
 }
 
@@ -225,6 +230,11 @@ async function saveStageConfig() {
         localStorage.setItem('myPermissions', JSON.stringify(myPermissions));
     }
 
+    const saveStageBtn = document.getElementById('saveStageConfig');
+    if (saveStageBtn) {
+        setButtonLoading(saveStageBtn, true, 'Saqlanmoqda...');
+    }
+
     try {
         const data = await apiRequest({
             action: 'workflow_save_config',
@@ -237,6 +247,10 @@ async function saveStageConfig() {
         showToastMsg && showToastMsg('✅ Sozlamalar saqlandi!');
     } catch (e) {
         showToastMsg && showToastMsg('❌ Tarmoq xatosi', true);
+    } finally {
+        if (saveStageBtn) {
+            setButtonLoading(saveStageBtn, false);
+        }
     }
 
     const dialog = document.getElementById('stageConfigDialog');
