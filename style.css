@@ -35,10 +35,23 @@ body {
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
 }
 
 .container {
-    max-width: 480px;
+    max-width: min(480px, 100vw - 32px);
     margin: 0 auto;
     padding: 16px 16px 100px;
 }
@@ -296,7 +309,7 @@ input, select, textarea {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
     background: #FAFBFD;
-    font-size: 14px;
+    font-size: 16px;
     font-family: var(--font);
     color: var(--text);
     outline: none;
@@ -1810,6 +1823,124 @@ body.dark .whatif-preview {
     .hodimlar-grid {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
         gap: 10px;
+    }
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 360px) {
+    .container {
+        padding: 12px 12px 100px;
+    }
+
+    .page-header h2 {
+        font-size: 20px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .budget-amount {
+        font-size: 24px;
+    }
+
+    .btn-main, .btn-secondary {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .nav-item {
+        font-size: 10px;
+    }
+
+    .nav-item .nav-icon {
+        font-size: 18px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .container {
+        max-width: min(600px, 100vw - 48px);
+        padding: 20px 20px 120px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .budget-card {
+        padding: 24px;
+    }
+}
+
+@media (min-width: 769px) {
+    .container {
+        max-width: min(800px, 100vw - 64px);
+        padding: 24px 24px 140px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 16px;
+    }
+
+    .stat-card {
+        padding: 24px;
+    }
+
+    .budget-card {
+        padding: 28px;
+    }
+
+    .bottom-nav {
+        padding: 16px 0;
+    }
+
+    .nav-item {
+        font-size: 12px;
+    }
+
+    .nav-item .nav-icon {
+        font-size: 22px;
+    }
+
+    .nav-fab {
+        width: 60px;
+        height: 60px;
+        font-size: 28px;
+        margin-top: -32px;
+    }
+}
+
+/* ========== ORIENTATION HANDLING ========== */
+@media (orientation: landscape) and (max-height: 500px) {
+    .container {
+        padding: 12px 12px 80px;
+    }
+
+    .budget-card {
+        padding: 18px;
+    }
+
+    .stat-card {
+        padding: 14px;
+    }
+
+    .bottom-nav {
+        padding: 8px 0;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .nav-fab {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+        margin-top: -24px;
     }
 }
 
