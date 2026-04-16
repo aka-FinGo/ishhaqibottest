@@ -125,6 +125,27 @@ function getTodayDdMmYyyy(now = new Date()) {
   };
 }
 
+function setButtonLoading(button, isLoading, text) {
+  if (!button) return;
+  if (isLoading) {
+    if (button.dataset.originalHtml === undefined) {
+      button.dataset.originalHtml = button.innerHTML;
+    }
+    button.disabled = true;
+    if (typeof text === 'string' && text.trim()) {
+      button.innerHTML = `<span class="btn-text">${escapeHtml(text)}</span>`;
+    }
+    button.classList.add('btn-loading');
+  } else {
+    button.disabled = false;
+    if (button.dataset.originalHtml !== undefined) {
+      button.innerHTML = button.dataset.originalHtml;
+      delete button.dataset.originalHtml;
+    }
+    button.classList.remove('btn-loading');
+  }
+}
+
 async function apiRequest(payload, opts) {
   const options = opts || {};
   const timeoutMs = Number(options.timeoutMs) || 25000;
