@@ -149,7 +149,7 @@ function _resolveKvName(uid, rec) {
  */
 function _aggregateWorkerM2(records) {
     const workerM2 = {};   // workerName → total m²
-    const workerOrders = {}; // workerName → count of orders
+    const workerOrders = {}; // workerName → count of distinct orders
 
     if (!Array.isArray(records)) return { workerM2, workerOrders };
 
@@ -159,22 +159,29 @@ function _aggregateWorkerM2(records) {
         if (m2 <= 0) return;
 
         const logs = Array.isArray(rec.logs) ? rec.logs : [];
-        const credited = new Set(); // avoid double-crediting same person on same order
+        const creditedSteps = new Set(); // avoid duplicate log rows for the same user/step
+        const creditedOrders = new Set();
 
-        // Credit each unique participant from the workflow logs
         logs.forEach(log => {
             if (!log) return;
             const uid = String(log.uid || '').trim();
             if (!uid) return;
+            const step = String(log.step || '').trim();
+            const stepKey = `${uid}|${step}`;
+            if (creditedSteps.has(stepKey)) return;
+            creditedSteps.add(stepKey);
+
             const name = _resolveKvName(uid, rec);
-            if (credited.has(name)) return;
-            credited.add(name);
             workerM2[name] = (workerM2[name] || 0) + m2;
-            workerOrders[name] = (workerOrders[name] || 0) + 1;
+
+            const orderKey = `${name}|${rec.rowId || rec.no || rec.orderName || ''}`;
+            if (!creditedOrders.has(orderKey)) {
+                creditedOrders.add(orderKey);
+                workerOrders[name] = (workerOrders[name] || 0) + 1;
+            }
         });
 
-        // If no logs at all, credit the staffName (creator)
-        if (credited.size === 0 && rec.staffName) {
+        if (creditedSteps.size === 0 && rec.staffName) {
             const name = rec.staffName;
             workerM2[name] = (workerM2[name] || 0) + m2;
             workerOrders[name] = (workerOrders[name] || 0) + 1;
@@ -455,7 +462,6 @@ function renderKvDashboard(body) {
     // ── HTML ──────────────────────────────────────────────────
     body.innerHTML = `
     <div class="dash-role-badge kv">
-        📐 Kvadratlar Dashboard
         <button class="btn-secondary" onclick="renderKvDashboardPage()" style="margin-left:auto; padding:4px 12px; font-size:11px; border-radius:12px;" title="Yangilash">
             🔄
         </button>
