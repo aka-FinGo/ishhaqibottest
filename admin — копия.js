@@ -105,17 +105,117 @@ function cacheData(key) {
     };
 }
 
-// Function to render admin list (transactions/actions) - will be overridden by enhanced version
+// Function to render admin list (transactions/actions)
 function renderAdminList(data) {
-    // This function will be replaced by the enhanced version in enhanced_admin_list.js
-    // This is just a placeholder to prevent errors
-    // The enhanced version will be loaded after this file
     const adminListEl = document.getElementById('adminList');
     if (!adminListEl) {
         console.error('adminList element not found');
         return;
     }
-    adminListEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b;">Loading...</div>';
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        adminListEl.innerHTML = `
+            <div class="empty-state" style="padding: 40px 20px; text-align: center; color: #64748b;">
+                <div style="font-size: 60px; margin-bottom: 16px;">📋</div>
+                <h3 style="margin: 0 0 8px; color: #1e293b;">Hech qanday amal topilmadi</h3>
+                <p style="margin: 0; font-size: 14px;">Hozircha tizimda hech qanday amal kiritilmagan</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort data by date (newest first)
+    const sortedData = [...data].sort((a, b) => {
+        // Compare dates - assuming 'date' field exists
+        const dateA = new Date(a.date || a.createdAt || a.timestamp || '');
+        const dateB = new Date(b.date || b.createdAt || b.timestamp || '');
+        return dateB - dateA; // Newest first
+    });
+
+    let html = '<div class="admin-list-container">';
+    
+    sortedData.forEach(item => {
+        const amountUZS = item.amountUZS || 0;
+        const amountUSD = item.amountUSD || 0;
+        const rate = item.rate || 0;
+        const comment = item.comment || 'Izohsiz';
+        const name = item.name || 'Noma\'lum';
+        const date = item.date || 'Sana kiritilmagan';
+        const actionPeriod = item.actionPeriod || '';
+
+        html += `
+            <div class="admin-list-item" style="
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-weight: 600; color: #1e293b;">${name}</div>
+                    <div style="color: #64748b; font-size: 12px;">${date}</div>
+                </div>
+                
+                <div style="margin-bottom: 8px;">
+                    <div style="color: #64748b; font-size: 13px;">${comment}</div>
+                    ${actionPeriod ? `<div style="color: #0ea5e9; font-size: 12px; margin-top: 4px;">Davr: ${actionPeriod}</div>` : ''}
+                </div>
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    ${amountUZS ? `<div class="amount-chip uzs" style="
+                        background: #dcfce7;
+                        color: #166534;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        font-weight: 500;
+                    ">💰 ${Number(amountUZS).toLocaleString()} UZS</div>` : ''}
+                    
+                    ${amountUSD ? `<div class="amount-chip usd" style="
+                        background: #dbeafe;
+                        color: #1e40af;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        font-weight: 500;
+                    ">💵 $${Number(amountUSD).toLocaleString()}</div>` : ''}
+                    
+                    ${rate ? `<div class="rate-tag" style="
+                        background: #fef3c7;
+                        color: #92400e;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                    ">📈 ${Number(rate).toLocaleString()}</div>` : ''}
+                </div>
+                
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                    <button class="btn-edit" onclick="openEdit('${item.rowId || item.id}')" style="
+                        background: #e0f2fe;
+                        color: #0369a1;
+                        border: none;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        cursor: pointer;
+                    ">Tahrirlash</button>
+                    <button class="btn-delete" onclick="deleteRecord('${item.rowId || item.id}')" style="
+                        background: #fee2e2;
+                        color: #b91c1c;
+                        border: none;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        cursor: pointer;
+                    ">O'chirish</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    adminListEl.innerHTML = html;
 }
 
 // Function to apply filters to admin data
