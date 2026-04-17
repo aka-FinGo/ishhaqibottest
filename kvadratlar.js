@@ -210,6 +210,7 @@ function updateKvFabVisibility() {
 
 /**
  * Renders the filtered list of measurements as a table.
+ * Optimizatsiya: Array.join() bilan DOM update minimallashtirildi
  */
 function renderKvList() {
     const container = document.getElementById('kvList');
@@ -219,25 +220,20 @@ function renderKvList() {
     console.log("Rendering KV list, filtered records:", kvFilteredRecords.length);
     
     if (!kvFilteredRecords.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📏</div>
-                <p>Ma'lumot topilmadi</p>
-            </div>`;
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📏</div><p>Ma'lumot topilmadi</p></div>`;
         if (totalDisplay) totalDisplay.innerText = '0';
         return;
     }
 
     let totalM2 = 0;
-    let rowsHtml = '';
     let lastDate = '';
+    const rows = [];
 
     kvFilteredRecords.forEach((rec, idx) => {
         totalM2 += Number(rec.totalM2) || 0;
 
-        // Group by Date rows
         if (rec.date !== lastDate) {
-            rowsHtml += `<tr class="kv-date-row"><td colspan="5">📅 ${escapeHtml(rec.date)}</td></tr>`;
+            rows.push(`<tr class="kv-date-row"><td colspan="5">📅 ${escapeHtml(rec.date)}</td></tr>`);
             lastDate = rec.date;
         }
 
@@ -253,33 +249,10 @@ function renderKvList() {
         if (status.indexOf('yigi') !== -1) stIcon = '🔵';
         else if (status.indexOf('tayyor') !== -1 || status.indexOf('landi') !== -1) stIcon = '🟢';
 
-        rowsHtml += `
-        <tr class="kv-data-row" onclick="showKvDetailModal(${idx})">
-            <td class="kv-col-seq">${idx + 1}</td>
-            <td class="kv-col-no">${escapeHtml(String(rec.no || '—'))}</td>
-            <td class="kv-col-oy">${monthClean || '—'}</td>
-            <td class="kv-col-m2">${m2Val}</td>
-            <td class="kv-col-st" title="${escapeHtml(status)}"><span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:${phaseColors.bg}; border:1px solid ${phaseColors.color};"></span>${stIcon}</span></td>
-        </tr>`;
+        rows.push(`<tr class="kv-data-row" onclick="showKvDetailModal(${idx})"><td class="kv-col-seq">${idx + 1}</td><td class="kv-col-no">${escapeHtml(String(rec.no || '—'))}</td><td class="kv-col-oy">${monthClean || '—'}</td><td class="kv-col-m2">${m2Val}</td><td class="kv-col-st" title="${escapeHtml(status)}"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:${phaseColors.bg};border:1px solid ${phaseColors.color};"></span>${stIcon}</span></td></tr>`);
     });
 
-    container.innerHTML = `
-    <div class="kv-table-wrap">
-        <table class="kv-table">
-            <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Buyurtma №</th>
-                    <th>Oy</th>
-                    <th style="text-align:right;">m²</th>
-                    <th>ST</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${rowsHtml}
-            </tbody>
-        </table>
-    </div>`;
+    container.innerHTML = `<div class="kv-table-wrap"><table class="kv-table"><thead><tr><th>№</th><th>Buyurtma №</th><th>Oy</th><th style="text-align:right;">m²</th><th>ST</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
 
     if (totalDisplay) totalDisplay.innerText = totalM2.toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
     if (typeof renderKvWorkerStats === 'function') renderKvWorkerStats(kvFilteredRecords);
