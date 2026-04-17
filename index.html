@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,426 +13,48 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Aristokrat Ish Haqi (v1.0.22)</title>
+    <title>Aristokrat Ish Haqi (v1.0.22.1)</title>
     <meta name="app-version" content="v1.0.22">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css?v=1.0.22">
 </head>
+
 <body>
-<div class="container">
+    <div class="container">
 
-    <!-- TAB 1: HISOBOT -->
-    <div id="reportTab" class="tab-content active">
-        <div class="page-header">
-            <div>
-                <h2 id="greeting">Salom!</h2>
-                <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">v1.0.22</div>
+        <!-- TAB 1: HISOBOT -->
+        <div id="reportTab" class="tab-content active">
+            <div class="page-header">
+                <div>
+                    <h2 id="greeting">Salom!</h2>
+                    <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">v1.0.22</div>
+                </div>
+                <div class="header-avatar">👤</div>
             </div>
-            <div class="header-avatar">👤</div>
-        </div>
-        <div class="stats-grid">
-            <div class="stat-card uzs"><div class="stat-label">So'm</div><div class="stat-value" id="myUzs">0</div></div>
-            <div class="stat-card usd"><div class="stat-label">Dollar</div><div class="stat-value" id="myUsd">$0</div></div>
-        </div>
-        <div class="budget-card">
-            <div class="budget-label">Jami Budjet (So'mda)</div>
-            <div class="budget-amount" id="myTotalBudget">0 UZS</div>
-            <div class="budget-footer">
-                <span style="font-size:12px;color:rgba(255,255,255,0.6);font-weight:500;">Shaxsiy hisobotingiz</span>
-            </div>
-        </div>
-        <div class="filter-box">
-            <div class="filter-row">
-                <select id="myFilterMonth" onchange="applyMyFilters()">
-                    <option value="all">Barcha oylar</option>
-                    <option value="01">Yanvar</option><option value="02">Fevral</option>
-                    <option value="03">Mart</option><option value="04">Aprel</option>
-                    <option value="05">May</option><option value="06">Iyun</option>
-                    <option value="07">Iyul</option><option value="08">Avgust</option>
-                    <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
-                    <option value="11">Noyabr</option><option value="12">Dekabr</option>
-                </select>
-                <select id="myFilterYear" onchange="applyMyFilters()"><option value="all">Yillar</option></select>
-            </div>
-            <button class="btn-main bg-navy" onclick="exportMyExcel()" style="margin-top:0;padding:11px;font-size:13px;">
-                📥 Excel hisobotni yuklab olish
-            </button>
-        </div>
-        <div class="section-title">Amallar ro'yxati</div>
-        <div id="myHistory"></div>
-    </div>
-
-    <!-- TAB 2: YANGI AMAL -->
-    <div id="addTab" class="tab-content">
-        <div class="form-header">
-            <h3>➕ Yangi amal</h3>
-            <p>Avans / Oylikni tizimga qo'shing</p>
-        </div>
-
-        <!-- Ruxsat yo'q xabari -->
-        <div id="permWarning" class="perm-warning hidden">
-            <div class="perm-warn-icon">⚠️</div>
-            <div class="perm-warn-title" id="permWarnTitle">Ruxsat yo'q</div>
-            <div class="perm-warn-desc" id="permWarnDesc">SuperAdminga murojaat qiling.</div>
-            <button id="contactAdminBtn" class="btn-main bg-navy hidden" onclick="contactAdmin()" style="margin-top:10px;">
-                📩 Admin bilan bog'lanish
-            </button>
-            <button class="btn-secondary" onclick="switchTab('reportTab','nav-report')" style="margin-top:16px;">
-                ← Hisobotga qaytish
-            </button>
-        </div>
-
-        <!-- Forma -->
-        <div id="addFormContent" class="card">
-            <form id="financeForm">
-                <div class="input-group">
-                    <label>Davri (Qaysi oy uchun)</label>
-                    <div style="display: flex; gap: 10px;">
-                        <select id="actionMonth" style="flex: 1;">
-                            <option value="01">Yanvar</option><option value="02">Fevral</option>
-                            <option value="03">Mart</option><option value="04">Aprel</option>
-                            <option value="05">May</option><option value="06">Iyun</option>
-                            <option value="07">Iyul</option><option value="08">Avgust</option>
-                            <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
-                            <option value="11">Noyabr</option><option value="12">Dekabr</option>
-                        </select>
-                        <select id="actionYear" style="flex: 1;"></select>
-                    </div>
+            <div class="stats-grid">
+                <div class="stat-card uzs">
+                    <div class="stat-label">So'm</div>
+                    <div class="stat-value" id="myUzs">0</div>
                 </div>
-                <div class="input-group">
-                    <label>Summa</label>
-                    <input type="number" id="amount" required placeholder="0" inputmode="numeric">
-                </div>
-                <div class="input-group">
-                    <label>Valyuta</label>
-                    <select id="currency" onchange="toggleRate()">
-                        <option value="UZS">🇺🇿 So'm (UZS)</option>
-                        <option value="USD">🇺🇸 Dollar (USD)</option>
-                    </select>
-                </div>
-                <div id="rateDiv" class="input-group hidden">
-                    <label>Valyuta kursi</label>
-                    <input type="number" id="rate" placeholder="Masalan: 12600" inputmode="numeric">
-                </div>
-                <div class="input-group">
-                    <label>Izoh</label>
-                    <textarea id="comment" rows="3" placeholder="Avans / Oylik haqida izoh..."></textarea>
-                </div>
-                <button type="submit" class="btn-main" id="submitBtn">💾 Saqlash</button>
-            </form>
-            <div id="status" class="status-msg"></div>
-        </div>
-    </div>
-
-    <!-- TAB 3: ADMIN -->
-    <div id="adminTab" class="tab-content">
-        <div class="page-header">
-            <h2>👑 Admin Panel</h2>
-            <div class="header-avatar">⚙️</div>
-        </div>
-
-        <div class="sub-tabs" id="adminNav">
-            <button class="sub-btn admin-sub-btn active" id="adminNavHodimlar" onclick="switchAdminSub('adminHodimlarArea',this)">👥 Hodimlar</button>
-            <button class="sub-btn admin-sub-btn" id="adminNavWorkflow" onclick="switchAdminSub('adminWorkflowArea',this)">⚙️ Ish Oqimi</button>
-            <button class="sub-btn admin-sub-btn" id="adminNavPositions" onclick="switchAdminSub('adminPositionsArea',this)">📁 Lavozimlar</button>
-            <button class="sub-btn admin-sub-btn" id="adminNavNotify" onclick="switchAdminSub('adminNotifyArea',this)">📣 Xabarlar</button>
-            <button class="sub-btn admin-sub-btn" id="adminNavService" onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
-        </div>
-
-        <div id="adminHodimlarArea">
-            <div class="card">
-                <div class="card-title">➕ Yangi Hodim Qo'shish</div>
-                <div class="input-group">
-                    <label>Telegram ID</label>
-                    <input type="text" id="newHodimId" placeholder="Hodimning Telegram ID raqami" inputmode="numeric">
-                </div>
-                <div class="input-group">
-                    <label>Laqab / Ko'rsatiladigan ism</label>
-                    <input type="text" id="newHodimName" placeholder="Masalan: Ali (Haydovchi)">
-                </div>
-                <button class="btn-main" onclick="addHodim()">➕ Qo'shish</button>
-                <div id="hodimStatus" class="status-msg"></div>
-            </div>
-
-            <div class="card" style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:16px;border-radius:16px;margin-bottom:14px;">
-                <div style="font-size:13px;font-weight:700;margin-bottom:10px;opacity:0.8;">📋 RUXSAT MODELI (V2)</div>
-                <div style="font-size:12px;line-height:2;opacity:0.85;">
-                    <div>🧩 Avval <b>Rol</b> tanlanadi: Hodim / Admin / Direktor / SuperAdmin</div>
-                    <div>🔧 Keyin har bir userga <b>individual override</b> berish mumkin</div>
-                    <div>👑 <b>SuperAdmin</b> — to'liq huquq (hammasi yoqilgan)</div>
-                    <div>🎯 <b>Direktor</b> — default: ko'rish + dashboard + export</div>
-                    <div>🛡 <b>Admin</b> — default: qo'shish + barchasini ko'rish</div>
-                    <div>➕ 👁 📈 📥 ✏️ 🗑 — qo'shish, ko'rish, dashboard, excel, tahrirlash, o'chirish</div>
+                <div class="stat-card usd">
+                    <div class="stat-label">Dollar</div>
+                    <div class="stat-value" id="myUsd">$0</div>
                 </div>
             </div>
-
-            <div class="section-title">Hodimlar ro'yxati</div>
-            <div id="hodimlarList"></div>
-        </div>
-
-        <div id="adminNotifyArea" class="hidden">
-            <div class="card">
-                <div class="card-title">📣 Xabar Yuborish</div>
-                <div class="input-group">
-                    <label>Default xabar matni</label>
-                    <textarea id="adminReminderText" rows="4" placeholder="Reminder matnini kiriting..."></textarea>
-                </div>
-                <div class="filter-row" style="margin-bottom:10px;">
-                    <button class="btn-secondary" style="margin-top:0;" onclick="loadReminderTextSettings(true)">🔄 Matnni yangilash</button>
-                    <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="saveReminderTextSettings()">💾 Default matnni saqlash</button>
-                </div>
-                <div class="filter-row" style="margin-bottom:8px;">
-                    <select id="adminNotifyTargetTgId"><option value="">User tanlang</option></select>
-                    <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="prepareReminderSend('single')">✉️ Userga tayyorlash</button>
-                </div>
-                <div class="filter-row" style="margin-bottom:8px;">
-                    <input type="number" id="adminInactiveDays" value="14" min="1" max="365" placeholder="Kun" inputmode="numeric">
-                    <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="prepareReminderSend('inactive')">🤖 Bulk tayyorlash</button>
-                </div>
-                <div id="adminNotifyConfirmBox" class="hidden" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px;margin-bottom:8px;">
-                    <div id="adminNotifyConfirmText" style="font-size:12px;font-weight:700;color:#1E3A8A;margin-bottom:8px;">Tasdiqlash kutilmoqda</div>
-                    <div class="filter-row" style="margin-bottom:0;">
-                        <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;" onclick="confirmReminderSend()">✅ Tasdiqlab yuborish</button>
-                        <button class="btn-secondary" style="margin-top:0;" onclick="cancelReminderSend()">✖ Bekor qilish</button>
-                    </div>
-                </div>
-                <div id="adminNotifyStatus" class="status-msg"></div>
-            </div>
-        </div>
-
-        <div id="adminWorkflowArea" class="hidden">
-            <div class="card">
-                <div class="card-title">⚙️ Ish Oqimini Sozlash</div>
-                <p style="margin:-10px 0 15px; font-size:12px; color:var(--text-muted);">
-                    Buyurtma qaysi bosqichlardan o'tishi va qaysi lavozimlar javobgarligini belgilang.
-                </p>
-                <div id="workflowList" class="workflow-container">
-                    <!-- Steps will be rendered here -->
-                </div>
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button class="btn-secondary" onclick="addNewWorkflowStep()" style="flex:1;">➕ Bosqich qo'shish</button>
-                    <button class="btn-main" onclick="saveWorkflowConfigUI()" style="flex:1;">💾 Oqimni saqlash</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="adminPositionsArea" class="hidden">
-            <div class="card">
-                <div class="card-title">📁 Texnik Lavozimlar (Pool)</div>
-                <p style="margin:-10px 0 15px; font-size:12px; color:var(--text-muted);">
-                    Barcha mavjud lavozimlarni bu yerda boshqaring.
-                </p>
-                <div id="positionsListUI"></div>
-                <button class="btn-secondary" onclick="addPositionUI()" style="width:100%; margin-bottom:10px;">➕ Yangi Lavozim</button>
-                <button class="btn-main" onclick="savePositionsUI()" style="width:100%;">💾 Lavozimlarni Saqlash</button>
-            </div>
-        </div>
-
-        <div id="adminServiceArea" class="hidden">
-            <div class="card">
-                <div class="card-title">🧪 Tizim Tekshiruvi</div>
-                <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
-                    Prod ulanish va muhim sozlamalarni tekshiradi.
-                </p>
-                <button class="btn-secondary" id="selfCheckBtnAdmin" style="margin-top:0;" onclick="runSystemSelfCheck('admin')">🧪 Self-check (Prod sozlamalar)</button>
-                <div id="adminServiceStatus" class="status-msg"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 4: DASHBOARD -->
-    <div id="dashboardTab" class="tab-content">
-        <div class="page-header">
-            <h2>📈 Dashboard</h2>
-            <div class="header-avatar">📊</div>
-        </div>
-        <div class="page-switcher">
-            <button id="dashTopCharts" class="page-switcher-btn" onclick="switchDashboardSub('dashboardChartsArea', this)">Dashboard</button>
-            <button id="dashTopActions" class="page-switcher-btn active" onclick="switchDashboardSub('dashboardActionsArea', this)">Amallar</button>
-        </div>
-
-        <div id="dashboardActionsArea" class="hidden">
-            <div class="budget-card" style="margin-bottom:14px;">
-                <div class="budget-label">Kompaniya Umumiy Budjet</div>
-                <div class="budget-amount" id="totalCompanyUzs">0 UZS</div>
+            <div class="budget-card">
+                <div class="budget-label">Jami Budjet (So'mda)</div>
+                <div class="budget-amount" id="myTotalBudget">0 UZS</div>
                 <div class="budget-footer">
-                    <span class="budget-count">📊 Filtrlangan: <span id="filteredCount">0</span> ta amal</span>
-                    <button class="excel-btn" id="companyExportBtn" onclick="exportAdminExcel()">📥 Excel</button>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.6);font-weight:500;">Shaxsiy
+                        hisobotingiz</span>
                 </div>
             </div>
             <div class="filter-box">
-                <div class="search-wrap">
-                    <span class="search-icon">🔎</span>
-                    <input type="text" id="searchInput" placeholder="Ism, izoh bo'yicha qidiring..." onkeyup="applyFilters()">
-                </div>
                 <div class="filter-row">
-                    <select id="filterEmployee" onchange="applyFilters()"><option value="all">Barcha xodimlar</option></select>
-                    <select id="filterMonth" onchange="applyFilters()">
-                        <option value="all">Oylar</option>
-                        <option value="01">Yanvar</option><option value="02">Fevral</option>
-                        <option value="03">Mart</option><option value="04">Aprel</option>
-                        <option value="05">May</option><option value="06">Iyun</option>
-                        <option value="07">Iyul</option><option value="08">Avgust</option>
-                        <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
-                        <option value="11">Noyabr</option><option value="12">Dekabr</option>
-                    </select>
-                    <select id="filterYear" onchange="applyFilters()"><option value="all">Yillar</option></select>
-                </div>
-            </div>
-            <div id="adminList"></div>
-            <div id="pagination" class="pagination"></div>
-        </div>
-
-        <div id="dashboardChartsArea">
-            <div id="dashboardContent">
-                <div class="dash-empty" style="padding:60px 20px;">
-                    <div style="font-size:40px;margin-bottom:12px;">📊</div>
-                    <p>Yuklanmoqda...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 5: KVADRATLAR — MUSTAQIL TAB (dashboardTab TASHQARISIDA) -->
-    <div id="kvadratTab" class="tab-content">
-        <div class="page-header">
-            <div>
-                <h2>🧾 Buyurtmalar</h2>
-                <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">Buyurtma №, Oy va m²</div>
-            </div>
-            <div style="display:flex; gap:12px; align-items:center;">
-                <button class="btn-secondary" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)" style="padding:8px 12px;font-size:14px;display:flex;align-items:center;gap:6px;">
-                    📈 Yangilash
-                </button>
-                <div class="header-avatar">🧾</div>
-            </div>
-        </div>
-        <div class="page-switcher">
-            <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">📈 Dashboard kv</button>
-            <button class="page-switcher-btn active">🧾 Buyurtmalar</button>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card" style="background:var(--navy);color:#fff;grid-column:1/-1;">
-                <div class="stat-label" style="opacity:0.8;">Jami m² (Tanlangan davr)</div>
-                <div class="stat-value" id="kvTotalM2" style="color:#fff;">0</div>
-            </div>
-        </div>
-
-        <div class="filter-box">
-            <div class="filter-row">
-                <select id="kvFilterMonth" onchange="applyKvFilters()">
-                    <option value="all">Barcha oylar</option>
-                    <option value="01">Yanvar</option><option value="02">Fevral</option>
-                    <option value="03">Mart</option><option value="04">Aprel</option>
-                    <option value="05">May</option><option value="06">Iyun</option>
-                    <option value="07">Iyul</option><option value="08">Avgust</option>
-                    <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
-                    <option value="11">Noyabr</option><option value="12">Dekabr</option>
-                </select>
-                <select id="kvFilterYear" onchange="applyKvFilters()"><option value="all">Yillar</option></select>
-            </div>
-            <div class="filter-row">
-                <select id="kvFilterStaff" onchange="applyKvFilters()">
-                    <option value="all">Barcha hodimlar</option>
-                </select>
-                <select id="kvFilterProcess" onchange="applyKvFilters()">
-                    <option value="all">Barcha jarayonlar</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="kvWorkerStatsBar" style="margin-bottom:10px;"></div>
-
-        <div id="kvList"></div>
-    </div>
-
-    <!-- TAB 6: KVADRAT DASHBOARD (MODAL SAHIFA) -->
-    <div id="kvDashboardTab" class="tab-content">
-        <div class="page-header">
-            <div>
-                <h2>📊 Dashboard kv</h2>
-            </div>
-            <div class="header-avatar">📈</div>
-        </div>
-        <div class="page-switcher">
-            <button class="page-switcher-btn active">Dashboard kv</button>
-            <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Buyurtmalar</button>
-        </div>
-        <div id="kvDashboardMainBody" style="padding:15px; background:#F1F5F9; min-height:calc(100vh - 220px);">
-            <!-- Dashboard content will be rendered by dashboard_kv.js -->
-        </div>
-    </div>
-
-<!-- Tahrirlash modali -->
-<div id="editModal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-drag"></div>
-        <div class="modal-header">
-            <div class="modal-title">✏️ Tahrirlash</div>
-            <div class="modal-meta">
-                <span class="meta-chip" id="editHeaderName">👤 —</span>
-                <span class="meta-chip" id="editHeaderDate">📅 —</span>
-            </div>
-        </div>
-        <form id="editForm" onsubmit="event.preventDefault();saveEdit();">
-            <input type="hidden" id="editRowId">
-            <div class="input-group">
-                <label>Davri (Qaysi oy uchun)</label>
-                <div style="display: flex; gap: 10px;">
-                    <select id="editActionMonth" style="flex: 1;">
-                        <option value="01">Yanvar</option><option value="02">Fevral</option>
-                        <option value="03">Mart</option><option value="04">Aprel</option>
-                        <option value="05">May</option><option value="06">Iyun</option>
-                        <option value="07">Iyul</option><option value="08">Avgust</option>
-                        <option value="09">Sentyabr</option><option value="10">Oktyabr</option>
-                        <option value="11">Noyabr</option><option value="12">Dekabr</option>
-                    </select>
-                    <select id="editActionYear" style="flex: 1;"></select>
-                </div>
-            </div>
-            <div class="input-group">
-                <label>💰 Summa (UZS)</label>
-                <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView()" inputmode="numeric">
-            </div>
-            <div class="input-group" id="editUsdRow">
-                <label>💵 Summa (USD)</label>
-                <input type="number" id="editAmountUSD" placeholder="Dollarda" oninput="updateEditCurrencyView()" inputmode="numeric">
-            </div>
-            <div class="input-group" id="editRateRow">
-                <label>📈 Valyuta kursi (1 USD = ? UZS)</label>
-                <input type="number" id="editRate" placeholder="Masalan: 12600" oninput="updateEditCurrencyView()" inputmode="numeric">
-            </div>
-            <div id="editConversionPreview" style="background:#ECFDF5;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none;"></div>
-            <div class="input-group">
-                <label>📝 Izoh</label>
-                <textarea id="editComment" rows="3" placeholder="Izohni o'zgartirish..."></textarea>
-            </div>
-            <div class="modal-actions">
-                <button type="submit" class="btn-main">💾 Saqlash</button>
-                <button type="button" class="btn-main bg-red" onclick="closeModal()">✕ Bekor</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Kvadratlar tahrirlash/qo'shish modali -->
-<div id="kvadratModal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-drag"></div>
-        <div class="modal-header">
-            <div class="modal-title" id="kvModalTitle">📐 Yangi o'lchov kiritish</div>
-        </div>
-        <form id="kvForm" onsubmit="event.preventDefault();saveKv();">
-            <input type="hidden" id="kvRowId">
-
-            <!-- OY/YIL TANLASH -->
-            <div class="input-group">
-                <label>📅 Qaysi oy uchun</label>
-                <div style="display:flex;gap:10px;">
-                    <select id="kvActionMonth" style="flex:1;">
+                    <select id="myFilterMonth" onchange="applyMyFilters()">
+                        <option value="all">Barcha oylar</option>
                         <option value="01">Yanvar</option>
                         <option value="02">Fevral</option>
                         <option value="03">Mart</option>
@@ -444,101 +68,565 @@
                         <option value="11">Noyabr</option>
                         <option value="12">Dekabr</option>
                     </select>
-                    <select id="kvActionYear" style="flex:1;">
-                        <!-- JS tomonidan to'ldiriladi -->
+                    <select id="myFilterYear" onchange="applyMyFilters()">
+                        <option value="all">Yillar</option>
+                    </select>
+                </div>
+                <button class="btn-main bg-navy" onclick="exportMyExcel()"
+                    style="margin-top:0;padding:11px;font-size:13px;">
+                    📥 Excel hisobotni yuklab olish
+                </button>
+            </div>
+            <div class="section-title">Amallar ro'yxati</div>
+            <div id="myHistory"></div>
+        </div>
+
+        <!-- TAB 2: YANGI AMAL -->
+        <div id="addTab" class="tab-content">
+            <div class="form-header">
+                <h3>➕ Yangi amal</h3>
+                <p>Avans / Oylikni tizimga qo'shing</p>
+            </div>
+
+            <!-- Ruxsat yo'q xabari -->
+            <div id="permWarning" class="perm-warning hidden">
+                <div class="perm-warn-icon">⚠️</div>
+                <div class="perm-warn-title" id="permWarnTitle">Ruxsat yo'q</div>
+                <div class="perm-warn-desc" id="permWarnDesc">SuperAdminga murojaat qiling.</div>
+                <button id="contactAdminBtn" class="btn-main bg-navy hidden" onclick="contactAdmin()"
+                    style="margin-top:10px;">
+                    📩 Admin bilan bog'lanish
+                </button>
+                <button class="btn-secondary" onclick="switchTab('reportTab','nav-report')" style="margin-top:16px;">
+                    ← Hisobotga qaytish
+                </button>
+            </div>
+
+            <!-- Forma -->
+            <div id="addFormContent" class="card">
+                <form id="financeForm">
+                    <div class="input-group">
+                        <label>Davri (Qaysi oy uchun)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="actionMonth" style="flex: 1;">
+                                <option value="01">Yanvar</option>
+                                <option value="02">Fevral</option>
+                                <option value="03">Mart</option>
+                                <option value="04">Aprel</option>
+                                <option value="05">May</option>
+                                <option value="06">Iyun</option>
+                                <option value="07">Iyul</option>
+                                <option value="08">Avgust</option>
+                                <option value="09">Sentyabr</option>
+                                <option value="10">Oktyabr</option>
+                                <option value="11">Noyabr</option>
+                                <option value="12">Dekabr</option>
+                            </select>
+                            <select id="actionYear" style="flex: 1;"></select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Summa</label>
+                        <input type="number" id="amount" required placeholder="0" inputmode="numeric">
+                    </div>
+                    <div class="input-group">
+                        <label>Valyuta</label>
+                        <select id="currency" onchange="toggleRate()">
+                            <option value="UZS">🇺🇿 So'm (UZS)</option>
+                            <option value="USD">🇺🇸 Dollar (USD)</option>
+                        </select>
+                    </div>
+                    <div id="rateDiv" class="input-group hidden">
+                        <label>Valyuta kursi</label>
+                        <input type="number" id="rate" placeholder="Masalan: 12600" inputmode="numeric">
+                    </div>
+                    <div class="input-group">
+                        <label>Izoh</label>
+                        <textarea id="comment" rows="3" placeholder="Avans / Oylik haqida izoh..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-main" id="submitBtn">💾 Saqlash</button>
+                </form>
+                <div id="status" class="status-msg"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ADMIN -->
+        <div id="adminTab" class="tab-content">
+            <div class="page-header">
+                <h2>👑 Admin Panel</h2>
+                <div class="header-avatar">⚙️</div>
+            </div>
+
+            <div class="sub-tabs" id="adminNav">
+                <button class="sub-btn admin-sub-btn active" id="adminNavHodimlar"
+                    onclick="switchAdminSub('adminHodimlarArea',this)">👥 Hodimlar</button>
+                <button class="sub-btn admin-sub-btn" id="adminNavWorkflow"
+                    onclick="switchAdminSub('adminWorkflowArea',this)">⚙️ Ish Oqimi</button>
+                <button class="sub-btn admin-sub-btn" id="adminNavPositions"
+                    onclick="switchAdminSub('adminPositionsArea',this)">📁 Lavozimlar</button>
+                <button class="sub-btn admin-sub-btn" id="adminNavNotify"
+                    onclick="switchAdminSub('adminNotifyArea',this)">📣 Xabarlar</button>
+                <button class="sub-btn admin-sub-btn" id="adminNavService"
+                    onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
+            </div>
+
+            <div id="adminHodimlarArea">
+                <div class="card">
+                    <div class="card-title">➕ Yangi Hodim Qo'shish</div>
+                    <div class="input-group">
+                        <label>Telegram ID</label>
+                        <input type="text" id="newHodimId" placeholder="Hodimning Telegram ID raqami"
+                            inputmode="numeric">
+                    </div>
+                    <div class="input-group">
+                        <label>Laqab / Ko'rsatiladigan ism</label>
+                        <input type="text" id="newHodimName" placeholder="Masalan: Ali (Haydovchi)">
+                    </div>
+                    <button class="btn-main" onclick="addHodim()">➕ Qo'shish</button>
+                    <div id="hodimStatus" class="status-msg"></div>
+                </div>
+
+                <div class="card"
+                    style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:16px;border-radius:16px;margin-bottom:14px;">
+                    <div style="font-size:13px;font-weight:700;margin-bottom:10px;opacity:0.8;">📋 RUXSAT MODELI (V2)
+                    </div>
+                    <div style="font-size:12px;line-height:2;opacity:0.85;">
+                        <div>🧩 Avval <b>Rol</b> tanlanadi: Hodim / Admin / Direktor / SuperAdmin</div>
+                        <div>🔧 Keyin har bir userga <b>individual override</b> berish mumkin</div>
+                        <div>👑 <b>SuperAdmin</b> — to'liq huquq (hammasi yoqilgan)</div>
+                        <div>🎯 <b>Direktor</b> — default: ko'rish + dashboard + export</div>
+                        <div>🛡 <b>Admin</b> — default: qo'shish + barchasini ko'rish</div>
+                        <div>➕ 👁 📈 📥 ✏️ 🗑 — qo'shish, ko'rish, dashboard, excel, tahrirlash, o'chirish</div>
+                    </div>
+                </div>
+
+                <div class="section-title">Hodimlar ro'yxati</div>
+                <div id="hodimlarList"></div>
+            </div>
+
+            <div id="adminNotifyArea" class="hidden">
+                <div class="card">
+                    <div class="card-title">📣 Xabar Yuborish</div>
+                    <div class="input-group">
+                        <label>Default xabar matni</label>
+                        <textarea id="adminReminderText" rows="4" placeholder="Reminder matnini kiriting..."></textarea>
+                    </div>
+                    <div class="filter-row" style="margin-bottom:10px;">
+                        <button class="btn-secondary" style="margin-top:0;" onclick="loadReminderTextSettings(true)">🔄
+                            Matnni yangilash</button>
+                        <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;"
+                            onclick="saveReminderTextSettings()">💾 Default matnni saqlash</button>
+                    </div>
+                    <div class="filter-row" style="margin-bottom:8px;">
+                        <select id="adminNotifyTargetTgId">
+                            <option value="">User tanlang</option>
+                        </select>
+                        <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;"
+                            onclick="prepareReminderSend('single')">✉️ Userga tayyorlash</button>
+                    </div>
+                    <div class="filter-row" style="margin-bottom:8px;">
+                        <input type="number" id="adminInactiveDays" value="14" min="1" max="365" placeholder="Kun"
+                            inputmode="numeric">
+                        <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;"
+                            onclick="prepareReminderSend('inactive')">🤖 Bulk tayyorlash</button>
+                    </div>
+                    <div id="adminNotifyConfirmBox" class="hidden"
+                        style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px;margin-bottom:8px;">
+                        <div id="adminNotifyConfirmText"
+                            style="font-size:12px;font-weight:700;color:#1E3A8A;margin-bottom:8px;">Tasdiqlash
+                            kutilmoqda</div>
+                        <div class="filter-row" style="margin-bottom:0;">
+                            <button class="btn-main bg-navy" style="width:auto;padding:10px 14px;margin-top:0;"
+                                onclick="confirmReminderSend()">✅ Tasdiqlab yuborish</button>
+                            <button class="btn-secondary" style="margin-top:0;" onclick="cancelReminderSend()">✖ Bekor
+                                qilish</button>
+                        </div>
+                    </div>
+                    <div id="adminNotifyStatus" class="status-msg"></div>
+                </div>
+            </div>
+
+            <div id="adminWorkflowArea" class="hidden">
+                <div class="card">
+                    <div class="card-title">⚙️ Ish Oqimini Sozlash</div>
+                    <p style="margin:-10px 0 15px; font-size:12px; color:var(--text-muted);">
+                        Buyurtma qaysi bosqichlardan o'tishi va qaysi lavozimlar javobgarligini belgilang.
+                    </p>
+                    <div id="workflowList" class="workflow-container">
+                        <!-- Steps will be rendered here -->
+                    </div>
+                    <div style="margin-top:15px; display:flex; gap:10px;">
+                        <button class="btn-secondary" onclick="addNewWorkflowStep()" style="flex:1;">➕ Bosqich
+                            qo'shish</button>
+                        <button class="btn-main" onclick="saveWorkflowConfigUI()" style="flex:1;">💾 Oqimni
+                            saqlash</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminPositionsArea" class="hidden">
+                <div class="card">
+                    <div class="card-title">📁 Texnik Lavozimlar (Pool)</div>
+                    <p style="margin:-10px 0 15px; font-size:12px; color:var(--text-muted);">
+                        Barcha mavjud lavozimlarni bu yerda boshqaring.
+                    </p>
+                    <div id="positionsListUI"></div>
+                    <button class="btn-secondary" onclick="addPositionUI()" style="width:100%; margin-bottom:10px;">➕
+                        Yangi Lavozim</button>
+                    <button class="btn-main" onclick="savePositionsUI()" style="width:100%;">💾 Lavozimlarni
+                        Saqlash</button>
+                </div>
+            </div>
+
+            <div id="adminServiceArea" class="hidden">
+                <div class="card">
+                    <div class="card-title">🧪 Tizim Tekshiruvi</div>
+                    <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
+                        Prod ulanish va muhim sozlamalarni tekshiradi.
+                    </p>
+                    <button class="btn-secondary" id="selfCheckBtnAdmin" style="margin-top:0;"
+                        onclick="runSystemSelfCheck('admin')">🧪 Self-check (Prod sozlamalar)</button>
+                    <div id="adminServiceStatus" class="status-msg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DASHBOARD -->
+        <div id="dashboardTab" class="tab-content">
+            <div class="page-header">
+                <h2>📈 Dashboard</h2>
+                <div class="header-avatar">📊</div>
+            </div>
+            <div class="page-switcher">
+                <button id="dashTopCharts" class="page-switcher-btn"
+                    onclick="switchDashboardSub('dashboardChartsArea', this)">Dashboard</button>
+                <button id="dashTopActions" class="page-switcher-btn active"
+                    onclick="switchDashboardSub('dashboardActionsArea', this)">Amallar</button>
+            </div>
+
+            <div id="dashboardActionsArea" class="hidden">
+                <div class="budget-card" style="margin-bottom:14px;">
+                    <div class="budget-label">Kompaniya Umumiy Budjet</div>
+                    <div class="budget-amount" id="totalCompanyUzs">0 UZS</div>
+                    <div class="budget-footer">
+                        <span class="budget-count">📊 Filtrlangan: <span id="filteredCount">0</span> ta amal</span>
+                        <button class="excel-btn" id="companyExportBtn" onclick="exportAdminExcel()">📥 Excel</button>
+                    </div>
+                </div>
+                <div class="filter-box">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔎</span>
+                        <input type="text" id="searchInput" placeholder="Ism, izoh bo'yicha qidiring..."
+                            onkeyup="applyFilters()">
+                    </div>
+                    <div class="filter-row">
+                        <select id="filterEmployee" onchange="applyFilters()">
+                            <option value="all">Barcha xodimlar</option>
+                        </select>
+                        <select id="filterMonth" onchange="applyFilters()">
+                            <option value="all">Oylar</option>
+                            <option value="01">Yanvar</option>
+                            <option value="02">Fevral</option>
+                            <option value="03">Mart</option>
+                            <option value="04">Aprel</option>
+                            <option value="05">May</option>
+                            <option value="06">Iyun</option>
+                            <option value="07">Iyul</option>
+                            <option value="08">Avgust</option>
+                            <option value="09">Sentyabr</option>
+                            <option value="10">Oktyabr</option>
+                            <option value="11">Noyabr</option>
+                            <option value="12">Dekabr</option>
+                        </select>
+                        <select id="filterYear" onchange="applyFilters()">
+                            <option value="all">Yillar</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="adminList"></div>
+                <div id="pagination" class="pagination"></div>
+            </div>
+
+            <div id="dashboardChartsArea">
+                <div id="dashboardContent">
+                    <div class="dash-empty" style="padding:60px 20px;">
+                        <div style="font-size:40px;margin-bottom:12px;">📊</div>
+                        <p>Yuklanmoqda...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: KVADRATLAR — MUSTAQIL TAB (dashboardTab TASHQARISIDA) -->
+        <div id="kvadratTab" class="tab-content">
+            <div class="page-header">
+                <div>
+                    <h2>🧾 Buyurtmalar</h2>
+                    <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">Buyurtma №, Oy va m²
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button class="btn-secondary" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)"
+                        style="padding:8px 12px;font-size:14px;display:flex;align-items:center;gap:6px;">
+                        📈 Yangilash
+                    </button>
+                    <div class="header-avatar">🧾</div>
+                </div>
+            </div>
+            <div class="page-switcher">
+                <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">📈 Dashboard
+                    kv</button>
+                <button class="page-switcher-btn active">🧾 Buyurtmalar</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card" style="background:var(--navy);color:#fff;grid-column:1/-1;">
+                    <div class="stat-label" style="opacity:0.8;">Jami m² (Tanlangan davr)</div>
+                    <div class="stat-value" id="kvTotalM2" style="color:#fff;">0</div>
+                </div>
+            </div>
+
+            <div class="filter-box">
+                <div class="filter-row">
+                    <select id="kvFilterMonth" onchange="applyKvFilters()">
+                        <option value="all">Barcha oylar</option>
+                        <option value="01">Yanvar</option>
+                        <option value="02">Fevral</option>
+                        <option value="03">Mart</option>
+                        <option value="04">Aprel</option>
+                        <option value="05">May</option>
+                        <option value="06">Iyun</option>
+                        <option value="07">Iyul</option>
+                        <option value="08">Avgust</option>
+                        <option value="09">Sentyabr</option>
+                        <option value="10">Oktyabr</option>
+                        <option value="11">Noyabr</option>
+                        <option value="12">Dekabr</option>
+                    </select>
+                    <select id="kvFilterYear" onchange="applyKvFilters()">
+                        <option value="all">Yillar</option>
+                    </select>
+                </div>
+                <div class="filter-row">
+                    <select id="kvFilterStaff" onchange="applyKvFilters()">
+                        <option value="all">Barcha hodimlar</option>
+                    </select>
+                    <select id="kvFilterProcess" onchange="applyKvFilters()">
+                        <option value="all">Barcha jarayonlar</option>
                     </select>
                 </div>
             </div>
 
-            <div class="input-group">
-                <label>� Buyurtma raqami</label>
-                <input type="text" id="kvOrderNumber"
-                       placeholder="Masalan: 176" required>
+            <div id="kvWorkerStatsBar" style="margin-bottom:10px;"></div>
+
+            <div id="kvList"></div>
+        </div>
+
+        <!-- TAB 6: KVADRAT DASHBOARD (MODAL SAHIFA) -->
+        <div id="kvDashboardTab" class="tab-content">
+            <div class="page-header">
+                <div>
+                    <h2>📊 Dashboard kv</h2>
+                </div>
+                <div class="header-avatar">📈</div>
             </div>
-
-            <div class="input-group">
-                <label>📌 Buyurtma nomi / Mijoz ismi</label>
-                <input type="text" id="kvOrderName"
-                       placeholder="Masalan: Ali oshxona" required>
+            <div class="page-switcher">
+                <button class="page-switcher-btn active">Dashboard kv</button>
+                <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Buyurtmalar</button>
             </div>
-
-            <div class="input-group">
-                <label>📏 Jami m² (metr kvadrat)</label>
-                <input type="number" step="0.01" id="kvTotalM2Input"
-                       placeholder="0.00" required inputmode="decimal">
-            </div>
-
-            <div class="input-group">
-                <label>👤 Mas'ul hodim</label>
-                <select id="kvStaffSelect" required>
-                    <option value="">Hodimni tanlang...</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button type="submit" class="btn-main">💾 Saqlash</button>
-                <button type="button" class="btn-main bg-red"
-                        onclick="closeKvModal()">✕ Bekor</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Kvadratlar batafsil modal -->
-<div id="kvDetailModal" class="modal hidden">
-    <div class="modal-content">
-        <div id="kvDetailModalBody"></div>
-    </div>
-</div>
-
-<!-- Batafsil modal -->
-<div id="detailModal" class="modal hidden">
-    <div class="modal-content"><div id="detailModalBody"></div></div>
-</div>
-
-<!-- Pastki menyu -->
-<div class="bottom-nav">
-    <div class="nav-item active" id="nav-report" onclick="switchTab('reportTab','nav-report')">
-        <span class="nav-icon">📊</span><span>Hisobot</span>
-    </div>
-    <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboardTab','nav-dashboard')">
-        <span class="nav-icon">📈</span><span>Dashboard</span>
-    </div>
-    <div class="nav-fab-container">
-        <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
-    </div>
-    <div class="nav-item" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
-        <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
-    </div>
-    <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
-        <span class="nav-icon">👑</span><span>Admin</span>
-    </div>
-</div>
-
-    <!-- MODAL: KVADRAT DASHBOARD -->
-    <div id="kvDashboardModal" class="modal hidden">
-        <div class="modal-content modal-full">
-            <div class="modal-drag"></div>
-            <div class="modal-header">
-                <h3>📊 Kvadrat Dashboard</h3>
-                <button class="close-btn" onclick="closeKvDashboard()">✕</button>
-            </div>
-            <div class="modal-body" id="kvDashboardBody" style="background:#F1F5F9; padding:15px;">
-                <!-- Content will be rendered by dashboard_kv.js -->
+            <div id="kvDashboardMainBody" style="padding:15px; background:#F1F5F9; min-height:calc(100vh - 220px);">
+                <!-- Dashboard content will be rendered by dashboard_kv.js -->
             </div>
         </div>
-    </div>
 
-    <script src="config.js?v=1.0.22"></script>
-<script src="ui.js?v=1.0.22"></script>
-<script src="employee.js?v=1.0.22"></script>
-<script src="admin.js?v=1.0.22"></script>
-<script src="export.js?v=1.0.22"></script>
-<script src="actions.js?v=1.0.22"></script>
-<script src="dashboard.js?v=1.0.22"></script>
-<script src="detail_modal.js?v=1.0.22"></script>
-<script src="kvadratlar.js?v=1.0.22"></script><script src="dashboard_kv.js?v=1.0.22"></script><script src="roles.js?v=1.0.22"></script>
-<script src="admin_workflow.js?v=1.0.22"></script>
-<script src="admin_positions.js?v=1.0.22"></script>
+        <!-- Tahrirlash modali -->
+        <div id="editModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-drag"></div>
+                <div class="modal-header">
+                    <div class="modal-title">✏️ Tahrirlash</div>
+                    <div class="modal-meta">
+                        <span class="meta-chip" id="editHeaderName">👤 —</span>
+                        <span class="meta-chip" id="editHeaderDate">📅 —</span>
+                    </div>
+                </div>
+                <form id="editForm" onsubmit="event.preventDefault();saveEdit();">
+                    <input type="hidden" id="editRowId">
+                    <div class="input-group">
+                        <label>Davri (Qaysi oy uchun)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="editActionMonth" style="flex: 1;">
+                                <option value="01">Yanvar</option>
+                                <option value="02">Fevral</option>
+                                <option value="03">Mart</option>
+                                <option value="04">Aprel</option>
+                                <option value="05">May</option>
+                                <option value="06">Iyun</option>
+                                <option value="07">Iyul</option>
+                                <option value="08">Avgust</option>
+                                <option value="09">Sentyabr</option>
+                                <option value="10">Oktyabr</option>
+                                <option value="11">Noyabr</option>
+                                <option value="12">Dekabr</option>
+                            </select>
+                            <select id="editActionYear" style="flex: 1;"></select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>💰 Summa (UZS)</label>
+                        <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView()"
+                            inputmode="numeric">
+                    </div>
+                    <div class="input-group" id="editUsdRow">
+                        <label>💵 Summa (USD)</label>
+                        <input type="number" id="editAmountUSD" placeholder="Dollarda"
+                            oninput="updateEditCurrencyView()" inputmode="numeric">
+                    </div>
+                    <div class="input-group" id="editRateRow">
+                        <label>📈 Valyuta kursi (1 USD = ? UZS)</label>
+                        <input type="number" id="editRate" placeholder="Masalan: 12600"
+                            oninput="updateEditCurrencyView()" inputmode="numeric">
+                    </div>
+                    <div id="editConversionPreview"
+                        style="background:#ECFDF5;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none;">
+                    </div>
+                    <div class="input-group">
+                        <label>📝 Izoh</label>
+                        <textarea id="editComment" rows="3" placeholder="Izohni o'zgartirish..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-main">💾 Saqlash</button>
+                        <button type="button" class="btn-main bg-red" onclick="closeModal()">✕ Bekor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Kvadratlar tahrirlash/qo'shish modali -->
+        <div id="kvadratModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-drag"></div>
+                <div class="modal-header">
+                    <div class="modal-title" id="kvModalTitle">📐 Yangi o'lchov kiritish</div>
+                </div>
+                <form id="kvForm" onsubmit="event.preventDefault();saveKv();">
+                    <input type="hidden" id="kvRowId">
+
+                    <!-- OY/YIL TANLASH -->
+                    <div class="input-group">
+                        <label>📅 Qaysi oy uchun</label>
+                        <div style="display:flex;gap:10px;">
+                            <select id="kvActionMonth" style="flex:1;">
+                                <option value="01">Yanvar</option>
+                                <option value="02">Fevral</option>
+                                <option value="03">Mart</option>
+                                <option value="04">Aprel</option>
+                                <option value="05">May</option>
+                                <option value="06">Iyun</option>
+                                <option value="07">Iyul</option>
+                                <option value="08">Avgust</option>
+                                <option value="09">Sentyabr</option>
+                                <option value="10">Oktyabr</option>
+                                <option value="11">Noyabr</option>
+                                <option value="12">Dekabr</option>
+                            </select>
+                            <select id="kvActionYear" style="flex:1;">
+                                <!-- JS tomonidan to'ldiriladi -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>� Buyurtma raqami</label>
+                        <input type="text" id="kvOrderNumber" placeholder="Masalan: 176" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>📌 Buyurtma nomi / Mijoz ismi</label>
+                        <input type="text" id="kvOrderName" placeholder="Masalan: Ali oshxona" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>📏 Jami m² (metr kvadrat)</label>
+                        <input type="number" step="0.01" id="kvTotalM2Input" placeholder="0.00" required
+                            inputmode="decimal">
+                    </div>
+
+                    <div class="input-group">
+                        <label>👤 Mas'ul hodim</label>
+                        <select id="kvStaffSelect" required>
+                            <option value="">Hodimni tanlang...</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-main">💾 Saqlash</button>
+                        <button type="button" class="btn-main bg-red" onclick="closeKvModal()">✕ Bekor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Kvadratlar batafsil modal -->
+        <div id="kvDetailModal" class="modal hidden">
+            <div class="modal-content">
+                <div id="kvDetailModalBody"></div>
+            </div>
+        </div>
+
+        <!-- Batafsil modal -->
+        <div id="detailModal" class="modal hidden">
+            <div class="modal-content">
+                <div id="detailModalBody"></div>
+            </div>
+        </div>
+
+        <!-- Pastki menyu -->
+        <div class="bottom-nav">
+            <div class="nav-item active" id="nav-report" onclick="switchTab('reportTab','nav-report')">
+                <span class="nav-icon">📊</span><span>Hisobot</span>
+            </div>
+            <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboardTab','nav-dashboard')">
+                <span class="nav-icon">📈</span><span>Dashboard</span>
+            </div>
+            <div class="nav-fab-container">
+                <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
+            </div>
+            <div class="nav-item" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
+                <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
+            </div>
+            <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
+                <span class="nav-icon">👑</span><span>Admin</span>
+            </div>
+        </div>
+
+        <!-- MODAL: KVADRAT DASHBOARD -->
+        <div id="kvDashboardModal" class="modal hidden">
+            <div class="modal-content modal-full">
+                <div class="modal-drag"></div>
+                <div class="modal-header">
+                    <h3>📊 Kvadrat Dashboard</h3>
+                    <button class="close-btn" onclick="closeKvDashboard()">✕</button>
+                </div>
+                <div class="modal-body" id="kvDashboardBody" style="background:#F1F5F9; padding:15px;">
+                    <!-- Content will be rendered by dashboard_kv.js -->
+                </div>
+            </div>
+        </div>
+
+        <script src="config.js?v=1.0.22"></script>
+        <script src="ui.js?v=1.0.22"></script>
+        <script src="employee.js?v=1.0.22"></script>
+        <script src="admin.js?v=1.0.22"></script>
+        <script src="export.js?v=1.0.22"></script>
+        <script src="actions.js?v=1.0.22"></script>
+        <script src="dashboard.js?v=1.0.22"></script>
+        <script src="detail_modal.js?v=1.0.22"></script>
+        <script src="kvadratlar.js?v=1.0.22"></script>
+        <script src="dashboard_kv.js?v=1.0.22"></script>
+        <script src="roles.js?v=1.0.22"></script>
+        <script src="admin_workflow.js?v=1.0.22"></script>
+        <script src="admin_positions.js?v=1.0.22"></script>
 </body>
+
 </html>
