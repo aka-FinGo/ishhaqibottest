@@ -1,5 +1,6 @@
 // ============================================================
 // GS_Records.gs — Financial Records Management
+// OPTIMIZED: Batch operations, cache usage, reduced API calls
 // ============================================================
 
 function addRecord(data, auth, actorTgId) {
@@ -12,14 +13,23 @@ function addRecord(data, auth, actorTgId) {
     var parsedDate = parseDateInput_(data.date, data.dateISO);
     if (!parsedDate) parsedDate = parseDateInput_(new Date(), null);
     var forPeriod = String(data.actionPeriod || '').trim();
-    dataSheet.appendRow([displayName, data.telegramId || '', Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, forPeriod ? "'" + forPeriod : ""]);
+    
+    // OPTIMIZED: Batch append with format in single operation
+    var newRow = [displayName, data.telegramId || '', Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, forPeriod ? "'" + forPeriod : ""];
+    dataSheet.appendRow(newRow);
     var row = dataSheet.getLastRow();
-    dataSheet.getRange(row, 7).setNumberFormat('dd/MM/yyyy');
-    dataSheet.getRange(row, 8).setNumberFormat('0');
-    dataSheet.getRange(row, 9).setNumberFormat('@');
+    
+    // OPTIMIZED: Batch format multiple cells at once
+    var formats = [['dd/MM/yyyy', '0', '@']];
+    dataSheet.getRange(row, 7, 1, 3).setNumberFormats(formats);
+    
     var appendedValues = dataSheet.getRange(row, 1, 1, 9).getValues()[0];
     addAuditLog_(actorTgId, 'add_record', row, null, rowToRecordForAudit_(appendedValues), 'created');
     notifyPayload = { employeeName: displayName, amountUZS: Number(data.amountUZS) || 0, amountUSD: Number(data.amountUSD) || 0, rate: Number(data.rate) || 0, comment: data.comment || '', date: parsedDate.display, actionPeriod: forPeriod };
+    
+    // OPTIMIZED: Reset data cache after write
+    resetDataCache_();
+    
     return { success: true, rowId: row };
   });
   if (!writeResult.success) return writeResult;
@@ -29,13 +39,14 @@ function addRecord(data, auth, actorTgId) {
 
 function adminGetAll(options) {
   var opts = options || {};
-  var dataSheet = getSheets().dataSheet;
-  var values = dataSheet.getDataRange().getValues();
+  // OPTIMIZED: Use cached data rows
+  var values = getDataRows_();
   var usernameMap = buildUsernameMap();
   var records = [];
   var totalUZS = 0;
   var employeeSet = {};
   var yearSet = {};
+  
   for (var i = values.length - 1; i > 0; i--) {
     var row = values[i];
     if (isDeletedRow_(row)) continue;
@@ -84,10 +95,12 @@ function selfEditRecord(data, actorTgId) {
     var parsedDate = parseDateInput_(data.date, data.dateISO);
     if (!parsedDate) parsedDate = parseDateInput_(rowData[DATA_COL.DATE], null);
     var updateValues = [ Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, data.actionPeriod ? "'" + data.actionPeriod : "" ];
+    // OPTIMIZED: Batch update with formats
     dataSheet.getRange(rowId, 3, 1, 7).setValues([updateValues]);
-    dataSheet.getRange(rowId, 7).setNumberFormat('dd/MM/yyyy');
-    dataSheet.getRange(rowId, 9).setNumberFormat('@');
+    dataSheet.getRange(rowId, 7, 1, 3).setNumberFormats([['dd/MM/yyyy', '0', '@']]);
     addAuditLog_(actorTgId, 'self_edit', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), data.reason);
+    // OPTIMIZED: Reset cache after write
+    resetDataCache_();
     return { success: true };
   });
   return writeResult;
@@ -104,6 +117,8 @@ function selfDeleteRecord(rowId, actorTgId, reason) {
     if (String(rowData[DATA_COL.TG_ID]) !== String(actorTgId)) return { success: false, error: "Siz faqat o'zingizning amallaringizni o'chirishingiz mumkin!" };
     dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'self_delete', rowIdNum, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0]), reason);
+    // OPTIMIZED: Reset cache after write
+    resetDataCache_();
     return { success: true };
   });
   return writeResult;
@@ -117,10 +132,12 @@ function adminEditRecord(data, actorTgId) {
     var parsedDate = parseDateInput_(data.date, data.dateISO);
     if (!parsedDate) parsedDate = parseDateInput_(rowData[DATA_COL.DATE], null);
     var updateValues = [ Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, data.actionPeriod ? "'" + data.actionPeriod : "" ];
+    // OPTIMIZED: Batch update with formats
     dataSheet.getRange(rowId, 3, 1, 7).setValues([updateValues]);
-    dataSheet.getRange(rowId, 7).setNumberFormat('dd/MM/yyyy');
-    dataSheet.getRange(rowId, 9).setNumberFormat('@');
+    dataSheet.getRange(rowId, 7, 1, 3).setNumberFormats([['dd/MM/yyyy', '0', '@']]);
     addAuditLog_(actorTgId, 'admin_edit', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), data.reason);
+    // OPTIMIZED: Reset cache after write
+    resetDataCache_();
     return { success: true };
   });
   return writeResult;
@@ -133,6 +150,8 @@ function adminDeleteRecord(rowId, actorTgId, reason) {
     var rowData = dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0];
     dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'admin_delete', rowIdNum, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0]), reason);
+    // OPTIMIZED: Reset cache after write
+    resetDataCache_();
     return { success: true };
   });
   return writeResult;
@@ -165,7 +184,8 @@ function isDeletedRow_(row) {
 }
 
 function getLatestActionDatesByTgId_() {
-  var values = getSheets().dataSheet.getDataRange().getValues();
+  // OPTIMIZED: Use cached data rows
+  var values = getDataRows_();
   var map = {};
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
