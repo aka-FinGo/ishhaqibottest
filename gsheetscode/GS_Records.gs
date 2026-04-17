@@ -74,8 +74,7 @@ function adminGetAll(options) {
 
 function selfEditRecord(data, actorTgId) {
   var auth = checkUserRoles(actorTgId);
-  console.log('DEBUG: User auth for tgId ' + actorTgId + ':', JSON.stringify(auth));
-  if (!auth.canEdit) return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
+  if (!auth.permissions.canEdit) return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
   var rowId = Number(data.rowId);
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
@@ -96,7 +95,7 @@ function selfEditRecord(data, actorTgId) {
 
 function selfDeleteRecord(rowId, actorTgId, reason) {
   var auth = checkUserRoles(actorTgId);
-  if (!auth.canDelete) return { success: false, error: "Sizda o'chirish ruxsati yo'q!" };
+  if (!auth.permissions.canDelete) return { success: false, error: "Sizda o'chirish ruxsati yo'q!" };
   var rowIdNum = Number(rowId);
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
