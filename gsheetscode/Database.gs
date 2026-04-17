@@ -1,5 +1,6 @@
 // ============================================================
 // DATABASE.GS — Core Infrastructure and Initialization
+// OPTIMIZED: Batch operations, improved caching
 // ============================================================
 
 var COL = {
@@ -39,8 +40,12 @@ var DATA_COL = {
 var _MEMO = {
   sheets: null,
   empRows: null,
-  usernameMap: null
+  usernameMap: null,
+  dataRows: null,
+  dataTimestamp: 0
 };
+
+var CACHE_TTL = 300; // 5 minutes cache for data rows
 
 var EMP_HEADERS = [
   "TelegramId","Username","CanAdd",
@@ -165,6 +170,21 @@ function ensurePositionsInfrastructure_(sh) {
   sh.appendRow(["Loyihachi", "📐"]); sh.appendRow(["Yig'uvchi", "🔧"]); sh.appendRow(["Qadoqlovchi", "📦"]);
 }
 
+function getDataRows_() {
+  var now = new Date().getTime();
+  if (_MEMO.dataRows && (now - _MEMO.dataTimestamp) < CACHE_TTL * 1000) {
+    return _MEMO.dataRows;
+  }
+  _MEMO.dataRows = getSheets().dataSheet.getDataRange().getValues();
+  _MEMO.dataTimestamp = now;
+  return _MEMO.dataRows;
+}
+
+function resetDataCache_() {
+  _MEMO.dataRows = null;
+  _MEMO.dataTimestamp = 0;
+}
+
 function getEmployeeRows_() {
   if (_MEMO.empRows) return _MEMO.empRows;
   _MEMO.empRows = getSheets().empSheet.getDataRange().getValues();
@@ -172,7 +192,14 @@ function getEmployeeRows_() {
 }
 
 function resetEmployeeCache_() {
-  _MEMO.empRows = null; _MEMO.usernameMap = null;
+  _MEMO.empRows = null; 
+  _MEMO.usernameMap = null;
+}
+
+function resetAllCaches_() {
+  resetEmployeeCache_();
+  resetDataCache_();
+  _MEMO.sheets = null;
 }
 
 function getAuditSheet_() {
@@ -199,8 +226,8 @@ function initUser(tgId, auth, data) {
     autoRegisterPendingUserIfMissing_(targetId, data, 'init');
   }
   
-  var dataSheet = getSheets().dataSheet;
-  var values = dataSheet.getDataRange().getValues();
+  // OPTIMIZED: Use cached data rows instead of fresh read
+  var values = getDataRows_();
   var userRecords = [];
   
   var isDeletedFn = (typeof isDeletedRow_ === 'function') ? isDeletedRow_ : function() { return false; };
