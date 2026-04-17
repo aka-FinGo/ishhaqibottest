@@ -326,6 +326,12 @@ async function loadAdminData() {
         const response = await apiRequest({ action: 'admin_get_all' });
         if (response.success) {
             globalAdminData = response.data || [];
+            
+            // Populate filters
+            populateEmployeeFilter();
+            populateYearFilter();
+            populateMonthFilter();
+            
             applyFilters();
             renderAdminList(filteredData || globalAdminData);
         } else {
@@ -392,6 +398,44 @@ function populateEmployeeFilter() {
         option.value = name;
         option.textContent = name;
         filterEmployee.appendChild(option);
+    });
+}
+
+// Function to populate year filter
+function populateYearFilter() {
+    const filterYear = document.getElementById('filterYear');
+    if (!filterYear) return;
+    
+    const years = [...new Set(globalAdminData.map(item => {
+        if (item.actionPeriod) {
+            const [year] = item.actionPeriod.split('-');
+            return year;
+        }
+        const dateMeta = getDateMonthYear(item.date);
+        return dateMeta ? dateMeta.year : null;
+    }).filter(Boolean))];
+    
+    filterYear.innerHTML = '<option value="all">Barcha yillar</option>';
+    years.sort().reverse().forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        filterYear.appendChild(option);
+    });
+}
+
+// Function to populate month filter
+function populateMonthFilter() {
+    const filterMonth = document.getElementById('filterMonth');
+    if (!filterMonth) return;
+    
+    const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
+    filterMonth.innerHTML = '<option value="all">Barcha oylar</option>';
+    monthNames.forEach((name, index) => {
+        const option = document.createElement('option');
+        option.value = (index + 1).toString().padStart(2, '0');
+        option.textContent = name;
+        filterMonth.appendChild(option);
     });
 }
 
