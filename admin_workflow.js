@@ -1,354 +1,262 @@
-/**
- * admin_workflow.js - Jarayonlarni boshqarish (Admin)
- * Optimizatsiya: Event Delegation, DOM Caching, apiRequest orqali ishlash
- * Muammo hal qilindi: Inputlar blokdan chiqishi va Select qiymatlari saqlanishi
- */
+// ============================================================
+// admin_workflow.js — Admin Workflow Management
+// ============================================================
 
-const WorkflowState = {
-    processes: [],
-    stages: [],
-    currentFilter: {},
-    editingId: null,
-    elements: {}
-};
+let currentWorkflowSteps = [];
 
-// 1. DOM Elementlarini Cache qilish
-function initWorkflowCache() {
-    WorkflowState.elements = {
-        tableBody: document.getElementById('workflowTableBody'),
-        filterStatus: document.getElementById('filterProcessStatus'),
-        filterStage: document.getElementById('filterProcessStage'),
-        searchInput: document.getElementById('workflowSearch'),
-        addBtn: document.getElementById('addProcessBtn'),
-        modal: document.getElementById('processModal'),
-        form: document.getElementById('processForm'),
-        saveBtn: document.getElementById('saveProcessBtn'),
-        closeBtn: document.getElementById('closeProcessModal'),
-        // Form ichidagi muhim elementlar
-        startStageSelect: document.getElementById('startStage'),
-        endStageSelect: document.getElementById('endStage')
-    };
-}
+function getWorkflowStepColors(idx, total) {
+    const position = total <= 2 ? (idx === 0 ? 'start' : 'end')
+        : idx === 0 ? 'start'
+        : idx === total - 1 ? 'end'
+        : 'middle';
 
-// 2. Ma'lumotlarni Yuklash (apiRequest orqali)
-async function loadWorkflowData() {
-    try {
-        toggleLoading(true);
-        
-        // Parallel so'rovlar
-        const [processes, stages] = await Promise.all([
-            apiRequest({ action: 'getProcesses' }),
-            apiRequest({ action: 'getStages' })
-        ]);
-
-        WorkflowState.processes = processes.result || processes.data || [];
-        WorkflowState.stages = stages.result || stages.data || [];
-
-        renderTable(WorkflowState.processes);
-        populateStageFilters(WorkflowState.stages);
-        
-    } catch (error) {
-        console.error("Jarayonlarni yuklashda xatolik:", error);
-        alert("Jarayonlarni yuklashda xatolik yuz berdi: " + error.message);
-    } finally {
-        toggleLoading(false);
+    switch (position) {
+        case 'start':
+            return { bg: '#FDE68A', color: '#92400E', label: 'Boshlanish' };
+        case 'middle':
+            return { bg: '#FECACA', color: '#991B1B', label: 'O‘rta bosqich' };
+        case 'end':
+            return { bg: '#DCFCE7', color: '#166534', label: 'Yakun' };
+        default:
+            return { bg: '#E2E8F0', color: '#475569', label: 'Bosqich' };
     }
 }
 
-// 3. Jadvalni Render Qilish (DocumentFragment optimizatsiyasi)
-function renderTable(processes) {
-    const tbody = WorkflowState.elements.tableBody;
-    if (!tbody) return;
+function initWorkflowAdmin() {
+    currentWorkflowSteps = JSON.parse(JSON.stringify(myPermissions.workflowConfig || []));
+    renderWorkflowSteps();
+}
 
-    tbody.innerHTML = '';
-    const fragment = document.createDocumentFragment();
-    
-    const filtered = filterProcesses(processes);
+function renderWorkflowSteps() {
+    const container = document.getElementById('workflowList');
+    if (!container) return;
 
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Ma\'lumot topilmadi</td></tr>';
+    // Add button for start/end stage configuration
+    const configButton = `
+        <div style="margin-bottom: 15px;">
+            <button id="stageConfigBtn" class="btn-primary" style="width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: 600;">
+                Boshlanish / Yakunlash bosqichi
+            </button>
+        </div>
+    `;
+
+    if (!currentWorkflowSteps.length) {
+        container.innerHTML = configButton + `<div class="empty-state" style="padding:20px;"><p>Oqim bo'sh. Qadamlar qo'shing.</p></div>`;
+        attachStageConfigHandler();
         return;
     }
 
-    filtered.forEach(item => {
-        const tr = document.createElement('tr');
-        // Xavfsiz HTML render
-        tr.innerHTML = `
-            <td>${escapeHtml(item.name || '')}</td>
-            <td>${escapeHtml(item.code || '')}</td>
-            <td><span class="badge ${item.status === 'active' ? 'bg-success' : 'bg-secondary'}">${item.status}</span></td>
-            <td>${escapeHtml(item.startStageName || '-')}</td>
-            <td>${escapeHtml(item.endStageName || '-')}</td>
-            <td>
-                <button class="btn-sm btn-edit" data-id="${item.id}">✏️</button>
-                <button class="btn-sm btn-delete" data-id="${item.id}">🗑️</button>
-            </td>
-        `;
-        fragment.appendChild(tr);
+    let html = configButton;
+    currentWorkflowSteps.forEach((step, idx) => {
+        const phaseColors = getWorkflowStepColors(idx, currentWorkflowSteps.length);
+        html += `
+        <div class="card" style="margin-bottom:10px; border:1px solid ${phaseColors.bg}; background:#fff; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="background:${phaseColors.bg}; color:${phaseColors.color}; padding:2px 10px; border-radius:15px; font-size:12px; font-weight:700;">
+                    Bosqich ${idx + 1} ${step.isStart ? '(Boshlang\'ich)' : step.isEnd ? '(Yakun)' : ''}
+                </span>
+                <span style="font-size:11px; font-weight:700; color:${phaseColors.color};">${phaseColors.label}</span>
+            </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="del-icon-btn" style="background:#F1F5F9; color:#64748B;" onclick="moveWorkflowStep(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                    <button class="del-icon-btn" style="background:#F1F5F9; color:#64748B;" onclick="moveWorkflowStep(${idx}, 1)" ${idx === currentWorkflowSteps.length - 1 ? 'disabled' : ''}>▼</button>
+                    <button class="del-icon-btn" style="background:#FEE2E2; color:#EF4444;" onclick="removeWorkflowStep(${idx})">🗑</button>
+                </div>
+            </div>
+            
+            <div class="filter-row" style="margin-bottom:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🏷 Lavozim</label>
+                    <select onchange="updateStepData(${idx}, 'position', this.value)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:10px;">
+                        <option value="">-- Tanlang --</option>
+                        ${TECHNICAL_POSITIONS.map(p => `
+                            <option value="${escapeHtml(p.name)}" ${step.position === p.name ? 'selected' : ''}>
+                                ${p.icon} ${p.name}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔘 Tugma matni</label>
+                    <input type="text" value="${escapeHtml(step.action)}" onchange="updateStepData(${idx}, 'action', this.value)" placeholder="Masalan: Men kesdim">
+                </div>
+            </div>
+            
+            <div>
+                <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">📊 Status (Amaldan keyin)</label>
+                <input type="text" value="${escapeHtml(step.status)}" onchange="updateStepData(${idx}, 'status', this.value)" placeholder="Masalan: Kesildi">
+            </div>
+            
+            <div style="margin-top:8px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
+                    <input type="checkbox" ${step.isStart ? 'checked' : ''} onchange="updateStepData(${idx}, 'isStart', this.checked)">
+                    <span>Bu buyurtmani yaratadigan qadam (Start)</span>
+                </label>
+            </div>
+        </div>`;
     });
 
-    tbody.appendChild(fragment);
+    container.innerHTML = html;
+    attachStageConfigHandler();
 }
 
-// 4. Filtrlash Mantiqi
-function filterProcesses(list) {
-    const { status, stage, search } = WorkflowState.currentFilter;
-    return list.filter(item => {
-        const matchStatus = !status || item.status === status;
-        const matchStage = !stage || item.startStage === stage || item.endStage === stage;
-        const matchSearch = !search || 
-            (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
-            (item.code && item.code.toLowerCase().includes(search.toLowerCase()));
-        return matchStatus && matchStage && matchSearch;
+function updateStepData(idx, field, val) {
+    if (currentWorkflowSteps[idx]) {
+        currentWorkflowSteps[idx][field] = val;
+    }
+}
+
+function addNewWorkflowStep() {
+    currentWorkflowSteps.push({
+        position: '',
+        action: 'Bajardim',
+        status: 'Bajarildi',
+        isStart: false
     });
+    renderWorkflowSteps();
 }
 
-// 5. Selectlarni To'ldirish (Boshlanish/Yakunlash bosqichi uchun)
-function populateStageFilters(stages) {
-    const startSel = WorkflowState.elements.startStageSelect;
-    const endSel = WorkflowState.elements.endStageSelect;
-    const filterSel = WorkflowState.elements.filterStage;
-
-    if (!stages || stages.length === 0) return;
-
-    const optionsHtml = '<option value="">Tanlang...</option>' + 
-        stages.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-
-    // Hozirgi tanlovni saqlab qolish uchun qiymatni keyinroq o'rnatamiz
-    if (startSel) {
-        const currentVal = startSel.value;
-        startSel.innerHTML = optionsHtml;
-        if (currentVal) startSel.value = currentVal;
-    }
-    
-    if (endSel) {
-        const currentVal = endSel.value;
-        endSel.innerHTML = optionsHtml;
-        if (currentVal) endSel.value = currentVal;
-    }
-
-    if (filterSel) {
-        filterSel.innerHTML = '<option value="">Barchasi</option>' + 
-            stages.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-    }
+function removeWorkflowStep(idx) {
+    if (!confirm("Ushbu bosqichni o'chirishga ishonchingiz komilmi?")) return;
+    currentWorkflowSteps.splice(idx, 1);
+    renderWorkflowSteps();
 }
 
-// 6. Event Listenerlar (Delegation)
-function setupWorkflowListeners() {
-    // Jadval ichidagi tugmalar
-    const tbody = WorkflowState.elements.tableBody;
-    if (tbody) {
-        tbody.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            
-            const id = btn.dataset.id;
-            if (btn.classList.contains('btn-edit')) openEditModal(id);
-            if (btn.classList.contains('btn-delete')) deleteProcess(id);
-        });
-    }
-
-    // Qidiruv (Debounce)
-    const searchInput = WorkflowState.elements.searchInput;
-    if (searchInput) {
-        let timeout;
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                WorkflowState.currentFilter.search = e.target.value.trim();
-                renderTable(WorkflowState.processes);
-            }, 300);
-        });
-    }
-
-    // Filterlar
-    const filterStatus = WorkflowState.elements.filterStatus;
-    if (filterStatus) {
-        filterStatus.addEventListener('change', (e) => {
-            WorkflowState.currentFilter.status = e.target.value;
-            renderTable(WorkflowState.processes);
-        });
-    }
-
-    const filterStage = WorkflowState.elements.filterStage;
-    if (filterStage) {
-        filterStage.addEventListener('change', (e) => {
-            WorkflowState.currentFilter.stage = e.target.value;
-            renderTable(WorkflowState.processes);
-        });
-    }
-
-    // Modal ochish/yopish
-    const addBtn = WorkflowState.elements.addBtn;
-    if (addBtn) addBtn.addEventListener('click', () => openEditModal(null));
-
-    const closeBtn = WorkflowState.elements.closeBtn;
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-
-    // Saqlash
-    const saveBtn = WorkflowState.elements.saveBtn;
-    if (saveBtn) saveBtn.addEventListener('click', handleSave);
+function moveWorkflowStep(idx, dir) {
+    const target = idx + dir;
+    if (target < 0 || target >= currentWorkflowSteps.length) return;
+    const temp = currentWorkflowSteps[idx];
+    currentWorkflowSteps[idx] = currentWorkflowSteps[target];
+    currentWorkflowSteps[target] = temp;
+    renderWorkflowSteps();
 }
 
-// 7. Modalni Ochish (Yangi yoki Tahrir)
-function openEditModal(id) {
-    WorkflowState.editingId = id;
-    const form = WorkflowState.elements.form;
-    const modal = WorkflowState.elements.modal;
-    
-    if (!form || !modal) return;
-
-    // Formani tozalash
-    form.reset();
-    
-    // Selectlarni yangilash (agar hali yuklanmagan bo'lsa)
-    if (WorkflowState.stages.length > 0) {
-        populateStageFilters(WorkflowState.stages);
-    }
-
-    if (id) {
-        // Tahrirlash rejimi
-        const item = WorkflowState.processes.find(p => p.id == id);
-        if (item) {
-            form.querySelector('[name="name"]')?.setValue || (form.querySelector('[name="name"]').value = item.name);
-            form.querySelector('[name="code"]')?.setValue || (form.querySelector('[name="code"]').value = item.code);
-            
-            // MUHIM: Select qiymatlarini to'g'ri o'rnatish
-            const startSel = WorkflowState.elements.startStageSelect;
-            const endSel = WorkflowState.elements.endStageSelect;
-            
-            if (startSel) startSel.value = item.startStage || item.startStageId || '';
-            if (endSel) endSel.value = item.endStage || item.endStageId || '';
-            
-            // Statusni ham o'rnatish kerak bo'lsa
-            const statusSel = form.querySelector('[name="status"]');
-            if (statusSel) statusSel.value = item.status || 'active';
-        }
-        modal.querySelector('.modal-title').textContent = "Jarayonni Tahrirlash";
-    } else {
-        // Yangi qo'shish
-        modal.querySelector('.modal-title').textContent = "Yangi Jarayon";
-        // Default qiymatlar
-        if (WorkflowState.elements.startStageSelect) WorkflowState.elements.startStageSelect.value = "";
-        if (WorkflowState.elements.endStageSelect) WorkflowState.elements.endStageSelect.value = "";
-    }
-
-    modal.style.display = 'flex';
-}
-
-// 8. Saqlash Jarayoni (apiRequest)
-async function handleSave() {
-    const form = WorkflowState.elements.form;
-    if (!form) return;
-
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Validatsiya
-    if (!data.name || !data.code) {
-        alert("Ism va Kod majburiy!");
+async function saveWorkflowConfigUI() {
+    if (!currentWorkflowSteps.length) {
+        showToastMsg('❌ Kamida bitta bosqich bo\'lishi shart', true);
         return;
     }
 
-    // Start/End Stage ID larni to'g'rilash
-    if (WorkflowState.elements.startStageSelect) {
-        data.startStageId = WorkflowState.elements.startStageSelect.value;
-        data.startStageName = WorkflowState.elements.startStageSelect.options[WorkflowState.elements.startStageSelect.selectedIndex]?.text || '';
-    }
-    if (WorkflowState.elements.endStageSelect) {
-        data.endStageId = WorkflowState.elements.endStageSelect.value;
-        data.endStageName = WorkflowState.elements.endStageSelect.options[WorkflowState.elements.endStageSelect.selectedIndex]?.text || '';
-    }
+    const saveBtn = document.querySelector('button[onclick*="saveWorkflowConfigUI"]');
+    setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
 
     try {
-        setButtonLoading(WorkflowState.elements.saveBtn, true, "Saqlanmoqda...");
-        
-        // Inputlarni bloklash (faqat saqlash paytida)
-        toggleFormInputs(true);
+        const data = await apiRequest({
+            action: 'workflow_save_config',
+            steps: currentWorkflowSteps
+        });
 
-        const payload = {
-            action: WorkflowState.editingId ? 'updateProcess' : 'createProcess',
-            data: data,
-            id: WorkflowState.editingId
-        };
-
-        const response = await apiRequest(payload);
-        
-        if (response.status === 'success' || response.result) {
-            closeModal();
-            await loadWorkflowData(); // Jadvalni yangilash
-            alert(WorkflowState.editingId ? "O'zgartirish saqlandi!" : "Yangi jarayon qo'shildi!");
+        if (data.success) {
+            showToastMsg('✅ Oqim saqlandi! Ilovani yangilang.');
+            // Update local config so roles.js picks it up
+            myPermissions.workflowConfig = currentWorkflowSteps;
         } else {
-            throw new Error(response.message || "Noma'lum xatolik");
+            showToastMsg('❌ ' + (data.error || 'Xato'), true);
         }
-
-    } catch (error) {
-        console.error("Saqlash xatosi:", error);
-        alert("Saqlashda xatolik: " + error.message);
+    } catch (e) {
+        showToastMsg('❌ Tarmoq xatosi', true);
     } finally {
-        setButtonLoading(WorkflowState.elements.saveBtn, false);
-        toggleFormInputs(false); // Inputlarni QAYTA OCHISH (Muammo shu yerda hal bo'ladi)
+        setButtonLoading(saveBtn, false);
     }
 }
 
-// 9. Yordamchi Funksiyalar
-function closeModal() {
-    const modal = WorkflowState.elements.modal;
-    if (modal) {
-        modal.style.display = 'none';
-        WorkflowState.editingId = null;
-        WorkflowState.elements.form?.reset();
+function attachStageConfigHandler() {
+    const btn = document.getElementById('stageConfigBtn');
+    if (btn) {
+        btn.addEventListener('click', showStageConfigDialog);
     }
 }
 
-function toggleFormInputs(disabled) {
-    const form = WorkflowState.elements.form;
-    if (!form) return;
+function showStageConfigDialog() {
+    // Create and show dialog for stage configuration
+    const dialog = document.createElement('div');
+    dialog.id = 'stageConfigDialog';
+    dialog.className = 'modal';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;';
     
-    const inputs = form.querySelectorAll('input, select, button:not(#closeProcessModal)');
-    inputs.forEach(input => {
-        // Saqlash tugmasini alohida boshqaramiz, qolganlarni blocklaymiz
-        if (input.id !== 'saveProcessBtn') {
-            input.disabled = disabled;
-        }
+    dialog.innerHTML = `
+        <div class="card" style="width: 90%; max-width: 500px; background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: var(--navy);">Boshlanish / Yakunlash bosqichi</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Qaysi jarayondan keyin boshlanish va yakunlash bosqichi tugashi kerakligini belgilang:</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Boshlanish bosqichi:</label>
+                <select id="startStageSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+                    <option value="">Tanlanmagan</option>
+                    ${currentWorkflowSteps.map((step, idx) => 
+                        `<option value="${idx}" ${step.isStart ? 'selected' : ''}>${step.position || `Bosqich ${idx + 1}`}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Yakunlash bosqichi:</label>
+                <select id="endStageSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+                    <option value="">Tanlanmagan</option>
+                    ${currentWorkflowSteps.map((step, idx) => 
+                        `<option value="${idx}" ${step.isEnd ? 'selected' : ''}>${step.position || `Bosqich ${idx + 1}`}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="saveStageConfig" class="btn-primary" style="flex: 1; padding: 12px; background: #10B981; color: white; border: none; border-radius: 10px; font-weight: 600;">Saqlash</button>
+                <button id="cancelStageConfig" class="btn-secondary" style="flex: 1; padding: 12px; background: #EF4444; color: white; border: none; border-radius: 10px; font-weight: 600;">Bekor qilish</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Add event listeners
+    document.getElementById('saveStageConfig').addEventListener('click', saveStageConfig);
+    document.getElementById('cancelStageConfig').addEventListener('click', () => {
+        document.body.removeChild(dialog);
     });
 }
 
-function toggleLoading(show) {
-    const loader = document.getElementById('globalLoader') || document.getElementById('loader');
-    if (loader) loader.style.display = show ? 'block' : 'none';
-    
-    // Umumiy opacity o'zgarishi
-    const mainContent = document.querySelector('.main-content') || document.body;
-    if (mainContent) mainContent.style.pointerEvents = show ? 'none' : 'auto';
-}
+async function saveStageConfig() {
+    const startStage = parseInt(document.getElementById('startStageSelect').value, 10);
+    const endStage = parseInt(document.getElementById('endStageSelect').value, 10);
 
-async function deleteProcess(id) {
-    if (!confirm("Rostdan ham o'chirmoqchimisiz?")) return;
-    
-    try {
-        toggleLoading(true);
-        const response = await apiRequest({
-            action: 'deleteProcess',
-            id: id
-        });
-        
-        if (response.status === 'success' || response.result) {
-            await loadWorkflowData();
-            alert("O'chirildi!");
-        } else {
-            throw new Error(response.message);
-        }
-    } catch (error) {
-        alert("O'chirishda xatolik: " + error.message);
-    } finally {
-        toggleLoading(false);
+    // Update workflow steps with start/end flags
+    currentWorkflowSteps.forEach((step, idx) => {
+        step.isStart = !Number.isNaN(startStage) && idx === startStage;
+        step.isEnd = !Number.isNaN(endStage) && idx === endStage;
+    });
+
+    if (typeof myPermissions !== 'undefined') {
+        myPermissions.workflowConfig = currentWorkflowSteps;
+        localStorage.setItem('myPermissions', JSON.stringify(myPermissions));
     }
-}
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-    initWorkflowCache();
-    loadWorkflowData();
-    setupWorkflowListeners();
-});
+    const saveStageBtn = document.getElementById('saveStageConfig');
+    if (saveStageBtn) {
+        setButtonLoading(saveStageBtn, true, 'Saqlanmoqda...');
+    }
+
+    try {
+        const data = await apiRequest({
+            action: 'workflow_save_config',
+            steps: currentWorkflowSteps
+        });
+        if (!data.success) {
+            showToastMsg && showToastMsg('❌ ' + (data.error || 'Sozlamalarni saqlashda xato'), true);
+            return;
+        }
+        showToastMsg && showToastMsg('✅ Sozlamalar saqlandi!');
+    } catch (e) {
+        showToastMsg && showToastMsg('❌ Tarmoq xatosi', true);
+    } finally {
+        if (saveStageBtn) {
+            setButtonLoading(saveStageBtn, false);
+        }
+    }
+
+    const dialog = document.getElementById('stageConfigDialog');
+    if (dialog) {
+        document.body.removeChild(dialog);
+    }
+
+    renderWorkflowSteps();
+}
