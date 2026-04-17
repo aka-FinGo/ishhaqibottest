@@ -33,17 +33,17 @@ async function loadAdminData() {
     try {
         showLoading(true);
         const [users, roles, positions] = await Promise.all([
-            google.script.run.withSuccessHandler(cacheData('users')).getUsers(),
-            google.script.run.withSuccessHandler(cacheData('roles')).getRoles(),
-            google.script.run.withSuccessHandler(cacheData('positions')).getPositions()
+            apiRequest({action: 'getUsers'}),
+            apiRequest({action: 'getRoles'}),
+            apiRequest({action: 'getPositions'})
         ]);
         
-        AdminState.cache.users = users;
-        AdminState.cache.roles = roles;
-        AdminState.cache.positions = positions;
+        AdminState.cache.users = users.data || [];
+        AdminState.cache.roles = roles.data || [];
+        AdminState.cache.positions = positions.data || [];
         
-        renderUserTable(users);
-        populateFilters(roles, positions);
+        renderUserTable(AdminState.cache.users);
+        populateFilters(AdminState.cache.roles, AdminState.cache.positions);
     } catch (error) {
         showError("Ma'lumotlarni yuklashda xatolik: " + error.message);
     } finally {
@@ -195,11 +195,14 @@ async function saveUser() {
     
     try {
         showLoading(true);
-        await google.script.run.withSuccessHandler(() => {
+        const result = await apiRequest({action: 'saveUser', data: data, userId: userId});
+        if (result.success) {
             closeModal();
             loadAdminData(); // Yangilash
             showSuccess("Muvaffaqiyatli saqlandi!");
-        }).saveUser(data, userId);
+        } else {
+            showError("Saqlashda xatolik: " + (result.error || "Noma'lum xatolik"));
+        }
     } catch (error) {
         showError("Saqlashda xatolik: " + error.message);
     } finally {
