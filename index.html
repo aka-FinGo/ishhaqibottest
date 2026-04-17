@@ -300,14 +300,16 @@
                 <h2>🧾 Buyurtmalar</h2>
                 <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">Buyurtma №, Oy va m²</div>
             </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)">🔄</button>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <button class="btn-secondary" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)" style="padding:8px 12px;font-size:14px;display:flex;align-items:center;gap:6px;">
+                    📈 Yangilash
+                </button>
                 <div class="header-avatar">🧾</div>
             </div>
         </div>
         <div class="page-switcher">
-            <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">Dashboard kv</button>
-            <button class="page-switcher-btn active">Buyurtmalar</button>
+            <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">📈 Dashboard kv</button>
+            <button class="page-switcher-btn active">🧾 Buyurtmalar</button>
         </div>
 
         <div class="stats-grid">
