@@ -310,8 +310,38 @@ function closeEditModal() {
     }
 }
 
-// Enhanced loadAdminData function with loading states
+// Enhanced loadAdminData function with permission checks
 async function loadAdminData() {
+    // Check permissions first
+    if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor') {
+        const adminListEl = document.getElementById('adminList');
+        if (adminListEl) {
+            adminListEl.innerHTML = `
+                <div class="error-state" style="padding: 40px 20px; text-align: center; color: #dc2626;">
+                    <div style="font-size: 60px; margin-bottom: 16px;">🔒</div>
+                    <h3 style="margin: 0 0 8px; color: #b91c1c;">Ruxsat yo'q</h3>
+                    <p style="margin: 0; font-size: 14px;">Bu sahifani ko'rish uchun ruxsat yo'q</p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    // Check if user can view all actions
+    if (myRole !== 'SuperAdmin' && (!myPermissions || !myPermissions.canViewAll)) {
+        const adminListEl = document.getElementById('adminList');
+        if (adminListEl) {
+            adminListEl.innerHTML = `
+                <div class="error-state" style="padding: 40px 20px; text-align: center; color: #dc2626;">
+                    <div style="font-size: 60px; margin-bottom: 16px;">🔒</div>
+                    <h3 style="margin: 0 0 8px; color: #b91c1c;">Ruxsat yo'q</h3>
+                    <p style="margin: 0; font-size: 14px;">Barcha amallarni ko'rish ruxsati yo'q</p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
     try {
         const adminListEl = document.getElementById('adminList');
         if (adminListEl) {
@@ -385,6 +415,11 @@ function applyFilters() {
 function updatePagination() {
     const paginationEl = document.getElementById('pagination');
     if (paginationEl) paginationEl.style.display = 'none';
+}
+
+// Check if user can export data
+function canExportData() {
+    return myRole === 'SuperAdmin' || (myPermissions && myPermissions.canExport);
 }
 
 // Function to populate employee filter
