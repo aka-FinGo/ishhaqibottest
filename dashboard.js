@@ -296,10 +296,19 @@ function personalChartsHTML(prefix, bycat) {
 function loadDashboard() {
     const el = document.getElementById('dashboardContent');
     if (!el) return;
-    if      (myRole === 'SuperAdmin') renderSuperAdminDashboard(el);
-    else if (myRole === 'Direktor')   renderDirektorDashboard(el);
-    else if (myRole === 'Admin')      renderAdminDashboard(el);
-    else                              renderUserDashboard(el);
+    
+    // Show loading indicator
+    el.innerHTML = `<div class="dash-empty" style="padding:50px 20px;"><div style="font-size:40px">⏳</div><p style="margin-top:12px;">Yuklanmoqda...</p></div>`;
+    
+    try {
+        if      (myRole === 'SuperAdmin') renderSuperAdminDashboard(el);
+        else if (myRole === 'Direktor')   renderDirektorDashboard(el);
+        else if (myRole === 'Admin')      renderAdminDashboard(el);
+        else                              renderUserDashboard(el);
+    } catch (error) {
+        console.error('Dashboard rendering error:', error);
+        el.innerHTML = `<div class="dash-empty"><p style="color:var(--red);">❌ Dashboardni chizishda xatolik: ${error.message}</p></div>`;
+    }
 }
 
 // ---- Ma'lumot yuklash yordamchisi ----
