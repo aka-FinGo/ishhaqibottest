@@ -1,9 +1,24 @@
 // ================= DASHBOARD =================
+// Optimizatsiya: Chart instance caching va memory management
 const _charts = {};
-function destroyChart(id) { if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; } }
+function destroyChart(id) { 
+    if (!_charts[id]) return;
+    try { _charts[id].destroy(); } catch(e) {}
+    delete _charts[id]; 
+}
 
 const MONTHS_UZ = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
 const PALETTE   = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+
+// Memoization for expensive calculations
+const _memo = {};
+function memoize(key, fn) {
+    if (_memo[key] !== undefined) return _memo[key];
+    const result = fn();
+    _memo[key] = result;
+    return result;
+}
+function clearMemo() { Object.keys(_memo).forEach(k => delete _memo[k]); }
 
 // ============================================================
 // FIX 1: parseDate — DD/MM/YYYY va ISO format ikkalasini ham qabul qiladi
