@@ -230,11 +230,27 @@ function openEdit(rowId) {
     }
 }
 
-// Basic edit modal function
+// Basic edit modal function with new form design
 function showEditModal(rowId) {
     // Find the record
     const record = findRecordByRowId(rowId);
     if (!record) return;
+    
+    // Parse action period if exists
+    let selectedMonth = '01';
+    let selectedYear = new Date().getFullYear().toString();
+    if (record.actionPeriod) {
+        const [year, month] = record.actionPeriod.split('-');
+        if (year && month) {
+            selectedYear = year;
+            selectedMonth = month;
+        }
+    }
+    
+    // Determine currency and amount
+    const isUSD = record.amountUSD && record.amountUSD > 0;
+    const amount = isUSD ? record.amountUSD : (record.amountUZS || 0);
+    const currency = isUSD ? 'USD' : 'UZS';
     
     const editHtml = `
         <div id="editActionModal" style="
@@ -256,10 +272,12 @@ function showEditModal(rowId) {
                 margin: 20px;
                 max-width: 90%;
                 width: 500px;
+                max-height: 90vh;
+                overflow-y: auto;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             " onclick="event.stopPropagation()">
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin: 0; color: #1e293b;">Amalni tahrirlash</h3>
                     <button onclick="closeEditModal()" style="
                         background: none;
@@ -270,84 +288,95 @@ function showEditModal(rowId) {
                     ">&times;</button>
                 </div>
                 
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Ism:</label>
-                    <input type="text" id="editName" value="${record.name || ''}" style="
-                        width: 100%;
-                        padding: 12px;
-                        border: 1px solid #cbd5e1;
-                        border-radius: 8px;
-                        font-family: inherit;
-                    ">
-                </div>
-                
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">So'm:</label>
-                    <input type="number" id="editAmountUZS" value="${record.amountUZS || ''}" style="
-                        width: 100%;
-                        padding: 12px;
-                        border: 1px solid #cbd5e1;
-                        border-radius: 8px;
-                        font-family: inherit;
-                    ">
-                </div>
-                
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Dollar:</label>
-                    <input type="number" id="editAmountUSD" value="${record.amountUSD || ''}" style="
-                        width: 100%;
-                        padding: 12px;
-                        border: 1px solid #cbd5e1;
-                        border-radius: 8px;
-                        font-family: inherit;
-                    ">
-                </div>
-                
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Kurs:</label>
-                    <input type="number" id="editRate" value="${record.rate || ''}" style="
-                        width: 100%;
-                        padding: 12px;
-                        border: 1px solid #cbd5e1;
-                        border-radius: 8px;
-                        font-family: inherit;
-                    ">
-                </div>
-                
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Izoh:</label>
-                    <textarea id="editComment" rows="3" style="
-                        width: 100%;
-                        padding: 12px;
-                        border: 1px solid #cbd5e1;
-                        border-radius: 8px;
-                        font-family: inherit;
-                        resize: vertical;
-                    ">${record.comment || ''}</textarea>
-                </div>
-                
-                <div style="display: flex; gap: 12px;">
-                    <button onclick="closeEditModal()" style="
-                        flex: 1;
-                        background: #f1f5f9;
-                        color: #475569;
-                        border: none;
-                        padding: 12px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        cursor: pointer;
-                    ">Bekor qilish</button>
-                    
-                    <button onclick="performEdit('${rowId}')" style="
-                        flex: 1;
-                        background: #bbf7d0;
-                        color: #166534;
-                        border: none;
-                        padding: 12px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        cursor: pointer;
-                    ">Saqlash</button>
+                <div id="addFormContent" class="card" style="background: #f8fafc; border-radius: 8px; padding: 16px;">
+                    <form id="financeForm">
+                        <div class="input-group" style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Davri (Qaysi oy uchun)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="actionMonth" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit;">
+                                    <option value="01" ${selectedMonth === '01' ? 'selected' : ''}>Yanvar</option>
+                                    <option value="02" ${selectedMonth === '02' ? 'selected' : ''}>Fevral</option>
+                                    <option value="03" ${selectedMonth === '03' ? 'selected' : ''}>Mart</option>
+                                    <option value="04" ${selectedMonth === '04' ? 'selected' : ''}>Aprel</option>
+                                    <option value="05" ${selectedMonth === '05' ? 'selected' : ''}>May</option>
+                                    <option value="06" ${selectedMonth === '06' ? 'selected' : ''}>Iyun</option>
+                                    <option value="07" ${selectedMonth === '07' ? 'selected' : ''}>Iyul</option>
+                                    <option value="08" ${selectedMonth === '08' ? 'selected' : ''}>Avgust</option>
+                                    <option value="09" ${selectedMonth === '09' ? 'selected' : ''}>Sentyabr</option>
+                                    <option value="10" ${selectedMonth === '10' ? 'selected' : ''}>Oktyabr</option>
+                                    <option value="11" ${selectedMonth === '11' ? 'selected' : ''}>Noyabr</option>
+                                    <option value="12" ${selectedMonth === '12' ? 'selected' : ''}>Dekabr</option>
+                                </select>
+                                <select id="actionYear" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit;">
+                                    ${generateYearOptions(selectedYear)}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group" style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Summa</label>
+                            <input type="number" id="amount" value="${amount}" required placeholder="0" inputmode="numeric" style="
+                                width: 100%;
+                                padding: 12px;
+                                border: 1px solid #cbd5e1;
+                                border-radius: 8px;
+                                font-family: inherit;
+                                font-size: 16px;
+                            ">
+                        </div>
+                        
+                        <div class="input-group" style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Valyuta</label>
+                            <select id="currency" onchange="toggleRate()" style="
+                                width: 100%;
+                                padding: 12px;
+                                border: 1px solid #cbd5e1;
+                                border-radius: 8px;
+                                font-family: inherit;
+                                font-size: 16px;
+                            ">
+                                <option value="UZS" ${currency === 'UZS' ? 'selected' : ''}>🇺🇿 So'm (UZS)</option>
+                                <option value="USD" ${currency === 'USD' ? 'selected' : ''}>🇺🇸 Dollar (USD)</option>
+                            </select>
+                        </div>
+                        
+                        <div id="rateDiv" class="input-group hidden" style="margin-bottom: 16px; ${isUSD ? '' : 'display: none;'}">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Valyuta kursi</label>
+                            <input type="number" id="rate" value="${record.rate || ''}" placeholder="Masalan: 12600" inputmode="numeric" style="
+                                width: 100%;
+                                padding: 12px;
+                                border: 1px solid #cbd5e1;
+                                border-radius: 8px;
+                                font-family: inherit;
+                                font-size: 16px;
+                            ">
+                        </div>
+                        
+                        <div class="input-group" style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Izoh</label>
+                            <textarea id="comment" rows="3" placeholder="Avans / Oylik haqida izoh..." style="
+                                width: 100%;
+                                padding: 12px;
+                                border: 1px solid #cbd5e1;
+                                border-radius: 8px;
+                                font-family: inherit;
+                                resize: vertical;
+                            ">${record.comment || ''}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn-main" id="submitBtn" onclick="performEdit('${rowId}'); return false;" style="
+                            width: 100%;
+                            padding: 14px;
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-weight: 600;
+                            font-size: 16px;
+                            cursor: pointer;
+                        ">💾 Saqlash</button>
+                    </form>
+                    <div id="status" class="status-msg"></div>
                 </div>
             </div>
         </div>
@@ -355,24 +384,59 @@ function showEditModal(rowId) {
     
     document.body.insertAdjacentHTML('beforeend', editHtml);
     
+    // Initialize year dropdown
+    initializeYearDropdown();
+    
     if (tg && tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('light');
     }
 }
 
-// Function to perform edit action
+// Generate year options
+function generateYearOptions(selectedYear) {
+    const currentYear = new Date().getFullYear();
+    let options = '';
+    for (let year = currentYear - 2; year <= currentYear + 1; year++) {
+        options += `<option value="${year}" ${year.toString() === selectedYear ? 'selected' : ''}>${year}</option>`;
+    }
+    return options;
+}
+
+// Initialize year dropdown
+function initializeYearDropdown() {
+    const yearSelect = document.getElementById('actionYear');
+    if (yearSelect && yearSelect.options.length === 0) {
+        yearSelect.innerHTML = generateYearOptions(yearSelect.value);
+    }
+}
+
+// Toggle rate field visibility
+function toggleRate() {
+    const currency = document.getElementById('currency').value;
+    const rateDiv = document.getElementById('rateDiv');
+    if (rateDiv) {
+        rateDiv.style.display = currency === 'USD' ? 'block' : 'none';
+    }
+}
+
+// Function to perform edit action with new form
 async function performEdit(rowId) {
-    // Get values
-    const name = document.getElementById('editName').value;
-    const amountUZS = parseFloat(document.getElementById('editAmountUZS').value) || 0;
-    const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
-    const rate = parseFloat(document.getElementById('editRate').value) || 0;
-    const comment = document.getElementById('editComment').value;
+    // Get values from new form
+    const actionMonth = document.getElementById('actionMonth').value;
+    const actionYear = document.getElementById('actionYear').value;
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const currency = document.getElementById('currency').value;
+    const rate = parseFloat(document.getElementById('rate').value) || 0;
+    const comment = document.getElementById('comment').value;
+    
+    // Determine amountUZS and amountUSD based on currency
+    const amountUZS = currency === 'UZS' ? amount : 0;
+    const amountUSD = currency === 'USD' ? amount : 0;
     
     // Show loading animation
-    const saveBtn = document.querySelector('#editActionModal button:last-child');
+    const saveBtn = document.getElementById('submitBtn');
     const originalText = saveBtn.textContent;
-    saveBtn.innerHTML = '<span style="display: inline-block; animation: spinner 1s linear infinite; border: 2px solid #f3f3f3; border-top: 2px solid #166534; border-radius: 50%; width: 16px; height: 16px; margin-right: 8px;"></span> Saqlanmoqda...';
+    saveBtn.innerHTML = '<span style="display: inline-block; animation: spinner 1s linear infinite; border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; width: 16px; height: 16px; margin-right: 8px;"></span> Saqlanmoqda...';
     saveBtn.disabled = true;
     
     try {
@@ -380,15 +444,18 @@ async function performEdit(rowId) {
         const reason = prompt("Tahrirlash sababini kiriting:");
         if (!reason) {
             showToastMsg('❌ Sabab kiritilishi shart', true);
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
             return;
         }
         
         const data = await apiRequest({
             action: 'admin_edit',
             rowId,
+            actionPeriod: `${actionYear}-${actionMonth}`,
             amountUZS,
             amountUSD,
-            rate,
+            rate: currency === 'USD' ? rate : 0,
             comment,
             reason
         });
