@@ -74,6 +74,7 @@ function adminGetAll(options) {
 
 function selfEditRecord(data, actorTgId) {
   var auth = checkUserRoles(actorTgId);
+  console.log('DEBUG: User auth for tgId ' + actorTgId + ':', JSON.stringify(auth));
   if (!auth.canEdit) return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
   var rowId = Number(data.rowId);
   var writeResult = withWriteLock_(function () {
