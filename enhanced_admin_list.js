@@ -174,10 +174,16 @@ function openEdit(rowId) {
     }
 }
 
-// Basic edit modal function with currency-specific form
+// Use existing editModal from index.html
 function showEditModal(rowId) {
     const record = findRecordByRowId(rowId);
     if (!record) return;
+    
+    // Fill existing form fields
+    document.getElementById('editRowId').value = rowId;
+    
+    // Set name and date in header
+    document.getElementById('editHeaderName').textContent = '👤 ' + (record.name || '—');
     
     let selectedMonth = '01';
     let selectedYear = new Date().getFullYear().toString();
@@ -186,99 +192,31 @@ function showEditModal(rowId) {
         if (year && month) { selectedYear = year; selectedMonth = month; }
     }
     
-    const isUSD = record.amountUSD && record.amountUSD > 0;
-    const amountUZS = record.amountUZS || 0;
-    const amountUSD = record.amountUSD || 0;
-    const rate = record.rate || 0;
-    const calculatedUZS = isUSD ? (amountUSD * rate) : amountUZS;
-    
     const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
-    const currentMonthName = monthNames[parseInt(selectedMonth) - 1];
+    document.getElementById('editHeaderDate').textContent = '📅 ' + monthNames[parseInt(selectedMonth) - 1] + ' / ' + selectedYear;
     
-    const editHtml = `
-        <div id="editActionModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1002;" onclick="closeEditModal(event)">
-            <div style="background: white; border-radius: 12px; padding: 24px; margin: 20px; max-width: 90%; width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div>
-                        <h3 style="margin: 0 0 8px; color: #1e293b;">✏️ Tahrirlash</h3>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 12px; font-size: 12px;">${record.name || 'Noma\'lum'}</span>
-                            <span style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 12px; font-size: 12px;">${currentMonthName} / ${selectedYear}</span>
-                        </div>
-                    </div>
-                    <button onclick="closeEditModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-                
-                <div id="addFormContent" class="card" style="background: #f8fafc; border-radius: 8px; padding: 16px;">
-                    <form id="financeForm">
-                        <div class="input-group" style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #64748b; font-size: 13px;">DAVRI (QAYSI OY UCHUN)</label>
-                            <div style="display: flex; gap: 10px;">
-                                <select id="actionMonth" style="flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 15px; background: white;">
-                                    <option value="01" ${selectedMonth === '01' ? 'selected' : ''}>Yanvar</option>
-                                    <option value="02" ${selectedMonth === '02' ? 'selected' : ''}>Fevral</option>
-                                    <option value="03" ${selectedMonth === '03' ? 'selected' : ''}>Mart</option>
-                                    <option value="04" ${selectedMonth === '04' ? 'selected' : ''}>Aprel</option>
-                                    <option value="05" ${selectedMonth === '05' ? 'selected' : ''}>May</option>
-                                    <option value="06" ${selectedMonth === '06' ? 'selected' : ''}>Iyun</option>
-                                    <option value="07" ${selectedMonth === '07' ? 'selected' : ''}>Iyul</option>
-                                    <option value="08" ${selectedMonth === '08' ? 'selected' : ''}>Avgust</option>
-                                    <option value="09" ${selectedMonth === '09' ? 'selected' : ''}>Sentyabr</option>
-                                    <option value="10" ${selectedMonth === '10' ? 'selected' : ''}>Oktyabr</option>
-                                    <option value="11" ${selectedMonth === '11' ? 'selected' : ''}>Noyabr</option>
-                                    <option value="12" ${selectedMonth === '12' ? 'selected' : ''}>Dekabr</option>
-                                </select>
-                                <select id="actionYear" style="flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 15px; background: white;">
-                                    ${generateYearOptions(selectedYear)}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        ${!isUSD ? `
-                        <div class="input-group" style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #64748b; font-size: 13px;">💰 SUMMA (UZS)</label>
-                            <input type="number" id="amountUZS" value="${amountUZS}" required placeholder="0" inputmode="numeric" style="width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 16px; background: white;">
-                        </div>
-                        ` : `
-                        <div class="input-group" style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #64748b; font-size: 13px;">💰 SUMMA (UZS)</label>
-                            <input type="number" id="amountUZS" value="${amountUZS}" readonly placeholder="0" inputmode="numeric" style="width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 16px; background: #f1f5f9; color: #64748b;">
-                        </div>
-                        
-                        <div class="input-group" style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #64748b; font-size: 13px;">💵 SUMMA (USD)</label>
-                            <input type="number" id="amountUSD" value="${amountUSD}" required placeholder="0" inputmode="numeric" onchange="calculateUZS()" style="width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 16px; background: white;">
-                        </div>
-                        
-                        <div class="input-group" style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #64748b; font-size: 13px;">📈 VALYUTA KURSI (1 USD = ? UZS)</label>
-                            <input type="number" id="rate" value="${rate}" required placeholder="Masalan: 12600" inputmode="numeric" onchange="calculateUZS()" style="width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 16px; background: white;">
-                        </div>
-                        
-                        <div id="calculatedUZS" style="margin-bottom: 16px; padding: 12px; background: #dcfce7; border-radius: 8px; color: #166534; font-weight: 500;">
-                            ≈ ${calculatedUZS.toLocaleString()} UZS (${amountUSD.toLocaleString()} × ${rate.toLocaleString()})
-                        </div>
-                        `}
-                        
-                        <div class="input-group" style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #64748b; font-size: 13px;">📝 IZOH</label>
-                            <textarea id="comment" rows="3" placeholder="Avans / Oylik haqida izoh..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; resize: vertical; background: white;">${record.comment || 'Izoh yo\'q'}</textarea>
-                        </div>
-                        
-                        <div style="display: flex; gap: 12px;">
-                            <button type="button" onclick="closeEditModal()" style="flex: 1; padding: 14px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer;">❌ Bekor</button>
-                            <button type="submit" class="btn-main" id="submitBtn" onclick="performEdit('${rowId}'); return false;" style="flex: 1; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer;">💾 Saqlash</button>
-                        </div>
-                    </form>
-                    <div id="status" class="status-msg"></div>
-                </div>
-            </div>
-        </div>
-    `;
+    // Set form values
+    document.getElementById('editActionMonth').value = selectedMonth;
     
-    document.body.insertAdjacentHTML('beforeend', editHtml);
-    initializeYearDropdown();
-    if (tg && tg.HapticFeedback) { tg.HapticFeedback.impactOccurred('light'); }
+    // Fill year dropdown
+    const yearSelect = document.getElementById('editActionYear');
+    yearSelect.innerHTML = generateYearOptions(selectedYear);
+    
+    // Set amounts
+    document.getElementById('editAmountUZS').value = record.amountUZS || '';
+    document.getElementById('editAmountUSD').value = record.amountUSD || '';
+    document.getElementById('editRate').value = record.rate || '';
+    document.getElementById('editComment').value = record.comment || '';
+    
+    // Update currency view
+    updateEditCurrencyView();
+    
+    // Show modal (using existing modal system)
+    const editModal = document.getElementById('editModal');
+    if (editModal) {
+        editModal.classList.remove('hidden');
+        if (tg && tg.HapticFeedback) { tg.HapticFeedback.impactOccurred('light'); }
+    }
 }
 
 // Generate year options
@@ -299,36 +237,48 @@ function initializeYearDropdown() {
     }
 }
 
-// Calculate UZS from USD and rate
-function calculateUZS() {
-    const amountUSD = parseFloat(document.getElementById('amountUSD').value) || 0;
-    const rate = parseFloat(document.getElementById('rate').value) || 0;
+// Update currency view for edit form (existing function)
+function updateEditCurrencyView() {
+    const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
+    const rate = parseFloat(document.getElementById('editRate').value) || 0;
     const calculatedUZS = amountUSD * rate;
-    const calculatedDiv = document.getElementById('calculatedUZS');
-    if (calculatedDiv) {
-        calculatedDiv.innerHTML = `≈ ${calculatedUZS.toLocaleString()} UZS (${amountUSD.toLocaleString()} × ${rate.toLocaleString()})`;
+    
+    // Show/hide USD and rate rows based on input
+    const editUsdRow = document.getElementById('editUsdRow');
+    const editRateRow = document.getElementById('editRateRow');
+    const editConversionPreview = document.getElementById('editConversionPreview');
+    
+    if (editUsdRow && editRateRow && editConversionPreview) {
+        if (amountUSD > 0) {
+            editUsdRow.style.display = 'block';
+            editRateRow.style.display = 'block';
+            editConversionPreview.style.display = 'block';
+            editConversionPreview.innerHTML = `<strong>≈ ${calculatedUZS.toLocaleString()} UZS</strong> (${amountUSD.toLocaleString()} × ${rate.toLocaleString()})`;
+        } else {
+            editUsdRow.style.display = 'none';
+            editRateRow.style.display = 'none';
+            editConversionPreview.style.display = 'none';
+        }
     }
-    const amountUZSInput = document.getElementById('amountUZS');
-    if (amountUZSInput) { amountUZSInput.value = calculatedUZS; }
 }
 
-// Function to perform edit action with new form
-async function performEdit(rowId) {
-    const actionMonth = document.getElementById('actionMonth').value;
-    const actionYear = document.getElementById('actionYear').value;
-    const amountUZS = parseFloat(document.getElementById('amountUZS').value) || 0;
-    const amountUSD = document.getElementById('amountUSD') ? (parseFloat(document.getElementById('amountUSD').value) || 0) : 0;
-    const rate = document.getElementById('rate') ? (parseFloat(document.getElementById('rate').value) || 0) : 0;
-    const comment = document.getElementById('comment').value;
+// Function to perform edit action using existing form
+async function performEdit() {
+    const rowId = document.getElementById('editRowId').value;
+    const actionMonth = document.getElementById('editActionMonth').value;
+    const actionYear = document.getElementById('editActionYear').value;
+    const amountUZS = parseFloat(document.getElementById('editAmountUZS').value) || 0;
+    const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
+    const rate = parseFloat(document.getElementById('editRate').value) || 0;
+    const comment = document.getElementById('editComment').value;
     
-    const saveBtn = document.getElementById('submitBtn');
+    const saveBtn = document.querySelector('#editForm .btn-main');
     const originalText = saveBtn.textContent;
     saveBtn.innerHTML = '<span style="display: inline-block; animation: spinner 1s linear infinite; border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; margin-right: 8px;"></span> Saqlanmoqda...';
-    saveBtn.disabled = true;
     
     try {
         const reason = prompt("Tahrirlash sababini kiriting:");
-        if (!reason) { showToastMsg('❌ Sabab kiritilishi shart', true); saveBtn.innerHTML = originalText; saveBtn.disabled = false; return; }
+        if (!reason) { showToastMsg('❌ Sabab kiritilishi shart', true); saveBtn.textContent = originalText; return; }
         
         const data = await apiRequest({
             action: 'admin_edit',
@@ -342,22 +292,22 @@ async function performEdit(rowId) {
         });
         
         if (!data.success) throw new Error(data.error || "Saqlashda xato");
-        closeEditModal();
+        closeModal();
         showToastMsg("✅ Saqlandi");
         loadAdminData();
     } catch (error) {
         showToastMsg('❌ Server xatosi: ' + error.message, true);
     } finally {
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
     }
 }
 
-// Function to close edit modal
-function closeEditModal(event) {
-    if (event && event.target.id !== 'editActionModal') return;
-    const modal = document.getElementById('editActionModal');
-    if (modal) modal.remove();
+// Function to close edit modal (using existing modal)
+function closeEditModal() {
+    const editModal = document.getElementById('editModal');
+    if (editModal) {
+        editModal.classList.add('hidden');
+    }
 }
 
 // Enhanced loadAdminData function with loading states
