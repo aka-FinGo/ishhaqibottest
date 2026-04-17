@@ -1,174 +1,142 @@
 /**
- * admin_workflow.js - Jarayonlar va Bosqichlarni Boshqarish
- * Optimizatsiya: State Management, Dynamic Select Fix, Event Delegation
+ * admin_workflow.js - Jarayonlarni boshqarish (Optimizatsiya + Universal API)
  */
 
 const WorkflowState = {
-    workflows: [],
-    stages: [], // Barcha mavjud bosqichlar
-    currentFilter: {},
-    editingId: null,
-    cache: {
-        stagesMap: {} // Tez qidirish uchun xesh-xarita
-    },
+    processes: [],
+    stages: [],
+    currentEditId: null,
     elements: {}
 };
 
-// 1. DOM Elementlarini Cache qilish
+// DOM Elementlarini Cache qilish
 function initWorkflowCache() {
     WorkflowState.elements = {
         tableBody: document.getElementById('workflowTableBody'),
-        stageSelectStart: document.getElementById('startStageSelect'),
-        stageSelectEnd: document.getElementById('endStageSelect'),
-        searchInput: document.getElementById('workflowSearch'),
-        filterStatus: document.getElementById('filterWorkflowStatus'),
+        processSelect: document.getElementById('filterProcess'),
+        stageStartSelect: document.getElementById('stageStart'),
+        stageEndSelect: document.getElementById('stageEnd'),
+        saveBtn: document.getElementById('saveWorkflowBtn'),
         modal: document.getElementById('workflowModal'),
         form: document.getElementById('workflowForm'),
-        saveBtn: document.getElementById('saveWorkflowBtn'),
         loader: document.getElementById('workflowLoader')
     };
 }
 
-// 2. Ma'lumotlarni Yuklash (Batch)
-async function loadWorkflows() {
+// Ma'lumotlarni yuklash (Universal)
+async function loadWorkflowData() {
+    toggleLoading(true);
     try {
-        toggleLoading(true);
-        
-        // Parallel so'rovlar
-        const [workflows, allStages] = await Promise.all([
-            google.script.run.getWorkflows(),
-            google.script.run.getAllStages()
+        // Config orqali chaqiruv
+        const [processes, stages] = await Promise.all([
+            CONFIG.callServer('getProcesses'),
+            CONFIG.callServer('getStages')
         ]);
 
-        WorkflowState.workflows = workflows;
-        WorkflowState.stages = allStages;
-        
-        // Xesh-xarita yaratish (Tez ishlash uchun)
-        WorkflowState.cache.stagesMap = {};
-        allStages.forEach(s => WorkflowState.cache.stagesMap[s.id] = s.name);
+        WorkflowState.processes = processes;
+        WorkflowState.stages = stages;
 
-        renderTable();
-        populateStageSelects(); // Selectlarni to'ldirish
+        renderTable(processes); // Yoki jarayonlar ro'yxati
+        populateSelects(stages);
         
+        // Agar tahrirlash ochiq bo'lsa, qiymatlarni tiklash
+        if (WorkflowState.currentEditId) {
+            restoreFormState();
+        }
     } catch (error) {
-        console.error("Workflow yuklashda xatolik:", error);
-        alert("Jarayonlarni yuklashda xatolik yuz berdi!");
+        console.error("Xatolik:", error);
+        alert("Jarayonlarni yuklashda xatolik! (URL to'g'riligini tekshiring)");
     } finally {
         toggleLoading(false);
     }
 }
 
-// 3. Jadvalni Render Qilish (DocumentFragment)
-function renderTable() {
+// Jadvalni chiqarish
+function renderTable(data) {
     const tbody = WorkflowState.elements.tableBody;
     if (!tbody) return;
-
+    
     tbody.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    
-    const filtered = filterWorkflows(WorkflowState.workflows);
 
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Ma\'lumot topilmadi</td></tr>';
-        return;
-    }
-
-    filtered.forEach(wf => {
+    data.forEach(item => {
         const tr = document.createElement('tr');
-        // Bosqich nomlarini ID dan olish
-        const startName = WorkflowState.cache.stagesMap[wf.startStageId] || 'Noma\'lum';
-        const endName = WorkflowState.cache.stagesMap[wf.endStageId] || 'Noma\'lum';
-
         tr.innerHTML = `
-            <td>${wf.name}</td>
-            <td>${startName}</td>
-            <td>${endName}</td>
-            <td><span class="badge ${wf.status}">${wf.status}</span></td>
+            <td>${item.name}</td>
+            <td>${item.startStage || '-'}</td>
+            <td>${item.endStage || '-'}</td>
             <td>
-                <button class="btn-sm btn-edit" data-id="${wf.id}">✏️</button>
-                <button class="btn-sm btn-delete" data-id="${wf.id}">🗑️</button>
+                <button class="btn-edit" data-id="${item.id}">✏️</button>
+                <button class="btn-delete" data-id="${item.id}">🗑️</button>
             </td>
         `;
         fragment.appendChild(tr);
     });
-
     tbody.appendChild(fragment);
 }
 
-// 4. Filtrlash Mantiqi
-function filterWorkflows(list) {
-    const { search, status } = WorkflowState.currentFilter;
-    return list.filter(wf => {
-        const matchSearch = !search || wf.name.toLowerCase().includes(search.toLowerCase());
-        const matchStatus = !status || wf.status === status;
-        return matchSearch && matchStatus;
-    });
-}
-
-// 5. Selectlarni To'ldirish (MUHIM: Tanlovni Saqlash)
-function populateStageSelects(selectedStartId = null, selectedEndId = null) {
-    const startSel = WorkflowState.elements.stageSelectStart;
-    const endSel = WorkflowState.elements.stageSelectEnd;
+// Selectlarni to'ldirish (Tanlovni saqlab qolish bilan)
+function populateSelects(stages) {
+    const startSel = WorkflowState.elements.stageStartSelect;
+    const endSel = WorkflowState.elements.stageEndSelect;
     
     if (!startSel || !endSel) return;
 
-    const optionsHtml = '<option value="">Tanlang...</option>' + 
-        WorkflowState.stages.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    // Hozirgi tanlovlarni saqlab olamiz
+    const currentStart = startSel.value;
+    const currentEnd = endSel.value;
 
-    // Hozirgi qiymatlarni saqlab qolamiz (agar modal ochiq bo'lsa)
-    const currentStart = selectedStartId || startSel.value;
-    const currentEnd = selectedEndId || endSel.value;
+    const optionsHtml = '<option value="">Tanlang...</option>' + 
+        stages.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
     startSel.innerHTML = optionsHtml;
     endSel.innerHTML = optionsHtml;
 
-    // Qiymatlarni qayta tiklash (Bu "tanlov yo'qolishi" muammosini hal qiladi)
+    // Qiymatlarni tiklash (agar mavjud bo'lsa)
     if (currentStart) startSel.value = currentStart;
     if (currentEnd) endSel.value = currentEnd;
 }
 
-// 6. Event Delegation (Barcha hodisalar uchun bitta joy)
-function setupWorkflowListeners() {
-    const tableBody = WorkflowState.elements.tableBody;
+// Formani tiklash (Tahrirlashdan keyin inputlar bloklanib qolmasligi uchun)
+function restoreFormState() {
+    const item = WorkflowState.processes.find(p => p.id == WorkflowState.currentEditId);
+    if (!item || !WorkflowState.elements.form) return;
+
+    const form = WorkflowState.elements.form;
     
-    // Jadval ichidagi tugmalar
-    if (tableBody) {
-        tableBody.addEventListener('click', (e) => {
+    // Inputlarni faollashtirish (Blockdan chiqarish)
+    Array.from(form.elements).forEach(el => el.disabled = false);
+
+    // Qiymatlarni to'ldirish
+    if (form.querySelector('[name="processName"]')) 
+        form.querySelector('[name="processName"]').value = item.name;
+    
+    if (WorkflowState.elements.stageStartSelect) 
+        WorkflowState.elements.stageStartSelect.value = item.startStageId || '';
+        
+    if (WorkflowState.elements.stageEndSelect) 
+        WorkflowState.elements.stageEndSelect.value = item.endStageId || '';
+}
+
+// Event Listenerlar (Delegation)
+function setupWorkflowListeners() {
+    const tbody = WorkflowState.elements.tableBody;
+    if (tbody) {
+        tbody.addEventListener('click', (e) => {
             const btn = e.target.closest('button');
             if (!btn) return;
             
             const id = btn.dataset.id;
             if (btn.classList.contains('btn-edit')) openEditModal(id);
-            if (btn.classList.contains('btn-delete')) deleteWorkflow(id);
+            if (btn.classList.contains('btn-delete')) deleteProcess(id);
         });
     }
 
-    // Qidiruv (Debounce)
-    if (WorkflowState.elements.searchInput) {
-        let timeout;
-        WorkflowState.elements.searchInput.addEventListener('input', (e) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                WorkflowState.currentFilter.search = e.target.value;
-                renderTable();
-            }, 300);
-        });
-    }
-
-    // Status filtri
-    if (WorkflowState.elements.filterStatus) {
-        WorkflowState.elements.filterStatus.addEventListener('change', (e) => {
-            WorkflowState.currentFilter.status = e.target.value;
-            renderTable();
-        });
-    }
-
-    // Modal saqlash tugmasi
     if (WorkflowState.elements.saveBtn) {
-        WorkflowState.elements.saveBtn.addEventListener('click', saveWorkflowData);
+        WorkflowState.elements.saveBtn.addEventListener('click', saveWorkflow);
     }
     
-    // Modal yopilganda formani tozalash
+    // Modal yopilganda holatni tozalash
     const modal = WorkflowState.elements.modal;
     if (modal) {
         modal.addEventListener('click', (e) => {
@@ -177,116 +145,67 @@ function setupWorkflowListeners() {
     }
 }
 
-// 7. Modalni Ochish (Tahrirlash)
+// Tahrirlashni ochish
 function openEditModal(id) {
-    const wf = WorkflowState.workflows.find(w => w.id == id);
-    if (!wf) return;
-
-    WorkflowState.editingId = id;
-    const form = WorkflowState.elements.form;
+    WorkflowState.currentEditId = id;
+    const modal = WorkflowState.elements.modal;
+    if (modal) modal.style.display = 'block';
     
-    // Formani to'ldirish
-    form.querySelector('[name="wfName"]').value = wf.name;
-    form.querySelector('[name="wfStatus"]').value = wf.status;
-    
-    // Selectlarni to'ldirish VA tanlovni saqlash
-    // Avval selectlarni yangilaymiz, keyin qiymatni set qilamiz
-    populateStageSelects(); 
-    
-    // Kichik kechikish bilan qiymatni o'rnatamiz (DOM renderdan keyin)
-    setTimeout(() => {
-        if (WorkflowState.elements.stageSelectStart) 
-            WorkflowState.elements.stageSelectStart.value = wf.startStageId;
-        if (WorkflowState.elements.stageSelectEnd) 
-            WorkflowState.elements.stageSelectEnd.value = wf.endStageId;
-    }, 0);
-
-    WorkflowState.elements.modal.style.display = 'block';
+    // Ma'lumotlarni yuklash va formani to'ldirish
+    loadWorkflowData(); 
 }
 
-// 8. Saqlash Funksiyasi
-async function saveWorkflowData() {
+// Saqlash
+async function saveWorkflow() {
     const form = WorkflowState.elements.form;
-    if (!form.checkValidity()) {
-        alert("Iltimos, barcha maydonlarni to'ldiring!");
-        return;
-    }
+    if (!form) return;
 
-    const formData = new FormData(form);
+    toggleLoading(true);
+    
+    // Inputlarni vaqtincha bloklash (faqat saqlash paytida)
+    Array.from(form.elements).forEach(el => el.disabled = true);
+
     const data = {
-        name: formData.get('wfName'),
-        status: formData.get('wfStatus'),
-        startStageId: formData.get('startStage'), // Name atributiga e'tibor bering
-        endStageId: formData.get('endStage')
+        id: WorkflowState.currentEditId,
+        name: form.querySelector('[name="processName"]')?.value,
+        startStageId: WorkflowState.elements.stageStartSelect?.value,
+        endStageId: WorkflowState.elements.stageEndSelect?.value
     };
 
-    // Inputlarni vaqtincha bloklash (faqat saqlash paytida)
-    toggleFormInputs(true);
-
     try {
-        await google.script.run
-            .withSuccessHandler(() => {
-                closeWorkflowModal();
-                loadWorkflows(); // Jadvalni yangilash
-                alert("Muvaffaqiyatli saqlandi!");
-            })
-            .withFailureHandler((err) => {
-                alert("Xatolik: " + err.message);
-                toggleFormInputs(false);
-            })
-            .saveWorkflow(data, WorkflowState.editingId);
-    } catch (e) {
-        toggleFormInputs(false);
+        await CONFIG.callServer('saveWorkflow', data);
+        closeWorkflowModal();
+        loadWorkflowData();
+        alert("Muvaffaqiyatli saqlandi!");
+    } catch (error) {
+        alert("Saqlashda xatolik: " + error.message);
+        // Xatolik bo'lsa inputlarni qayta ochish
+        Array.from(form.elements).forEach(el => el.disabled = false);
+    } finally {
+        toggleLoading(false);
     }
 }
 
-// 9. O'chirish
-async function deleteWorkflow(id) {
-    if (!confirm("Rostdan ham o'chirmoqchimisiz?")) return;
-    
-    try {
-        await google.script.run.deleteWorkflow(id);
-        loadWorkflows();
-    } catch (e) {
-        alert("O'chirishda xatolik: " + e.message);
-    }
-}
-
-// Yordamchi funksiyalar
 function closeWorkflowModal() {
-    WorkflowState.elements.modal.style.display = 'none';
-    WorkflowState.elements.form.reset();
-    WorkflowState.editingId = null;
-    toggleFormInputs(false);
-}
-
-function toggleFormInputs(disabled) {
-    const inputs = WorkflowState.elements.form.querySelectorAll('input, select, button');
-    inputs.forEach(el => {
-        if (el.id !== 'saveWorkflowBtn') el.disabled = disabled; 
-        // Save tugmasini bloklamaymiz yoki alohida boshqaramiz
-    });
-    // Loader ko'rsatish
-    const btn = WorkflowState.elements.saveBtn;
-    if (btn) {
-        btn.textContent = disabled ? 'Saqlanmoqda...' : 'Saqlash';
-        btn.disabled = disabled;
+    WorkflowState.currentEditId = null;
+    const modal = WorkflowState.elements.modal;
+    if (modal) {
+        modal.style.display = 'none';
+        if (WorkflowState.elements.form) WorkflowState.elements.form.reset();
     }
 }
 
 function toggleLoading(show) {
-    if (WorkflowState.elements.loader) {
-        WorkflowState.elements.loader.style.display = show ? 'block' : 'none';
-    }
-    if (WorkflowState.elements.tableBody) {
-        WorkflowState.elements.tableBody.style.opacity = show ? '0.5' : '1';
-        WorkflowState.elements.tableBody.style.pointerEvents = show ? 'none' : 'auto';
-    }
+    const loader = WorkflowState.elements.loader;
+    if (loader) loader.style.display = show ? 'block' : 'none';
+    
+    // Faqat loader paytida umumiy fonni o'chirib qo'ymaslik kerak
+    // Inputlarni boshqarish saveWorkflow ichida amalga oshiriladi
 }
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     initWorkflowCache();
-    loadWorkflows();
+    loadWorkflowData();
     setupWorkflowListeners();
 });
