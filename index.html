@@ -71,6 +71,7 @@
                     <select id="myFilterYear" onchange="applyMyFilters()">
                         <option value="all">Yillar</option>
                     </select>
+                    <button class="btn-secondary" onclick="resetMyFilters()" style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;" title="Tozalash">🔄</button>
                 </div>
                 <button class="btn-main bg-navy" onclick="exportMyExcel()"
                     style="margin-top:0;padding:11px;font-size:13px;">
@@ -78,7 +79,25 @@
                 </button>
             </div>
             <div class="section-title">Amallar ro'yxati</div>
-            <div id="myHistory"></div>
+            <div id="myHistory">
+                <div class="skeleton-container" style="padding: 0;">
+                    <div class="skeleton-card">
+                        <div class="skeleton skeleton-header-line"></div>
+                        <div class="skeleton skeleton-date-line"></div>
+                        <div class="skeleton-chips">
+                            <div class="skeleton skeleton-chip"></div>
+                            <div class="skeleton skeleton-chip"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton skeleton-header-line" style="width: 40%"></div>
+                        <div class="skeleton skeleton-date-line"></div>
+                        <div class="skeleton-chips">
+                            <div class="skeleton skeleton-chip" style="width: 100px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 2: YANGI AMAL -->
@@ -341,6 +360,7 @@
                         <select id="filterYear" onchange="applyFilters()">
                             <option value="all">Yillar</option>
                         </select>
+                        <button class="btn-secondary" onclick="resetAdminFilters()" style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;" title="Tozalash">🔄</button>
                     </div>
                 </div>
                 <div id="adminList"></div>

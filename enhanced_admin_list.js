@@ -30,6 +30,7 @@ function renderAdminList(data) {
     });
 
     let html = '<div class="admin-list-container">';
+    let lastDate = null;
     
     sortedData.forEach(item => {
         const amountUZS = item.amountUZS || 0;
@@ -38,6 +39,13 @@ function renderAdminList(data) {
         const name = item.name || 'Noma\'lum';
         const date = item.date || 'Sana kiritilmagan';
         const actionPeriod = item.actionPeriod || '';
+        
+        let relDate = formatRelativeDate(date);
+        
+        if (relDate !== lastDate) {
+            html += `<div style="font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">${relDate}</div>`;
+            lastDate = relDate;
+        }
 
         html += `
             <div class="admin-list-item" style="
@@ -50,7 +58,7 @@ function renderAdminList(data) {
                 cursor: pointer;
             " onclick="showActionDetails(${JSON.stringify(item).replace(/"/g, '&quot;')})">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div style="font-weight: 600; color: #1e293b; flex-grow: 1;">${name}</div>
+                    <div style="font-weight: 600; color: #1e293b; flex-grow: 1;">${amountUZS > 0 ? '🟢 ' : (amountUSD > 0 ? '🟡 ' : '🔴 ')} ${name}</div>
                     <div style="color: #64748b; font-size: 12px; text-align: right; min-width: 80px;">${date}</div>
                 </div>
                 
@@ -277,8 +285,8 @@ async function performEdit() {
     saveBtn.innerHTML = '<span style="display: inline-block; animation: spinner 1s linear infinite; border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; margin-right: 8px;"></span> Saqlanmoqda...';
     
     try {
-        const reason = prompt("Tahrirlash sababini kiriting:");
-        if (!reason) { showToastMsg('❌ Sabab kiritilishi shart', true); saveBtn.textContent = originalText; return; }
+        const reason = await askActionReason("Tahrirlash");
+        if (!reason) { saveBtn.textContent = originalText; return; }
         
         const data = await apiRequest({
             action: 'admin_edit',
@@ -343,19 +351,52 @@ async function loadAdminData() {
     }
     
     try {
+        const cachedAdminData = localStorage.getItem('globalAdminData');
+        if (cachedAdminData) {
+            globalAdminData = JSON.parse(cachedAdminData);
+            populateEmployeeFilter();
+            populateYearFilter();
+            populateMonthFilter();
+            applyFilters();
+        }
+    } catch (e) {}
+
+    try {
         const adminListEl = document.getElementById('adminList');
-        if (adminListEl) {
+        // Only show skeletons if we don't have cached data yet to avoid flashing
+        if (adminListEl && (!globalAdminData || globalAdminData.length === 0)) {
             adminListEl.innerHTML = `
-                <div class="skeleton-container" style="padding: 20px;">
-                    <div class="skeleton skeleton-item" style="height: 80px; background: #f1f5f9; margin-bottom: 12px; border-radius: 8px;"></div>
-                    <div class="skeleton skeleton-item" style="height: 80px; background: #f1f5f9; margin-bottom: 12px; border-radius: 8px;"></div>
-                    <div class="skeleton skeleton-item" style="height: 80px; background: #f1f5f9; margin-bottom: 12px; border-radius: 8px;"></div>
+                <div class="skeleton-container" style="padding: 16px;">
+                    <div class="skeleton-card">
+                        <div class="skeleton skeleton-header-line"></div>
+                        <div class="skeleton skeleton-date-line"></div>
+                        <div class="skeleton-chips">
+                            <div class="skeleton skeleton-chip"></div>
+                            <div class="skeleton skeleton-chip"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton skeleton-header-line"></div>
+                        <div class="skeleton skeleton-date-line"></div>
+                        <div class="skeleton-chips">
+                            <div class="skeleton skeleton-chip"></div>
+                            <div class="skeleton skeleton-chip"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton skeleton-header-line" style="width:40%"></div>
+                        <div class="skeleton skeleton-date-line"></div>
+                        <div class="skeleton-chips">
+                            <div class="skeleton skeleton-chip" style="width: 100px;"></div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
         const response = await apiRequest({ action: 'admin_get_all' });
         if (response.success) {
             globalAdminData = response.data || [];
+            localStorage.setItem('globalAdminData', JSON.stringify(globalAdminData));
             
             // Populate filters
             populateEmployeeFilter();
@@ -409,6 +450,21 @@ function applyFilters() {
     const countEl = document.getElementById('filteredCount');
     if (countEl) countEl.textContent = filteredData.length;
     renderAdminList(filteredData);
+}
+
+// Function to reset admin filters
+function resetAdminFilters() {
+    const searchInput = document.getElementById('searchInput');
+    const filterEmployee = document.getElementById('filterEmployee');
+    const filterMonth = document.getElementById('filterMonth');
+    const filterYear = document.getElementById('filterYear');
+    
+    if (searchInput) searchInput.value = '';
+    if (filterEmployee) filterEmployee.value = 'all';
+    if (filterMonth) filterMonth.value = 'all';
+    if (filterYear) filterYear.value = 'all';
+    
+    applyFilters();
 }
 
 // Function to update pagination
