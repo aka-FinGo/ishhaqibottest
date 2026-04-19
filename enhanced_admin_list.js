@@ -449,6 +449,23 @@ function applyFilters() {
 
     const countEl = document.getElementById('filteredCount');
     if (countEl) countEl.textContent = filteredData.length;
+    
+    let totalUZS = 0;
+    let totalUSD = 0;
+    filteredData.forEach(item => {
+        totalUZS += Number(item.amountUZS) || 0;
+        totalUSD += Number(item.amountUSD) || 0;
+    });
+    
+    const budgetEl = document.getElementById('totalCompanyUzs');
+    if (budgetEl) {
+        let text = totalUZS.toLocaleString() + ' UZS';
+        if (totalUSD > 0) {
+            text += ` | $${totalUSD.toLocaleString()}`;
+        }
+        budgetEl.textContent = text;
+    }
+
     renderAdminList(filteredData);
 }
 
