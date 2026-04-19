@@ -1,1 +1,60 @@
-Nothing needs to be added to .gitignore since only a JavaScript source file (admin.js) was modified and no build artifacts, dependencies, or temporary files were present in the changes.
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build and temporary files
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+.serverless/
+out/
+tmp/
+temp/
+
+# Claude / AI Assistant local state
+.claude/settings.local.json
+.claude/backups/
+
+# Backup and temporary files
+* — копия.js
+* - Copy.js
+*.bak
+*.tmp
+*.swp
+
+# Testing
+coverage/
+.nyc_output/
