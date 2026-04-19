@@ -28,162 +28,9 @@ function initAdminCache() {
     };
 }
 
-// Asosiy yuklash funksiyasi
-async function loadAdminData() {
-    try {
-        showLoading(true);
-        
-        // Check if we're in the dashboard actions area
-        const adminListEl = document.getElementById('adminList');
-        
-        if (adminListEl) {
-            // Load admin data for transactions/actions
-            const response = await apiRequest({ action: 'admin_get_all' });
-            
-            if (response.success) {
-                globalAdminData = response.data || [];
-                
-                // Apply any active filters
-                applyFilters();
-                
-                // Render the admin list
-                renderAdminList(globalAdminData);
-                
-                // Update pagination if needed
-                updatePagination();
-            } else {
-                throw new Error(response.error || 'Ma\'lumotlarni yuklashda xatolik yuz berdi');
-            }
-        } else {
-            // Load user management data
-            const [users, roles, positions] = await Promise.all([
-                apiRequest({action: 'getUsers'}),
-                apiRequest({action: 'getRoles'}),
-                apiRequest({action: 'getPositions'})
-            ]);
-            
-            AdminState.cache.users = users.data || [];
-            AdminState.cache.roles = roles.data || [];
-            AdminState.cache.positions = positions.data || [];
-            
-            renderUserTable(AdminState.cache.users);
-            populateFilters(AdminState.cache.roles, AdminState.cache.positions);
-        }
-    } catch (error) {
-        console.error('Admin data load error:', error);
-        const adminListEl = document.getElementById('adminList');
-        if (adminListEl) {
-            adminListEl.innerHTML = `
-                <div class="error-state" style="padding: 40px 20px; text-align: center; color: #dc2626;">
-                    <div style="font-size: 60px; margin-bottom: 16px;">⚠️</div>
-                    <h3 style="margin: 0 0 8px; color: #b91c1c;">Xatolik yuz berdi</h3>
-                    <p style="margin: 0; font-size: 14px;">${error.message || 'Ma\'lumotlarni yuklashda xatolik yuz berdi'}</p>
-                    <button onclick="loadAdminData()" style="
-                        margin-top: 16px;
-                        background: #3b82f6;
-                        color: white;
-                        border: none;
-                        padding: 8px 16px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    ">Qayta urinib ko'rish</button>
-                </div>
-            `;
-        } else {
-            showError("Ma'lumotlarni yuklashda xatolik: " + error.message);
-        }
-    } finally {
-        showLoading(false);
-    }
-}
+// Admin data loading and rendering is now handled by enhanced_admin_list.js
+// This ensures better performance, caching, and skeleton loading animations.
 
-// Cache helper
-function cacheData(key) {
-    return function(data) {
-        AdminState.cache[key] = data;
-        return data;
-    };
-}
-
-// Function to render admin list (transactions/actions) - will be overridden by enhanced version
-function renderAdminList(data) {
-    // This function will be replaced by the enhanced version in enhanced_admin_list.js
-    // This is just a placeholder to prevent errors
-    // The enhanced version will be loaded after this file
-    const adminListEl = document.getElementById('adminList');
-    if (!adminListEl) {
-        console.error('adminList element not found');
-        return;
-    }
-    adminListEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b;">Loading...</div>';
-}
-
-// Function to apply filters to admin data
-function applyFilters() {
-    const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
-    const employeeFilter = document.getElementById('filterEmployee')?.value || 'all';
-    const monthFilter = document.getElementById('filterMonth')?.value || 'all';
-    const yearFilter = document.getElementById('filterYear')?.value || 'all';
-
-    filteredData = globalAdminData.filter(item => {
-        // Search filter
-        const matchesSearch = !searchTerm || 
-            (item.name && item.name.toLowerCase().includes(searchTerm)) ||
-            (item.comment && item.comment.toLowerCase().includes(searchTerm));
-
-        // Employee filter
-        const matchesEmployee = employeeFilter === 'all' || item.name === employeeFilter;
-
-        // Month filter
-        let matchesMonth = monthFilter === 'all';
-        if (monthFilter !== 'all') {
-            if (item.actionPeriod) {
-                const [year, month] = item.actionPeriod.split('-');
-                matchesMonth = month === monthFilter;
-            } else {
-                const dateMeta = getDateMonthYear(item.date);
-                if (dateMeta) {
-                    matchesMonth = dateMeta.month === monthFilter;
-                }
-            }
-        }
-
-        // Year filter
-        let matchesYear = yearFilter === 'all';
-        if (yearFilter !== 'all') {
-            if (item.actionPeriod) {
-                const [year] = item.actionPeriod.split('-');
-                matchesYear = year === yearFilter;
-            } else {
-                const dateMeta = getDateMonthYear(item.date);
-                if (dateMeta) {
-                    matchesYear = dateMeta.year === yearFilter;
-                }
-            }
-        }
-
-        return matchesSearch && matchesEmployee && matchesMonth && matchesYear;
-    });
-
-    // Update count display
-    const countEl = document.getElementById('filteredCount');
-    if (countEl) {
-        countEl.textContent = filteredData.length;
-    }
-
-    // Re-render the list with filtered data
-    renderAdminList(filteredData);
-}
-
-// Function to update pagination
-function updatePagination() {
-    // Simple pagination - could be enhanced based on requirements
-    const paginationEl = document.getElementById('pagination');
-    if (paginationEl) {
-        // For now, just hide pagination if not needed
-        paginationEl.style.display = 'none';
-    }
-}
 
 // Jadvalni render qilish (Optimizatsiya: DocumentFragment)
 function renderUserTable(users) {
@@ -213,22 +60,8 @@ function renderUserTable(users) {
     tbody.appendChild(fragment);
 }
 
-// Function to populate employee filter
-function populateEmployeeFilter() {
-    const filterEmployee = document.getElementById('filterEmployee');
-    if (!filterEmployee) return;
+// populateEmployeeFilter is handled in enhanced_admin_list.js
 
-    // Get unique employee names from globalAdminData
-    const employeeNames = [...new Set(globalAdminData.map(item => item.name))].filter(Boolean);
-    
-    filterEmployee.innerHTML = '<option value="all">Barcha xodimlar</option>';
-    employeeNames.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        filterEmployee.appendChild(option);
-    });
-}
 
 // Filtrlash mantiqi
 function filterUsers(users) {
