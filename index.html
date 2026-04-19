@@ -386,6 +386,9 @@
                     </div>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;">
+                    <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)">
+                        🔄
+                    </button>
                     <div class="header-avatar">🧾</div>
                 </div>
             </div>
@@ -393,10 +396,6 @@
                 <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">📈 Dashboard
                     kv</button>
                 <button class="page-switcher-btn active">🧾 Buyurtmalar</button>
-                <button class="btn-secondary" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)"
-                    style="padding:4px 8px;font-size:14px;display:flex;align-items:center;gap:4px;height:fit-content;margin-left:auto;">
-                    🔄
-                </button>
             </div>
 
             <div class="stats-grid">
