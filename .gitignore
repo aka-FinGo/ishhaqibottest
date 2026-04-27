@@ -61,3 +61,15 @@ coverage/
 
 # Project directory (not needed for the main application)
 project/
+
+# Copy files
+admin — копия.js
+
+# Test files
+tests/
+
+# Documentation
+OPTIMIZATSIYA_XULOSA.md
+
+# Claude/AI backup files
+.claude/
