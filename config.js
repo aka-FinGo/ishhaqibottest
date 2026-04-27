@@ -165,6 +165,8 @@ async function apiRequest(payload, opts) {
   }
 
   try {
+    console.log('📤 API so\'rov yuborilmoqda:', body.action || 'unknown');
+    
     const res = await fetch(API_URL, {
       method: 'POST',
       // IMPORTANT:
@@ -174,19 +176,35 @@ async function apiRequest(payload, opts) {
     });
 
     if (!res.ok) {
-      throw new Error('HTTP ' + res.status);
+      throw new Error('HTTP ' + res.status + ' ' + res.statusText);
     }
 
     const text = await res.text();
+    
+    // ✅ FIX: Empty response handling
+    if (!text || text.trim() === '') {
+      throw new Error('Server bo\'sh javob qaytardi');
+    }
+    
     try {
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      console.log('✅ API javob olingan:', body.action || 'unknown');
+      return parsed;
     } catch (e) {
-      throw new Error('Server javobi noto\'g\'ri formatda');
+      console.error('❌ JSON parsing xatosi. Response:', text.substring(0, 200));
+      throw new Error('Server javobi noto\'g\'ri JSON formatda');
     }
   } catch (err) {
     if (err && err.name === 'AbortError') {
-      throw new Error("So'rov vaqti tugadi");
+      console.error('❌ API timeout:', body.action, timeoutMs + 'ms');
+      throw new Error('So\'rov vaqti tugadi (' + timeoutMs + 'ms)');
     }
+    
+    if (err instanceof TypeError) {
+      console.error('❌ Network xatosi:', err.message);
+      throw new Error('Tarmoq ulanishida xato: ' + err.message);
+    }
+    
     throw err;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
