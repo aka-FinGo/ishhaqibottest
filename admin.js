@@ -36,28 +36,50 @@ function initAdminCache() {
 function renderUserTable(users) {
     const tbody = AdminState.elements.tableBody;
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    
+
     const filtered = filterUsers(users);
-    
+
     filtered.forEach(user => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${user.role}</td>
-            <td>${user.position || '-'}</td>
-            <td>
-                <button class="btn-edit" data-id="${user.id}">Tahrirlash</button>
-                <button class="btn-delete" data-id="${user.id}">O'chirish</button>
-            </td>
-        `;
+        const idStr = String(user.id); // Convert to string for consistency
+
+        // Create cells safely
+        const cells = [
+            { text: user.name },
+            { text: user.email },
+            { text: user.role },
+            { text: user.position || '-' },
+            { html: true, content: `
+                <button class="btn-edit" data-id="${escapeHtml(idStr)}">Tahrirlash</button>
+                <button class="btn-delete" data-id="${escapeHtml(idStr)}">O'chirish</button>
+            ` }
+        ];
+
+        cells.forEach(cell => {
+            const td = document.createElement('td');
+            if (cell.html) {
+                td.innerHTML = cell.content;
+            } else {
+                td.textContent = cell.text;
+            }
+            tr.appendChild(td);
+        });
+
         fragment.appendChild(tr);
     });
-    
+
     tbody.appendChild(fragment);
+}
+
+// HTML escaping function
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // populateEmployeeFilter is handled in enhanced_admin_list.js
@@ -145,17 +167,21 @@ function setupEventListeners() {
 
 // Foydalanuvchini tahrirlash
 function editUser(id) {
-    const user = AdminState.cache.users.find(u => u.id === id);
-    if (!user) return;
-    
+    const idStr = String(id); // Ensure string comparison
+    const user = AdminState.cache.users.find(u => String(u.id) === idStr);
+    if (!user) {
+        showToastMsg('❌ Foydalanuvchi topilmadi', true);
+        return;
+    }
+
     const form = AdminState.elements.form;
     if (form) {
-        form.dataset.userId = id;
-        form.querySelector('[name="name"]').value = user.name;
-        form.querySelector('[name="email"]').value = user.email;
-        form.querySelector('[name="role"]').value = user.role;
+        form.dataset.userId = idStr;
+        form.querySelector('[name="name"]').value = user.name || '';
+        form.querySelector('[name="email"]').value = user.email || '';
+        form.querySelector('[name="role"]').value = user.role || '';
         // Boshqa maydonlar...
-        
+
         AdminState.elements.modal.style.display = 'block';
     }
 }
@@ -164,23 +190,25 @@ function editUser(id) {
 async function saveUser() {
     const form = AdminState.elements.form;
     if (!form) return;
-    
+
     const userId = form.dataset.userId;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
-    
+
     try {
         showLoading(true);
         const result = await apiRequest({action: 'saveUser', data: data, userId: userId});
         if (result.success) {
             closeModal();
-            loadAdminData(); // Yangilash
-            showSuccess("Muvaffaqiyatli saqlandi!");
+            if (typeof loadAdminData === 'function') {
+                loadAdminData(); // Yangilash
+            }
+            showToastMsg("✅ Muvaffaqiyatli saqlandi!");
         } else {
-            showError("Saqlashda xatolik: " + (result.error || "Noma'lum xatolik"));
+            showToastMsg("❌ Saqlashda xatolik: " + (result.error || "Noma'lum xatolik"), true);
         }
     } catch (error) {
-        showError("Saqlashda xatolik: " + error.message);
+        showToastMsg("❌ Saqlashda xatolik: " + error.message, true);
     } finally {
         showLoading(false);
     }
@@ -204,8 +232,44 @@ function showLoading(show) {
     inputs.forEach(input => input.disabled = show);
 }
 
-function showError(msg) { alert(msg); }
-function showSuccess(msg) { alert(msg); }
+function showError(msg) {
+    if (typeof showToastMsg === 'function') {
+        showToastMsg("❌ " + msg, true);
+    } else {
+        console.error(msg);
+    }
+}
+
+function showSuccess(msg) {
+    if (typeof showToastMsg === 'function') {
+        showToastMsg("✅ " + msg);
+    } else {
+        console.log(msg);
+    }
+}
+
+// Foydalanuvchini o'chirish
+async function deleteUser(id) {
+    const idStr = String(id);
+    if (!confirm("Ushbu foydalanuvchini o'chirishga ishonchingiz komilmi?")) return;
+
+    try {
+        showLoading(true);
+        const result = await apiRequest({action: 'deleteUser', userId: idStr});
+        if (result.success) {
+            showToastMsg("✅ Foydalanuvchi o'chirildi");
+            if (typeof loadAdminData === 'function') {
+                loadAdminData();
+            }
+        } else {
+            showToastMsg("❌ O'chirishda xatolik: " + (result.error || "Noma'lum xatolik"), true);
+        }
+    } catch (error) {
+        showToastMsg("❌ O'chirishda xatolik: " + error.message, true);
+    } finally {
+        showLoading(false);
+    }
+}
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {

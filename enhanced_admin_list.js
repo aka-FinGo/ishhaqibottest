@@ -3,6 +3,14 @@
  * Improved UI with compact list and modal details
  */
 
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Function to render compact admin list
 function renderAdminList(data) {
     const adminListEl = document.getElementById('adminList');
@@ -39,16 +47,17 @@ function renderAdminList(data) {
         const name = item.name || 'Noma\'lum';
         const date = item.date || 'Sana kiritilmagan';
         const actionPeriod = item.actionPeriod || '';
-        
+
         let relDate = formatRelativeDate(date);
-        
+
         if (relDate !== lastDate) {
             html += `<div style="font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">${relDate}</div>`;
             lastDate = relDate;
         }
 
+        const itemId = `admin-item-${Math.random().toString(36).substr(2, 9)}`;
         html += `
-            <div class="admin-list-item" style="
+            <div class="admin-list-item" id="${itemId}" style="
                 background: white;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
@@ -56,14 +65,14 @@ function renderAdminList(data) {
                 margin-bottom: 12px;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 cursor: pointer;
-            " onclick="showActionDetails(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+            ">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div style="font-weight: 600; color: #1e293b; flex-grow: 1;">${amountUZS > 0 ? '🟢 ' : (amountUSD > 0 ? '🟡 ' : '🔴 ')} ${name}</div>
-                    <div style="color: #64748b; font-size: 12px; text-align: right; min-width: 80px;">${date}</div>
+                    <div style="font-weight: 600; color: #1e293b; flex-grow: 1;">${amountUZS > 0 ? '🟢 ' : (amountUSD > 0 ? '🟡 ' : '🔴 ')} ${escapeHtml(name)}</div>
+                    <div style="color: #64748b; font-size: 12px; text-align: right; min-width: 80px;">${escapeHtml(date)}</div>
                 </div>
-                
+
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="color: #64748b; font-size: 13px; flex-grow: 1; max-width: 70%;">${comment}</div>
+                    <div style="color: #64748b; font-size: 13px; flex-grow: 1; max-width: 70%;">${escapeHtml(comment)}</div>
                     <div style="display: flex; gap: 8px; flex-shrink: 0;">
                         ${amountUZS ? `<span style="
                             background: #dcfce7;
@@ -73,7 +82,7 @@ function renderAdminList(data) {
                             font-size: 11px;
                             font-weight: 500;
                         ">${Number(amountUZS).toLocaleString()} UZS</span>` : ''}
-                        
+
                         ${amountUSD ? `<span style="
                             background: #dbeafe;
                             color: #1e40af;
@@ -84,20 +93,35 @@ function renderAdminList(data) {
                         ">$${Number(amountUSD).toLocaleString()}</span>` : ''}
                     </div>
                 </div>
-                
-                ${actionPeriod ? `<div style="color: #0ea5e9; font-size: 11px; margin-top: 6px;">Davr: ${actionPeriod}</div>` : ''}
+
+                ${actionPeriod ? `<div style="color: #0ea5e9; font-size: 11px; margin-top: 6px;">Davr: ${escapeHtml(actionPeriod)}</div>` : ''}
             </div>
         `;
     });
     
     html += '</div>';
     adminListEl.innerHTML = html;
+
+    // Attach event listeners to items
+    adminListEl.querySelectorAll('.admin-list-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const itemText = this.innerText;
+            const itemHtml = this.innerHTML;
+            // Find the original item data from globalAdminData
+            for (let data of sortedData) {
+                if ((data.name || 'Noma\'lum').includes(itemText.split('\n')[0].replace('🟢 ', '').replace('🟡 ', '').replace('🔴 ', ''))) {
+                    showActionDetails(data);
+                    return;
+                }
+            }
+        });
+    });
 }
 
 // Function to show action details in modal
 function showActionDetails(item) {
     showDetailModal(item, 'admin');
-    if (tg && tg.HapticFeedback) {
+    if (typeof tg !== 'undefined' && tg && typeof tg.HapticFeedback !== 'undefined') {
         tg.HapticFeedback.impactOccurred('light');
     }
 }
@@ -145,17 +169,24 @@ function showDeleteConfirm(rowId) {
 // Function to perform delete action
 async function performDelete(rowId) {
     const reason = document.getElementById('deleteReason').value.trim();
-    if (!reason) { alert('Iltimos, sababini kiriting!'); return; }
+    if (!reason) {
+        showToastMsg('❌ Iltimos, sababini kiriting!', true);
+        return;
+    }
+
     const deleteBtn = document.querySelector('#deleteConfirmModal button:last-child');
     const originalText = deleteBtn.textContent;
     deleteBtn.innerHTML = '<span style="display: inline-block; animation: spinner 1s linear infinite; border: 2px solid #f3f3f3; border-top: 2px solid #b91c1c; border-radius: 50%; width: 16px; height: 16px; margin-right: 8px;"></span> O\'chirilmoqda...';
     deleteBtn.disabled = true;
+
     try {
         const data = await apiRequest({action: "admin_delete", rowId, reason});
         if (!data.success) throw new Error(data.error || "O'chirishda xato");
         closeDeleteConfirmModal();
         showToastMsg("✅ O'chirildi");
-        loadAdminData();
+        if (typeof loadAdminData === 'function') {
+            loadAdminData();
+        }
     } catch (error) {
         showToastMsg('❌ Server xatosi: ' + error.message, true);
     } finally {
@@ -279,15 +310,21 @@ async function performEdit() {
     const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
     const rate = parseFloat(document.getElementById('editRate').value) || 0;
     const comment = document.getElementById('editComment').value;
-    
+
     const saveBtn = document.querySelector('#editForm .btn-main');
     const originalText = saveBtn.textContent;
     saveBtn.innerHTML = '<span style="display: inline-block; animation: spinner 1s linear infinite; border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; margin-right: 8px;"></span> Saqlanmoqda...';
-    
+
     try {
-        const reason = await askActionReason("Tahrirlash");
-        if (!reason) { saveBtn.textContent = originalText; return; }
-        
+        let reason = '';
+        if (typeof askActionReason === 'function') {
+            reason = await askActionReason("Tahrirlash");
+            if (!reason) {
+                saveBtn.textContent = originalText;
+                return;
+            }
+        }
+
         const data = await apiRequest({
             action: 'admin_edit',
             rowId,
@@ -298,11 +335,13 @@ async function performEdit() {
             comment,
             reason
         });
-        
+
         if (!data.success) throw new Error(data.error || "Saqlashda xato");
         closeModal();
         showToastMsg("✅ Saqlandi");
-        loadAdminData();
+        if (typeof loadAdminData === 'function') {
+            loadAdminData();
+        }
     } catch (error) {
         showToastMsg('❌ Server xatosi: ' + error.message, true);
     } finally {

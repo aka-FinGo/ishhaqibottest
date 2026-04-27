@@ -43,6 +43,7 @@ function renderWorkflowSteps() {
     if (!currentWorkflowSteps.length) {
         container.innerHTML = configButton + `<div class="empty-state" style="padding:20px;"><p>Oqim bo'sh. Qadamlar qo'shing.</p></div>`;
         attachStageConfigHandler();
+        attachWorkflowListeners();
         return;
     }
 
@@ -58,16 +59,16 @@ function renderWorkflowSteps() {
                 <span style="font-size:11px; font-weight:700; color:${phaseColors.color};">${phaseColors.label}</span>
             </div>
                 <div style="display:flex; gap:5px;">
-                    <button class="del-icon-btn" style="background:#F1F5F9; color:#64748B;" onclick="moveWorkflowStep(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-                    <button class="del-icon-btn" style="background:#F1F5F9; color:#64748B;" onclick="moveWorkflowStep(${idx}, 1)" ${idx === currentWorkflowSteps.length - 1 ? 'disabled' : ''}>▼</button>
-                    <button class="del-icon-btn" style="background:#FEE2E2; color:#EF4444;" onclick="removeWorkflowStep(${idx})">🗑</button>
+                    <button class="del-icon-btn move-up-btn" data-idx="${idx}" style="background:#F1F5F9; color:#64748B;" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                    <button class="del-icon-btn move-down-btn" data-idx="${idx}" style="background:#F1F5F9; color:#64748B;" ${idx === currentWorkflowSteps.length - 1 ? 'disabled' : ''}>▼</button>
+                    <button class="del-icon-btn delete-step-btn" data-idx="${idx}" style="background:#FEE2E2; color:#EF4444;">🗑</button>
                 </div>
             </div>
-            
+
             <div class="filter-row" style="margin-bottom:8px;">
                 <div style="flex:1;">
                     <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🏷 Lavozim</label>
-                    <select onchange="updateStepData(${idx}, 'position', this.value)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:10px;">
+                    <select class="position-select" data-idx="${idx}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:10px;">
                         <option value="">-- Tanlang --</option>
                         ${TECHNICAL_POSITIONS.map(p => `
                             <option value="${escapeHtml(p.name)}" ${step.position === p.name ? 'selected' : ''}>
@@ -78,18 +79,18 @@ function renderWorkflowSteps() {
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔘 Tugma matni</label>
-                    <input type="text" value="${escapeHtml(step.action)}" onchange="updateStepData(${idx}, 'action', this.value)" placeholder="Masalan: Men kesdim">
+                    <input type="text" class="action-input" data-idx="${idx}" value="${escapeHtml(step.action)}" placeholder="Masalan: Men kesdim">
                 </div>
             </div>
-            
+
             <div>
                 <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">📊 Status (Amaldan keyin)</label>
-                <input type="text" value="${escapeHtml(step.status)}" onchange="updateStepData(${idx}, 'status', this.value)" placeholder="Masalan: Kesildi">
+                <input type="text" class="status-input" data-idx="${idx}" value="${escapeHtml(step.status)}" placeholder="Masalan: Kesildi">
             </div>
-            
+
             <div style="margin-top:8px;">
                 <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
-                    <input type="checkbox" ${step.isStart ? 'checked' : ''} onchange="updateStepData(${idx}, 'isStart', this.checked)">
+                    <input type="checkbox" class="is-start-checkbox" data-idx="${idx}" ${step.isStart ? 'checked' : ''}>
                     <span>Bu buyurtmani yaratadigan qadam (Start)</span>
                 </label>
             </div>
@@ -98,6 +99,69 @@ function renderWorkflowSteps() {
 
     container.innerHTML = html;
     attachStageConfigHandler();
+    attachWorkflowListeners();
+}
+
+// Attach event listeners for workflow controls
+function attachWorkflowListeners() {
+    const container = document.getElementById('workflowList');
+    if (!container) return;
+
+    // Move up buttons
+    container.querySelectorAll('.move-up-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            moveWorkflowStep(idx, -1);
+        });
+    });
+
+    // Move down buttons
+    container.querySelectorAll('.move-down-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            moveWorkflowStep(idx, 1);
+        });
+    });
+
+    // Delete buttons
+    container.querySelectorAll('.delete-step-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            removeWorkflowStep(idx);
+        });
+    });
+
+    // Position select
+    container.querySelectorAll('.position-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            updateStepData(idx, 'position', e.target.value);
+        });
+    });
+
+    // Action input
+    container.querySelectorAll('.action-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            updateStepData(idx, 'action', e.target.value);
+        });
+    });
+
+    // Status input
+    container.querySelectorAll('.status-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            updateStepData(idx, 'status', e.target.value);
+        });
+    });
+
+    // Is start checkbox
+    container.querySelectorAll('.is-start-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            updateStepData(idx, 'isStart', e.target.checked);
+        });
+    });
 }
 
 function updateStepData(idx, field, val) {
