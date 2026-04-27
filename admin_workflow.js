@@ -12,9 +12,9 @@ function getWorkflowStepColors(idx, total) {
 
     switch (position) {
         case 'start':
-            return { bg: '#FDE68A', color: '#92400E', label: 'Boshlanish' };
+            return { bg: '#FDE68A', color: '#92400E', label: 'Boshlang\'ich' };
         case 'middle':
-            return { bg: '#FECACA', color: '#991B1B', label: 'O‘rta bosqich' };
+            return { bg: '#FECACA', color: '#991B1B', label: 'O\'rta bosqich' };
         case 'end':
             return { bg: '#DCFCE7', color: '#166534', label: 'Yakun' };
         default:
