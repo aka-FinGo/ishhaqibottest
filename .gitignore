@@ -58,3 +58,6 @@ temp/
 # Testing
 coverage/
 .nyc_output/
+
+# Project directory (not needed for the main application)
+project/
