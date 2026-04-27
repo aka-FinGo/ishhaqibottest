@@ -20,7 +20,8 @@ function getWorkflowConfig() {
       position: String(row[1] || '').trim(),
       action:   String(row[2] || '').trim(),
       status:   String(row[3] || '').trim(),
-      isStart:  Number(row[4]) === 1
+      isStart:  Number(row[4]) === 1,
+      isEnd:    Number(row[5]) === 1
     });
   }
   
@@ -38,8 +39,8 @@ function saveWorkflowConfig(steps) {
   if (!sh) sh = ss.insertSheet("WorkflowSteps");
 
   sh.clear();
-  sh.appendRow(["StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart"]);
-  sh.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  sh.appendRow(["StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd"]);
+  sh.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
 
   if (steps && steps.length) {
     steps.forEach((s, idx) => {
@@ -48,7 +49,8 @@ function saveWorkflowConfig(steps) {
         s.position,
         s.action,
         s.status,
-        s.isStart ? 1 : 0
+        s.isStart ? 1 : 0,
+        s.isEnd ? 1 : 0
       ]);
     });
   }
