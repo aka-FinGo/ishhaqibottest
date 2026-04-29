@@ -470,14 +470,30 @@ function applyFilters() {
     
     let totalUZS = 0;
     let totalUSD = 0;
+    let effectiveTotalUZS = 0; // Dollar va So'mning umumlashgan UZS qiymati
+    
     filteredData.forEach(item => {
-        totalUZS += Number(item.amountUZS) || 0;
-        totalUSD += Number(item.amountUSD) || 0;
+        const uzs = Number(item.amountUZS) || 0;
+        const usd = Number(item.amountUSD) || 0;
+        const rate = Number(item.rate) || 0;
+        
+        totalUZS += uzs;
+        totalUSD += usd;
+        
+        effectiveTotalUZS += uzs;
+        if (usd > 0 && rate > 0) {
+            effectiveTotalUZS += (usd * rate);
+        }
     });
+    
+    const uzsOnlyEl = document.getElementById('totalCompanyUzsOnly');
+    const usdOnlyEl = document.getElementById('totalCompanyUsdOnly');
+    if (uzsOnlyEl) uzsOnlyEl.innerHTML = `<span>${totalUZS.toLocaleString()}</span>`;
+    if (usdOnlyEl) usdOnlyEl.innerHTML = `<span>$${totalUSD.toLocaleString()}</span>`;
     
     const budgetEl = document.getElementById('totalCompanyUzs');
     if (budgetEl) {
-        let text = totalUZS.toLocaleString() + ' UZS';
+        let text = effectiveTotalUZS.toLocaleString() + ' UZS';
         if (totalUSD > 0) {
             text += ` | $${totalUSD.toLocaleString()}`;
         }
