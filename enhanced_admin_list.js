@@ -32,15 +32,20 @@ function renderAdminList(data) {
 
     // Sort data by date (newest first)
     const sortedData = [...data].sort((a, b) => {
-        const dateA = new Date(a.date || a.createdAt || a.timestamp || '');
-        const dateB = new Date(b.date || b.createdAt || b.timestamp || '');
+        const davrA = getDavrSortKey(a.actionPeriod, a.date, a.dateISO);
+        const davrB = getDavrSortKey(b.actionPeriod, b.date, b.dateISO);
+        if (davrB !== davrA) {
+            return davrB.localeCompare(davrA); // descending
+        }
+        const dateA = new Date(a.dateISO || (a.date ? a.date.split('/').reverse().join('-') : ''));
+        const dateB = new Date(b.dateISO || (b.date ? b.date.split('/').reverse().join('-') : ''));
         return dateB - dateA;
     });
 
     const fragment = document.createDocumentFragment();
     const container = document.createElement('div');
     container.className = 'admin-list-container';
-    let lastDate = null;
+    let lastDavr = null;
 
     sortedData.forEach(item => {
         const amountUZS = item.amountUZS || 0;
@@ -50,14 +55,15 @@ function renderAdminList(data) {
         const date = item.date || 'Sana kiritilmagan';
         const actionPeriod = item.actionPeriod || '';
 
-        let relDate = formatRelativeDate(date);
+        const currentDavr = getDavrSortKey(item.actionPeriod, item.date, item.dateISO);
+        let relDavr = getDavrLabel(currentDavr);
 
-        if (relDate !== lastDate) {
+        if (relDavr !== lastDavr) {
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;';
-            dateHeader.textContent = relDate;
+            dateHeader.textContent = relDavr;
             container.appendChild(dateHeader);
-            lastDate = relDate;
+            lastDavr = relDavr;
         }
 
         const li = document.createElement('div');

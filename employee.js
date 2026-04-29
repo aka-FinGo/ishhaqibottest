@@ -93,13 +93,23 @@ function drawMyHistoryUI() {
 }
 
 function renderMyPage() {
-    const reversed  = [...myFilteredRecords].reverse();
-    const totalPages= Math.ceil(reversed.length/MY_ITEMS_PER_PAGE);
+    const sortedMyData = [...myFilteredRecords].sort((a, b) => {
+        const davrA = getDavrSortKey(a.actionPeriod, a.date, a.dateISO);
+        const davrB = getDavrSortKey(b.actionPeriod, b.date, b.dateISO);
+        if (davrB !== davrA) {
+            return davrB.localeCompare(davrA);
+        }
+        const dateA = new Date(a.dateISO || (a.date ? a.date.split('/').reverse().join('-') : ''));
+        const dateB = new Date(b.dateISO || (b.date ? b.date.split('/').reverse().join('-') : ''));
+        return dateB - dateA;
+    });
+
+    const totalPages= Math.ceil(sortedMyData.length/MY_ITEMS_PER_PAGE);
     const start     = (myCurrentPage-1)*MY_ITEMS_PER_PAGE;
-    const pageData  = reversed.slice(start, start+MY_ITEMS_PER_PAGE);
+    const pageData  = sortedMyData.slice(start, start+MY_ITEMS_PER_PAGE);
 
     const fragment = document.createDocumentFragment();
-    let lastDate = null;
+    let lastDavr = null;
     
     if (pageData.length === 0) {
         const emptyState = document.createElement('div');
@@ -111,23 +121,27 @@ function renderMyPage() {
             const uzs=Number(r.amountUZS)||0, usd=Number(r.amountUSD)||0;
             const rate=Number(r.rate)||0;
             const effRate=rate>0?rate:(usd>0&&uzs>0?Math.round(uzs/usd):0);
-            const origIdx=myFilteredRecords.length-1-start-i;
+            
+            // To'g'ri origIdx topish uchun indexni myFilteredRecords orqali aniqlaymiz
+            const origIdx = myFilteredRecords.indexOf(r);
             const safeComment = escapeHtml(r.comment || '—');
             
             let displayDate = escapeHtml(r.date || '—');
-            let relDate = formatRelativeDate(displayDate);
             
-            if (relDate !== lastDate) {
+            const currentDavr = getDavrSortKey(r.actionPeriod, r.date, r.dateISO);
+            let relDavr = getDavrLabel(currentDavr);
+            
+            if (relDavr !== lastDavr) {
                 const dateHeader = document.createElement('div');
                 dateHeader.style.cssText = 'font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;';
-                dateHeader.textContent = relDate;
+                dateHeader.textContent = relDavr;
                 fragment.appendChild(dateHeader);
-                lastDate = relDate;
+                lastDavr = relDavr;
             }
 
-            let dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">${displayDate}</span>`;
+            let dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">$ ${displayDate}</span>`;
             if (r.actionPeriod) {
-                dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">📅 Davr: ${r.actionPeriod}</span>`;
+                dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">📅 Davr: ${r.actionPeriod} (${displayDate})</span>`;
             }
 
             const itemDiv = document.createElement('div');

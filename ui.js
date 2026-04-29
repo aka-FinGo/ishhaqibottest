@@ -1,5 +1,30 @@
 let globalEmployeeList=[];
 
+const UZ_MONTHS = [ 'Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr' ];
+
+function getDavrSortKey(actionPeriod, date, dateISO) {
+    if (actionPeriod) return actionPeriod; // Masalan: "2026-04"
+    if (dateISO) return dateISO.substring(0, 7); // Masalan: "2026-04"
+    const meta = getDateMonthYear(date);
+    if (meta) {
+        return `${meta.year}-${String(meta.month).padStart(2, '0')}`;
+    }
+    return date ? date : '0000-00';
+}
+
+function getDavrLabel(davrKey) {
+    if (!davrKey || davrKey === '0000-00') return 'Davr noma\'lum';
+    const parts = davrKey.split('-');
+    if (parts.length >= 2) {
+        const y = parts[0];
+        const m = parseInt(parts[1], 10);
+        if (m >= 1 && m <= 12) {
+            return `📅 Davr: ${UZ_MONTHS[m-1]} ${y}`;
+        }
+    }
+    return `📅 Davr: ${davrKey}`;
+}
+
 // Helpers
 function formatRelativeDate(dateStr) {
     if(!dateStr) return 'Sana kiritilmagan';

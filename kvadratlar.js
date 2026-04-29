@@ -1,4 +1,14 @@
-let kvFullRecords=[];let kvFilteredRecords=[];const KV_MONTHS_UZ=[ '','Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr' ];function kvMonthLabel(monthStr){const clean=String(monthStr||'').replace(/^_+/,'').replace(/^'/,'');const num=parseInt(clean,10);return (num>=1&&num<=12) ? KV_MONTHS_UZ[num]:(clean||'—');}let activeKvProc=null;function kvShowProc(msg){if (activeKvProc) kvHideProc();const toast=document.createElement('div');toast.className='kv-proc-toast';toast.innerHTML=`<div class="kv-spinner"></div><span>${escapeHtml(msg)}</span>`;document.body.appendChild(toast);activeKvProc=toast;}function kvHideProc(isSuccess=null,finalMsg=null){if (!activeKvProc) return;const toast=activeKvProc;activeKvProc=null;if (isSuccess!==null){toast.innerHTML=`<span>${isSuccess ? '✅':'❌'}</span><span>${escapeHtml(finalMsg||(isSuccess ? 'Bajarildi':'Xatolik'))}</span>`;toast.classList.add(isSuccess ? 'success':'error');setTimeout(()=>{toast.classList.add('hiding');setTimeout(()=>toast.remove(),300);},1500);}else{toast.remove();}}async function kvRefreshAll(btn){if (btn) btn.classList.add('spinning');kvShowProc('Ma\'lumotlar yangilanmoqda...');try{await initKvadratTab();kvHideProc(true,'Yangilandi');}catch (e){kvHideProc(false,'Yangilashda xato');}finally{const refreshButtons = document.querySelectorAll('.btn-secondary[title="Yangilash"]');refreshButtons.forEach(button => {button.classList.remove('spinning');});}}function populateKvadratMeta(staffList){const staffFilter=document.getElementById('kvFilterStaff');const kvStaffModal=document.getElementById('kvStaffSelect');if (staffFilter){staffFilter.innerHTML='<option value="all">Barcha hodimlar</option>';staffList.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;staffFilter.appendChild(opt);});}if (kvStaffModal){kvStaffModal.innerHTML='<option value="">Hodimni tanlang...</option>';staffList.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;kvStaffModal.appendChild(opt);});}const yearSel=document.getElementById('kvFilterYear');if (yearSel){const currentYear=new Date().getFullYear();yearSel.innerHTML='<option value="all">Yillar</option>';for (let y=currentYear;y>=2024;y--){const opt=document.createElement('option');opt.value=y;opt.textContent=y;yearSel.appendChild(opt);}}const processSelect=document.getElementById('kvFilterProcess');if (processSelect){const workflowConfig=(typeof myPermissions!=='undefined'&&Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig:[];processSelect.innerHTML='<option value="all">Barcha jarayonlar</option>';console.log("Populating process filter with workflow config:",workflowConfig);workflowConfig.forEach((step,idx)=>{const stepIndex=String(step.index||idx+1);const label=escapeHtml(step.status||step.action||`Bosqich ${idx+1}`);const opt=document.createElement('option');opt.value=stepIndex;opt.textContent=label;processSelect.appendChild(opt);});processSelect.value='all';}_initKvFormYears();}function _initKvFormYears(){const curYear=new Date().getFullYear();const curMonth=String(new Date().getMonth()+1).padStart(2,'0');const yearEl=document.getElementById('kvActionYear');if (yearEl){yearEl.innerHTML='';for (let y=curYear+1;y>=curYear-2;y--){const opt=document.createElement('option');opt.value=y;opt.textContent=y;if (y===curYear) opt.selected=true;yearEl.appendChild(opt);}}const monthEl=document.getElementById('kvActionMonth');if (monthEl) monthEl.value=curMonth;}async function initKvadratTab(){const listContainer=document.getElementById('kvList');if (!listContainer) return;listContainer.innerHTML=`<div class="kv-table-wrap"><table class="kv-table"><thead><tr><th>№</th><th>Buyurtma №</th><th>Oy</th><th>m²</th><th>ST</th></tr></thead><tbody>${Array(5).fill('<tr><td colspan="5"><div class="skeleton" style="height:25px;margin:5px 0;"></div></tr>').join('')}</tbody></table></div>`;try{console.log("Loading kvadrat data from server...");const data=await apiRequest({action:'kvadrat_get_all'});console.log("Received kvadrat data:",data);if (data.success){kvFullRecords=data.data||[];if (typeof kvDashboardRecords!=='undefined'){kvDashboardRecords=kvFullRecords;}console.log("Loaded kvadrat records:",kvFullRecords.length);applyKvFilters();}else{console.error("Failed to load kvadrat data:",data.error);listContainer.innerHTML=`<div class="empty-state"><p style="color:var(--red);">❌ ${escapeHtml(data.error||'Yuklashda xato')}</p></div>`;}}catch (e){console.error("initKvadratTab error:",e);listContainer.innerHTML=`<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi:${escapeHtml(e.message)}</p></div>`;}updateKvFabVisibility();}function updateKvFabVisibility(){const fab=document.getElementById('nav-add');if (!fab) return;const activeTab=document.querySelector('.tab-content.active');if (activeTab&&activeTab.id==='kvadratTab'){const positions=(typeof myPermissions!=='undefined'&&myPermissions.positions)||[];const isLoyihachi=myRole==='SuperAdmin'||positions.indexOf('Loyihachi')!==-1;fab.style.visibility=isLoyihachi ? 'visible':'hidden';fab.style.pointerEvents=isLoyihachi ? 'auto':'none';fab.style.opacity=isLoyihachi ? '1':'0';fab.style.transition='opacity 0.2s';}else{fab.style.visibility='visible';fab.style.pointerEvents='auto';fab.style.opacity='1';}}function renderKvList(){const container=document.getElementById('kvList');const totalDisplay=document.getElementById('kvTotalM2');if (!container) return;console.log("Rendering KV list,filtered records:",kvFilteredRecords.length);if (!kvFilteredRecords.length){container.innerHTML=`<div class="empty-state"><div class="empty-icon">📏</div><p>Ma'lumot topilmadi</p></div>`;if (totalDisplay) totalDisplay.innerText='0';return;}let totalM2=0;let lastDate='';
+let totalM2=0;let lastDavr=null;
+
+const sortedKvData = [...kvFilteredRecords].sort((a, b) => {
+    const davrA = getDavrSortKey(a.year && a.month ? `${a.year}-${String(a.month).replace('_', '').padStart(2, '0')}` : '', a.date, '');
+    const davrB = getDavrSortKey(b.year && b.month ? `${b.year}-${String(b.month).replace('_', '').padStart(2, '0')}` : '', b.date, '');
+    if(davrB !== davrA) return davrB.localeCompare(davrA);
+    const dateA = new Date(a.date ? a.date.split('/').reverse().join('-') : '');
+    const dateB = new Date(b.date ? b.date.split('/').reverse().join('-') : '');
+    return dateB - dateA;
+});
+
 const fragment = document.createDocumentFragment();
 const wrap = document.createElement('div');
 wrap.className = 'kv-table-wrap';
@@ -7,14 +17,20 @@ table.className = 'kv-table';
 table.innerHTML = `<thead><tr><th>№</th><th>Buyurtma №</th><th>Oy</th><th style="text-align:right;">m²</th><th>ST</th></tr></thead>`;
 const tbody = document.createElement('tbody');
 
-kvFilteredRecords.forEach((rec,idx)=>{
+sortedKvData.forEach((rec, loopIdx)=>{
+    const origIdx = kvFilteredRecords.indexOf(rec);
     totalM2+=Number(rec.totalM2)||0;
-    if (rec.date!==lastDate){
+    
+    // Davr bo'yicha guruhlash
+    const currentDavr = getDavrSortKey(rec.year && rec.month ? `${rec.year}-${String(rec.month).replace('_', '').padStart(2, '0')}` : '', rec.date, '');
+    let relDavr = getDavrLabel(currentDavr);
+    
+    if (relDavr !== lastDavr){
         const trDate = document.createElement('tr');
         trDate.className = 'kv-date-row';
-        trDate.innerHTML = `<td colspan="5">📅 ${escapeHtml(rec.date)}</td>`;
+        trDate.innerHTML = `<td colspan="5">${relDavr}</td>`;
         tbody.appendChild(trDate);
-        lastDate=rec.date;
+        lastDavr = relDavr;
     }
     const m2Val=(Number(rec.totalM2)||0).toLocaleString('uz-UZ',{minimumFractionDigits:1,maximumFractionDigits:1});
     const monthClean=String(rec.month||'').replace(/^_+/,'').replace(/^'/,'');
@@ -29,8 +45,8 @@ kvFilteredRecords.forEach((rec,idx)=>{
 
     const trData = document.createElement('tr');
     trData.className = 'kv-data-row';
-    trData.addEventListener('click', () => showKvDetailModal(idx));
-    trData.innerHTML = `<td class="kv-col-seq">${idx+1}</td><td class="kv-col-no">${escapeHtml(String(rec.no||'—'))}</td><td class="kv-col-oy">${monthClean||'—'}</td><td class="kv-col-m2">${m2Val}</td><td class="kv-col-st" title="${escapeHtml(status)}"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:${phaseColors.bg};border:1px solid ${phaseColors.color};"></span>${stIcon}</span></td>`;
+    trData.addEventListener('click', () => showKvDetailModal(origIdx));
+    trData.innerHTML = `<td class="kv-col-seq">${loopIdx+1}</td><td class="kv-col-no">${escapeHtml(String(rec.no||'—'))}</td><td class="kv-col-oy">${monthClean||'—'}</td><td class="kv-col-m2">${m2Val}</td><td class="kv-col-st" title="${escapeHtml(status)}"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:${phaseColors.bg};border:1px solid ${phaseColors.color};"></span>${stIcon}</span></td>`;
     tbody.appendChild(trData);
 });
 
