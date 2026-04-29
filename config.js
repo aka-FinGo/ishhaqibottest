@@ -164,6 +164,9 @@ async function apiRequest(payload, opts) {
     }, timeoutMs);
   }
 
+  const logAction = 'API [' + (body.action || 'unknown') + ']';
+  console.time(logAction);
+
   try {
     console.log('📤 API so\'rov yuborilmoqda:', body.action || 'unknown');
     
@@ -189,8 +192,10 @@ async function apiRequest(payload, opts) {
     try {
       const parsed = JSON.parse(text);
       console.log('✅ API javob olingan:', body.action || 'unknown');
+      console.timeEnd(logAction);
       return parsed;
     } catch (e) {
+      console.timeEnd(logAction);
       console.error('❌ JSON parsing xatosi. Response:', text.substring(0, 200));
       throw new Error('Server javobi noto\'g\'ri JSON formatda');
     }
@@ -205,6 +210,7 @@ async function apiRequest(payload, opts) {
       throw new Error('Tarmoq ulanishida xato: ' + err.message);
     }
     
+    console.timeEnd(logAction);
     throw err;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);

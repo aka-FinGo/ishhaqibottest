@@ -37,9 +37,11 @@ function renderAdminList(data) {
         return dateB - dateA;
     });
 
-    let html = '<div class="admin-list-container">';
+    const fragment = document.createDocumentFragment();
+    const container = document.createElement('div');
+    container.className = 'admin-list-container';
     let lastDate = null;
-    
+
     sortedData.forEach(item => {
         const amountUZS = item.amountUZS || 0;
         const amountUSD = item.amountUSD || 0;
@@ -51,71 +53,42 @@ function renderAdminList(data) {
         let relDate = formatRelativeDate(date);
 
         if (relDate !== lastDate) {
-            html += `<div style="font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">${relDate}</div>`;
+            const dateHeader = document.createElement('div');
+            dateHeader.style.cssText = 'font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;';
+            dateHeader.textContent = relDate;
+            container.appendChild(dateHeader);
             lastDate = relDate;
         }
 
-        const itemId = `admin-item-${Math.random().toString(36).substr(2, 9)}`;
-        html += `
-            <div class="admin-list-item" id="${itemId}" style="
-                background: white;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 16px;
-                margin-bottom: 12px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                cursor: pointer;
-            ">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div style="font-weight: 600; color: #1e293b; flex-grow: 1;">${amountUZS > 0 ? '🟢 ' : (amountUSD > 0 ? '🟡 ' : '🔴 ')} ${escapeHtml(name)}</div>
-                    <div style="color: #64748b; font-size: 12px; text-align: right; min-width: 80px;">${escapeHtml(date)}</div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="color: #64748b; font-size: 13px; flex-grow: 1; max-width: 70%;">${escapeHtml(comment)}</div>
-                    <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                        ${amountUZS ? `<span style="
-                            background: #dcfce7;
-                            color: #166534;
-                            padding: 2px 6px;
-                            border-radius: 4px;
-                            font-size: 11px;
-                            font-weight: 500;
-                        ">${Number(amountUZS).toLocaleString()} UZS</span>` : ''}
-
-                        ${amountUSD ? `<span style="
-                            background: #dbeafe;
-                            color: #1e40af;
-                            padding: 2px 6px;
-                            border-radius: 4px;
-                            font-size: 11px;
-                            font-weight: 500;
-                        ">$${Number(amountUSD).toLocaleString()}</span>` : ''}
-                    </div>
-                </div>
-
-                ${actionPeriod ? `<div style="color: #0ea5e9; font-size: 11px; margin-top: 6px;">Davr: ${escapeHtml(actionPeriod)}</div>` : ''}
-            </div>
+        const li = document.createElement('div');
+        li.className = 'admin-list-item';
+        li.style.cssText = `
+            background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer;
         `;
-    });
-    
-    html += '</div>';
-    adminListEl.innerHTML = html;
 
-    // Attach event listeners to items
-    adminListEl.querySelectorAll('.admin-list-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const itemText = this.innerText;
-            const itemHtml = this.innerHTML;
-            // Find the original item data from globalAdminData
-            for (let data of sortedData) {
-                if ((data.name || 'Noma\'lum').includes(itemText.split('\n')[0].replace('🟢 ', '').replace('🟡 ', '').replace('🔴 ', ''))) {
-                    showActionDetails(data);
-                    return;
-                }
-            }
-        });
+        li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-weight: 600; color: #1e293b; flex-grow: 1;">${amountUZS > 0 ? '🟢 ' : (amountUSD > 0 ? '🟡 ' : '🔴 ')} ${escapeHtml(name)}</div>
+                <div style="color: #64748b; font-size: 12px; text-align: right; min-width: 80px;">${escapeHtml(date)}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="color: #64748b; font-size: 13px; flex-grow: 1; max-width: 70%;">${escapeHtml(comment)}</div>
+                <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                    ${amountUZS ? `<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">${Number(amountUZS).toLocaleString()} UZS</span>` : ''}
+                    ${amountUSD ? `<span style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">$${Number(amountUSD).toLocaleString()}</span>` : ''}
+                </div>
+            </div>
+            ${actionPeriod ? `<div style="color: #0ea5e9; font-size: 11px; margin-top: 6px;">Davr: ${escapeHtml(actionPeriod)}</div>` : ''}
+        `;
+
+        li.addEventListener('click', () => showActionDetails(item));
+        container.appendChild(li);
     });
+
+    fragment.appendChild(container);
+    adminListEl.innerHTML = '';
+    adminListEl.appendChild(fragment);
 }
 
 // Function to show action details in modal

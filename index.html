@@ -337,7 +337,7 @@
                     <div class="search-wrap">
                         <span class="search-icon">🔎</span>
                         <input type="text" id="searchInput" placeholder="Ism, izoh bo'yicha qidiring..."
-                            onkeyup="applyFilters()">
+                            onkeyup="performDebounce('dashFilters', applyFilters, 300)">
                     </div>
                     <div class="filter-row">
                         <select id="filterEmployee" onchange="applyFilters()">
@@ -639,21 +639,21 @@
             </div>
         </div>
 
-        <script src="config.js?v=1.0.22"></script>
-        <script src="ui.js?v=1.0.22"></script>
-        <script src="employee.js?v=1.0.22"></script>
-        <script src="admin.js?v=1.0.22"></script>
-        <script src="export.js?v=1.0.22"></script>
-        <script src="actions.js?v=1.0.22"></script>
-        <script src="dashboard.js?v=1.0.22"></script>
-        <script src="detail_modal.js?v=1.0.22"></script>
-        <script src="kvadratlar.js?v=1.0.22"></script>
-        <script src="dashboard_kv.js?v=1.0.22"></script>
-        <script src="roles.js?v=1.0.22"></script>
-        <script src="admin_workflow.js?v=1.0.22"></script>
-        <script src="admin_positions.js?v=1.0.22"></script>
-        <script src="enhanced_admin_list.js?v=1.0.22"></script>
-        <script src="admin_notifications.js?v=1.0.22"></script>
+        <script defer src="config.js?v=1.0.22"></script>
+        <script defer src="ui.js?v=1.0.22"></script>
+        <script defer src="employee.js?v=1.0.22"></script>
+        <script defer src="admin.js?v=1.0.22"></script>
+        <script defer src="export.js?v=1.0.22"></script>
+        <script defer src="actions.js?v=1.0.22"></script>
+        <script defer src="dashboard.js?v=1.0.22"></script>
+        <script defer src="detail_modal.js?v=1.0.22"></script>
+        <script defer src="kvadratlar.js?v=1.0.22"></script>
+        <script defer src="dashboard_kv.js?v=1.0.22"></script>
+        <script defer src="roles.js?v=1.0.22"></script>
+        <script defer src="admin_workflow.js?v=1.0.22"></script>
+        <script defer src="admin_positions.js?v=1.0.22"></script>
+        <script defer src="enhanced_admin_list.js?v=1.0.22"></script>
+        <script defer src="admin_notifications.js?v=1.0.22"></script>
 </body>
 
 </html>

@@ -98,54 +98,76 @@ function renderMyPage() {
     const start     = (myCurrentPage-1)*MY_ITEMS_PER_PAGE;
     const pageData  = reversed.slice(start, start+MY_ITEMS_PER_PAGE);
 
-    let html='';
+    const fragment = document.createDocumentFragment();
     let lastDate = null;
     
-    pageData.forEach((r,i)=>{
-        const uzs=Number(r.amountUZS)||0, usd=Number(r.amountUSD)||0;
-        const rate=Number(r.rate)||0;
-        const effRate=rate>0?rate:(usd>0&&uzs>0?Math.round(uzs/usd):0);
-        const origIdx=myFilteredRecords.length-1-start-i;
-        const safeComment = escapeHtml(r.comment || '—');
-        
-        let displayDate = escapeHtml(r.date || '—');
-        let relDate = formatRelativeDate(displayDate);
-        
-        if (relDate !== lastDate) {
-            html += `<div style="font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">${relDate}</div>`;
-            lastDate = relDate;
-        }
+    if (pageData.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.innerHTML = `<div class="empty-icon">💸</div><p>Hali hech qanday amal yo'q</p>`;
+        fragment.appendChild(emptyState);
+    } else {
+        pageData.forEach((r,i)=>{
+            const uzs=Number(r.amountUZS)||0, usd=Number(r.amountUSD)||0;
+            const rate=Number(r.rate)||0;
+            const effRate=rate>0?rate:(usd>0&&uzs>0?Math.round(uzs/usd):0);
+            const origIdx=myFilteredRecords.length-1-start-i;
+            const safeComment = escapeHtml(r.comment || '—');
+            
+            let displayDate = escapeHtml(r.date || '—');
+            let relDate = formatRelativeDate(displayDate);
+            
+            if (relDate !== lastDate) {
+                const dateHeader = document.createElement('div');
+                dateHeader.style.cssText = 'font-size:13px; font-weight:700; color:#64748b; margin:16px 0 8px 4px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;';
+                dateHeader.textContent = relDate;
+                fragment.appendChild(dateHeader);
+                lastDate = relDate;
+            }
 
-        let dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">${displayDate}</span>`;
-        if (r.actionPeriod) {
-            dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">📅 Davr: ${r.actionPeriod}</span>`;
-        }
-        html+=`
-        <div class="history-item" onclick="showMyDetailModal(${origIdx})" style="cursor:pointer; background:white; border-radius:12px; padding:12px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-            <div class="item-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="item-name" style="font-weight:600; color:#1e293b; font-size:14px;">
-                    ${uzs > 0 ? '🟢 ' : (usd > 0 ? '🟡 ' : '🔴 ')} ${safeComment}
-                </span>
-                ${dateHtml}
-            </div>
-            <div class="item-amounts" style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                ${uzs>0?`<span class="amount-chip uzs" style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600;">💰 ${uzs.toLocaleString()} UZS</span>`:''}
-                ${usd>0?`<span class="amount-chip usd" style="background:#fef9c3; color:#854d0e; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600;">💵 $${usd.toLocaleString()}</span>`:''}
-                ${usd>0&&effRate>0?`<span class="rate-tag" style="background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:6px; font-size:11px;">📈 1$=${effRate.toLocaleString()}</span>`:''}
-            </div>
-        </div>`;
-    });
+            let dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">${displayDate}</span>`;
+            if (r.actionPeriod) {
+                dateHtml = `<span class="item-date" style="font-size:11px; opacity:0.7;">📅 Davr: ${r.actionPeriod}</span>`;
+            }
 
-    let pagHtml='';
-    if(totalPages>1){
-        pagHtml='<div class="pagination">';
-        for(let i=1;i<=totalPages;i++)
-            pagHtml+=`<button class="page-btn ${i===myCurrentPage?'active':''}" onclick="goToMyPage(${i})">${i}</button>`;
-        pagHtml+='</div>';
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'history-item';
+            itemDiv.style.cssText = 'cursor:pointer; background:white; border-radius:12px; padding:12px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+            itemDiv.onclick = () => showMyDetailModal(origIdx);
+            
+            itemDiv.innerHTML=`
+                <div class="item-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="item-name" style="font-weight:600; color:#1e293b; font-size:14px;">
+                        ${uzs > 0 ? '🟢 ' : (usd > 0 ? '🟡 ' : '🔴 ')} ${safeComment}
+                    </span>
+                    ${dateHtml}
+                </div>
+                <div class="item-amounts" style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                    ${uzs>0?`<span class="amount-chip uzs" style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600;">💰 ${uzs.toLocaleString()} UZS</span>`:''}
+                    ${usd>0?`<span class="amount-chip usd" style="background:#fef9c3; color:#854d0e; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600;">💵 $${usd.toLocaleString()}</span>`:''}
+                    ${usd>0&&effRate>0?`<span class="rate-tag" style="background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:6px; font-size:11px;">📈 1$=${effRate.toLocaleString()}</span>`:''}
+                </div>
+            `;
+            fragment.appendChild(itemDiv);
+        });
+
+        if(totalPages>1){
+            const paginationDiv = document.createElement('div');
+            paginationDiv.className = 'pagination';
+            for(let i=1;i<=totalPages;i++){
+                const btn = document.createElement('button');
+                btn.className = `page-btn ${i===myCurrentPage?'active':''}`;
+                btn.onclick = () => goToMyPage(i);
+                btn.innerText = i;
+                paginationDiv.appendChild(btn);
+            }
+            fragment.appendChild(paginationDiv);
+        }
     }
 
-    document.getElementById('myHistory').innerHTML=
-        html?html+pagHtml:`<div class="empty-state"><div class="empty-icon">💸</div><p>Hali hech qanday amal yo'q</p></div>`;
+    const myHistoryEl = document.getElementById('myHistory');
+    myHistoryEl.innerHTML = '';
+    myHistoryEl.appendChild(fragment);
 }
 
 function goToMyPage(page){

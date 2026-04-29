@@ -61,6 +61,13 @@ function showCustomConfirm(title, message, confirmText, cancelText, requireReaso
     };
 }
 
+// Global debounce utility
+let _globalDebounceTimers = {};
+function performDebounce(key, func, wait = 300) {
+    if (_globalDebounceTimers[key]) clearTimeout(_globalDebounceTimers[key]);
+    _globalDebounceTimers[key] = setTimeout(func, wait);
+}
+
 // ✅ FIX: Data loading state
 let _appInitialized = false;
 let _appInitRetries = 0;
