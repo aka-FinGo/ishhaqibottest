@@ -3,6 +3,9 @@
  * Improved UI with compact list and modal details
  */
 
+const ADMIN_ITEMS_PER_PAGE = 50;
+let adminCurrentPage = 1;
+
 // Escape HTML to prevent XSS
 function escapeHtml(text) {
     if (!text) return '';
@@ -42,12 +45,18 @@ function renderAdminList(data) {
         return dateB - dateA;
     });
 
+    // Pagination logic
+    const totalPages = Math.ceil(sortedData.length / ADMIN_ITEMS_PER_PAGE);
+    const start = (adminCurrentPage - 1) * ADMIN_ITEMS_PER_PAGE;
+    const end = start + ADMIN_ITEMS_PER_PAGE;
+    const paginatedData = sortedData.slice(start, end);
+
     const fragment = document.createDocumentFragment();
     const container = document.createElement('div');
     container.className = 'admin-list-container';
     let lastDavr = null;
 
-    sortedData.forEach(item => {
+    paginatedData.forEach(item => {
         const amountUZS = item.amountUZS || 0;
         const amountUSD = item.amountUSD || 0;
         const comment = item.comment || 'Izohsiz';
@@ -93,8 +102,31 @@ function renderAdminList(data) {
     });
 
     fragment.appendChild(container);
+
+    // Pagination buttons
+    if (totalPages > 1) {
+        const paginationDiv = document.createElement('div');
+        paginationDiv.className = 'pagination';
+        paginationDiv.style.cssText = 'display:flex; justify-content:center; gap:8px; padding:20px 0; flex-wrap:wrap;';
+        
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.className = `page-btn ${i === adminCurrentPage ? 'active' : ''}`;
+            btn.onclick = () => goToAdminPage(i);
+            btn.innerText = i;
+            paginationDiv.appendChild(btn);
+        }
+        fragment.appendChild(paginationDiv);
+    }
+
     adminListEl.innerHTML = '';
     adminListEl.appendChild(fragment);
+}
+
+function goToAdminPage(page) {
+    adminCurrentPage = page;
+    renderAdminList(filteredData);
+    document.getElementById('adminList').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Function to show action details in modal
@@ -448,6 +480,9 @@ function applyFilters() {
     const employeeFilter = document.getElementById('filterEmployee')?.value || 'all';
     const monthFilter = document.getElementById('filterMonth')?.value || 'all';
     const yearFilter = document.getElementById('filterYear')?.value || 'all';
+
+    // Reset to page 1 on search or filter change
+    adminCurrentPage = 1;
 
     filteredData = globalAdminData.filter(item => {
         const matchesSearch = !searchTerm || (item.name && item.name.toLowerCase().includes(searchTerm)) || (item.comment && item.comment.toLowerCase().includes(searchTerm));
