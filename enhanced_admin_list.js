@@ -5,7 +5,6 @@
 
 const ADMIN_ITEMS_PER_PAGE = 15;
 let adminCurrentPage = 1;
-let filteredData = [];
 
 // Escape HTML to prevent XSS
 function escapeHtml(text) {
