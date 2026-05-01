@@ -229,6 +229,23 @@ document.getElementById('financeForm').addEventListener('submit', async(e)=>{
     const amountUSD=currency==='USD'?amount:0;
     if(currency==='USD'&&rate<5000)return alert("Iltimos, to'g'ri kursni kiriting!");
 
+    // Dublikat tekshiruvi (Sana va Summa bo'yicha)
+    const isDuplicate = myFullRecords.some(r => {
+        const rUzs = Number(r.amountUZS) || 0;
+        const rUsd = Number(r.amountUSD) || 0;
+        const rPeriod = r.actionPeriod || '';
+        
+        // Summa va Davr (actionPeriod) bir xil bo'lsa dublikat deb hisoblaymiz
+        return rUzs === amountUZS && rUsd === amountUSD && rPeriod === actionPeriod;
+    });
+
+    if (isDuplicate) {
+        const confirmMsg = `⚠️ Ushbu davr (${actionPeriod || 'joriy'}) uchun ${amount.toLocaleString()} ${currency} miqdoridagi amal allaqachon mavjud!\n\nBaribir saqlaysizmi?`;
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+    }
+
     const today = getTodayDdMmYyyy();
     const date = today.display;
     btn.disabled=true; btn.innerText='⏳ Yuborilmoqda...';
