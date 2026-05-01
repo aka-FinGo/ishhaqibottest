@@ -8,22 +8,23 @@ var KV_COL = {
   DATE:             0,
   NO:               1,
   MONTH:            2,
-  TOTAL_M2:         3,
-  ORDER_NAME:       4,
-  STAFF_NAME:       5, // Display name (hodim ismi)
-  OWNER_TG_ID:      6,
-  IS_DELETED:       7,
-  STEP_INDEX:       8,
-  STATUS:           9,
-  STEP_LOGS:        10,
-  YIGUVCHI_NAME:   11, // Yig'uvchi ismi
-  YIGUVCHI_M2:     12, // Yig'uvchi bajargan m2
-  QADOQLOVCHI_NAME:13, // Qadoqlovchi ismi
-  QADOQLOVCHI_M2:  14  // Qadoqlovchi bajargan m2
+  YEAR:             3,
+  TOTAL_M2:         4,
+  ORDER_NAME:       5,
+  STAFF_NAME:       6, // Display name (hodim ismi)
+  OWNER_TG_ID:      7,
+  IS_DELETED:       8,
+  STEP_INDEX:       9,
+  STATUS:           10,
+  STEP_LOGS:        11,
+  YIGUVCHI_NAME:   12, // Yig'uvchi ismi
+  YIGUVCHI_M2:     13, // Yig'uvchi bajargan m2
+  QADOQLOVCHI_NAME:14, // Qadoqlovchi ismi
+  QADOQLOVCHI_M2:  15  // Qadoqlovchi bajargan m2
 };
 
 var KV_HEADERS = [
-  "Sana", "№", "Oy", "Jami m2:", "Buyurtma nomi/Mijoz ismi", "Hodim", "OwnerTgId", "IsDeleted", 
+  "Sana", "№", "Oy", "Yil", "Jami m2:", "Buyurtma nomi/Mijoz ismi", "Hodim", "OwnerTgId", "IsDeleted", 
   "CurrentStep", "Status", "WorkflowLogs", "Yig'uvchi", "Yig'uvchi m2", "Qadoqlovchi", "Qadoqlovchi m2"
 ];
 
@@ -33,16 +34,24 @@ function getKvadratSheet() {
   if (!sh) {
     sh = ss.insertSheet(KVADRAT_SHEET_NAME);
     sh.appendRow(KV_HEADERS);
-    sh.getRange(1, 1, 1, KV_HEADERS.length)
-      .setFontWeight("bold")
-      .setBackground("#1e293b")
-      .setFontColor("#ffffff");
-    sh.getRange("A:A").setNumberFormat("dd/MM/yyyy");
-    sh.getRange("B:B").setNumberFormat("@");
-    sh.getRange("C:C").setNumberFormat("@");
-    sh.getRange("D:D").setNumberFormat("0.00");
+    sh.getRange(1, 1, 1, KV_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+    sh.setFrozenRows(1);
   }
+  ensureKvadratInfrastructure_(sh);
   return sh;
+}
+
+function ensureKvadratInfrastructure_(sh) {
+  var lastCol = sh.getLastColumn();
+  var headers = sh.getRange(1, 1, 1, Math.max(lastCol, KV_HEADERS.length)).getValues()[0];
+  
+  // Check if "Yil" column exists at index 3 (4th column)
+  if (headers[KV_COL.YEAR] !== "Yil") {
+    sh.insertColumnAfter(3); // Insert after "Oy" (index 2)
+    sh.getRange(1, KV_COL.YEAR + 1).setValue("Yil").setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+    // Run migration immediately
+    migrateKvadratYears();
+  }
 }
 
 // Sanitize month string — accepts "_03", "03", "3" → stores "_03"
@@ -89,6 +98,7 @@ function kvadratAdd(data, auth, actorTgId) {
 
     var today = new Date();
     var monthStr = normalizeKvMonth_(data.month);
+    var yearStr = String(data.year || today.getFullYear());
 
     // Hodim ismini hodimlar ro'yxatidan olamiz
     var userMap = buildUsernameMap();
@@ -103,6 +113,7 @@ function kvadratAdd(data, auth, actorTgId) {
       today,
       orderNo,
       "'" + monthStr,          // Force text with apostrophe
+      "'" + yearStr,           // Year column
       Number(data.totalM2) || 0,
       String(data.orderName || '').trim(),
       resolvedStaffName,       // Hodimlar ro'yxatidan olingan ism
@@ -116,16 +127,13 @@ function kvadratAdd(data, auth, actorTgId) {
     var row = sh.getLastRow();
     sh.getRange(row, 1).setNumberFormat('dd/MM/yyyy');
     sh.getRange(row, 3).setNumberFormat('@');
-    sh.getRange(row, 4).setNumberFormat('0.00');
+    sh.getRange(row, 4).setNumberFormat('@'); // Year format
+    sh.getRange(row, 5).setNumberFormat('0.00');
 
     return { success: true, rowId: row };
   });
 }
 
-/**
- * Gets all measurement records.
- * Har bir yozuvga hodim ismi va username hodimlar ro'yxatidan qo'shiladi.
- */
 function kvadratGetAll(options) {
   var sh = getKvadratSheet();
   var values      = sh.getDataRange().getValues();
@@ -139,25 +147,23 @@ function kvadratGetAll(options) {
         String(isDeleted).toLowerCase() === '1' ||
         String(isDeleted).toLowerCase() === 'true') continue;
 
-    // Clean up month: remove leading apostrophe/underscore to get clean value
     var rawMonth = String(row[KV_COL.MONTH] || '');
-    var cleanMonth = rawMonth.replace(/^'/, '');   // remove apostrophe
-    // Keep "_03" format for frontend filtering
+    var cleanMonth = rawMonth.replace(/^'/, '');
+    var year = String(row[KV_COL.YEAR] || '').replace(/^'/, '');
 
     var ownerTgId  = String(row[KV_COL.OWNER_TG_ID] || '');
     var staffNameRaw = String(row[KV_COL.STAFF_NAME] || '');
-
-    // Hodim ismini hodimlar ro'yxatidan olamiz (tgId → username)
     var resolvedName = resolveStaffName_(ownerTgId, staffNameRaw, userMap);
 
     records.push({
       rowId:      i + 1,
       date:       formatDateCell(row[KV_COL.DATE]),
       no:         String(row[KV_COL.NO] || ''),
-      month:      cleanMonth,                          // "_03" etc
+      month:      cleanMonth,
+      year:       year,
       totalM2:    Number(row[KV_COL.TOTAL_M2]) || 0,
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
-      staffName:         resolvedName,                 // Hodimlar ro'yxatidan olingan ism
+      staffName:         resolvedName,
       ownerTgId:         ownerTgId,
       currentStep:       Number(row[KV_COL.STEP_INDEX]) || 1,
       status:            String(row[KV_COL.STATUS] || 'yangi'),
@@ -165,7 +171,6 @@ function kvadratGetAll(options) {
         try { return JSON.parse(row[KV_COL.STEP_LOGS] || '[]'); }
         catch(e) { return []; }
       })(),
-      // Yig'uvchi va Qadoqlovchi ma'lumotlari
       yiguvchiName: String(row[KV_COL.YIGUVCHI_NAME] || ''),
       yiguvchiM2:   Number(row[KV_COL.YIGUVCHI_M2]) || 0,
       qadoqlovchiName: String(row[KV_COL.QADOQLOVCHI_NAME] || ''),
@@ -173,15 +178,10 @@ function kvadratGetAll(options) {
     });
   }
 
-  // Newest first
   records.reverse();
   return { success: true, data: records };
 }
 
-/**
- * Edits a measurement record.
- * staffName ham yangilanganida hodimlar ro'yxatidan olinadi.
- */
 function kvadratEdit(data, auth, actorTgId) {
   return withWriteLock_(function() {
     var sh = getKvadratSheet();
@@ -190,15 +190,13 @@ function kvadratEdit(data, auth, actorTgId) {
       return { success: false, error: 'Qator topilmadi' };
     }
 
-    var existing = sh.getRange(row, 1, 1, KV_HEADERS.length).getValues()[0];
+    var existing = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
-    // Only owner or admin can edit
     if (!auth.isAdmin && !auth.isSuperAdmin && ownerTgId !== String(actorTgId)) {
       return { success: false, error: "Tahrirlashga ruxsat yo'q" };
     }
 
-    // Agar frontend ownerTgId yuborgan bo'lsa (admin boshqa hodim nomidan), uni ishlatamiz
     var targetOwnerId = (data.ownerTgId && String(data.ownerTgId).trim()) ? String(data.ownerTgId).trim() : ownerTgId;
     var userMap = buildUsernameMap();
     var resolvedName = resolveStaffName_(targetOwnerId, data.staffName, userMap);
@@ -208,15 +206,41 @@ function kvadratEdit(data, auth, actorTgId) {
       sh.getRange(row, KV_COL.NO + 1).setValue(String(data.no || '').trim());
     }
     sh.getRange(row, KV_COL.ORDER_NAME  + 1).setValue(String(data.orderName || '').trim());
-    sh.getRange(row, KV_COL.STAFF_NAME  + 1).setValue(resolvedName); // Hodimlar ro'yxatidan olingan ism
+    sh.getRange(row, KV_COL.STAFF_NAME  + 1).setValue(resolvedName);
 
     if (data.month) {
       var monthStr = normalizeKvMonth_(data.month);
       sh.getRange(row, KV_COL.MONTH + 1).setValue("'" + monthStr);
     }
+    if (data.year) {
+      sh.getRange(row, KV_COL.YEAR + 1).setValue("'" + String(data.year));
+    }
 
     return { success: true };
   });
+}
+
+function migrateKvadratYears() {
+  var sh = getKvadratSheet();
+  var values = sh.getDataRange().getValues();
+  var updated = 0;
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    var currentYear = String(row[KV_COL.YEAR] || '').trim();
+    if (!currentYear) {
+      var date = row[KV_COL.DATE];
+      var year = new Date().getFullYear();
+      if (date instanceof Date) {
+        year = date.getFullYear();
+      } else if (String(date).indexOf('.') !== -1) {
+        var parts = String(date).split('.');
+        if (parts.length === 3) year = parts[2];
+      }
+      sh.getRange(i + 1, KV_COL.YEAR + 1).setValue("'" + year);
+      updated++;
+    }
+  }
+  return { success: true, updated: updated };
 }
 
 /**

@@ -174,12 +174,16 @@ function renderKvList() {
 
     let lastDavr = null;
     const sortedKvData = [...kvFilteredRecords].sort((a, b) => {
-        const davrA = getDavrSortKey(a.year && a.month ? `${a.year}-${String(a.month).replace('_', '').padStart(2, '0')}` : '', a.date, '');
-        const davrB = getDavrSortKey(b.year && b.month ? `${b.year}-${String(b.month).replace('_', '').padStart(2, '0')}` : '', b.date, '');
+        // Yil va Oy bo'yicha saralash (Davr)
+        const davrA = a.year && a.month ? `${a.year}-${String(a.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', a.date, '');
+        const davrB = b.year && b.month ? `${b.year}-${String(b.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', b.date, '');
+        
         if (davrB !== davrA) return davrB.localeCompare(davrA);
-        const dateA = new Date(a.date ? a.date.split('/').reverse().join('-') : '');
-        const dateB = new Date(b.date ? b.date.split('/').reverse().join('-') : '');
-        return dateB - dateA;
+        
+        // Agar davr bir xil bo'lsa, № bo'yicha (kattasi tepada)
+        const noA = parseInt(a.no, 10) || 0;
+        const noB = parseInt(b.no, 10) || 0;
+        return noB - noA;
     });
 
     // Pagination logic
@@ -202,7 +206,7 @@ function renderKvList() {
         const globalIdx = (kvCurrentPage - 1) * KV_ITEMS_PER_PAGE + loopIdx;
         const origIdx = kvFilteredRecords.indexOf(rec);
 
-        const currentDavr = getDavrSortKey(rec.year && rec.month ? `${rec.year}-${String(rec.month).replace('_', '').padStart(2, '0')}` : '', rec.date, '');
+        const currentDavr = rec.year && rec.month ? `${rec.year}-${String(rec.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', rec.date, '');
         let relDavr = getDavrLabel(currentDavr);
 
         if (relDavr !== lastDavr) {
@@ -323,7 +327,8 @@ function applyKvFilters() {
             if (cleanMonth !== month) return false;
         }
         if (year !== 'all') {
-            if (!String(rec.date || '').endsWith(String(year))) return false;
+            const recYear = rec.year || (rec.date ? rec.date.split('/').pop() : '');
+            if (String(recYear) !== String(year)) return false;
         }
         if (staff !== 'all') {
             var staffMatch = (rec.staffName === staff);
@@ -372,9 +377,13 @@ function openKvModal(rowId = null) {
             const monthEl = document.getElementById('kvActionMonth');
             if (monthEl && cleanMonth) monthEl.value = cleanMonth.padStart(2, '0');
             const yearEl = document.getElementById('kvActionYear');
-            if (yearEl && rec.date) {
-                const parts = String(rec.date).split('/');
-                if (parts.length === 3) yearEl.value = parts[2];
+            if (yearEl) {
+                if (rec.year) {
+                    yearEl.value = rec.year;
+                } else if (rec.date) {
+                    const parts = String(rec.date).split('/');
+                    if (parts.length === 3) yearEl.value = parts[2];
+                }
             }
         }
     } else {
@@ -404,7 +413,7 @@ async function saveKv() {
     const totalM2 = parseFloat(document.getElementById('kvTotalM2Input').value) || 0;
     const staffName = document.getElementById('kvStaffSelect').value;
     const month = document.getElementById('kvActionMonth')?.value || '';
-    const year = document.getElementById('kvActionYear')?.value || '';
+    const year = document.getElementById('kvActionYear')?.value || new Date().getFullYear();
     const monthStr = (year && month) ? `_${month}` : '';
     if (!orderNumber || !orderName || totalM2 <= 0 || !staffName) {
         showToastMsg('❌ Ma\'lumotlarni to\'liq kiriting', true);
@@ -437,7 +446,7 @@ async function saveKv() {
             staffName,
             ownerTgId,
             month: monthStr,
-            year
+            year: year
         });
         if (data.success) {
             showToastMsg('✅ Saqlandi');
