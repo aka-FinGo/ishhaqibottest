@@ -54,7 +54,10 @@ function ensureKvadratInfrastructure_(sh) {
   var currentHeaders = sh.getRange(1, 1, 1, Math.max(currentLastCol, 1)).getValues()[0];
   
   var updateNeeded = false;
-  if (currentLastCol < fullHeaders.length) {
+  var infraVer = "v3"; // Version to force format updates
+  var currentInfra = sh.getRange(1, 1).getComment();
+  
+  if (currentLastCol < fullHeaders.length || currentInfra !== infraVer) {
     updateNeeded = true;
   } else {
     for (var i = 0; i < fullHeaders.length; i++) {
@@ -73,6 +76,25 @@ function ensureKvadratInfrastructure_(sh) {
     sh.getRange(1, 1, 1, requiredTotal).setValues([fullHeaders])
       .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
     
+    // Set column formats to prevent data type issues (e.g. m2 being seen as date)
+    config.forEach(function(s) {
+      if (s.index > 1) {
+        var startCol = 13 + (s.index - 2) * 4; // 1-indexed column
+        // Row 2 to bottom
+        var numRows = sh.getMaxRows() - 1;
+        if (numRows > 0) {
+          // Col 1: Hodim (Text), Col 2: Hodim ID (Text)
+          sh.getRange(2, startCol, numRows, 2).setNumberFormat("@");
+          // Col 3: m2 (Number)
+          sh.getRange(2, startCol + 2, numRows, 1).setNumberFormat("0.00");
+          // Col 4: Sana (Date)
+          sh.getRange(2, startCol + 3, numRows, 1).setNumberFormat("dd.mm.yyyy HH:mm");
+        }
+      }
+    });
+
+    sh.getRange(1, 1).setComment(infraVer);
+
     // If it's a migration (e.g. Yil column was missing at index 3)
     if (currentHeaders[3] !== "Yil") {
        migrateKvadratYears();

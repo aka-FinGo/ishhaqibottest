@@ -291,7 +291,6 @@ function showKvDetailModal(idx) {
         const nextColors = getWorkflowStepColors(nextStepIdx, totalSteps);
         claimBtnHtml = `<button class="btn-main" style="background:${nextColors.bg};color:${nextColors.color};margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
-    let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
         const totalSteps = config.length >= 2 ? config.length : 3;
@@ -312,12 +311,83 @@ function showKvDetailModal(idx) {
         
         let logDisplay = escapeHtml(name);
         if (log.group) logDisplay += ` (${escapeHtml(log.group)})`;
-        historyHtml += `<div style="border-left:2px solid ${phaseColors.bg};padding-left:12px;margin-bottom:12px;position:relative;"><div style="width:10px;height:10px;border-radius:50%;background:${phaseColors.bg};position:absolute;left:-6px;top:4px;"></div><div style="font-size:12px;font-weight:700;color:${phaseColors.color};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div><div style="font-size:11px;color:var(--text-muted);">${logDisplay} • ${new Date(log.d).toLocaleString('uz-UZ')}</div></div>`;
+
+        historyHtml += `<div style="border-left:2px solid ${phaseColors.bg}; padding-left:20px; margin-bottom:20px; position:relative;">
+            <div style="width:12px; height:12px; border-radius:50%; background:white; border:3px solid ${phaseColors.bg}; position:absolute; left:-7px; top:2px; box-shadow:0 0 0 2px white;"></div>
+            <div style="font-size:13px; font-weight:700; color:#1E293B;">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
+            <div style="font-size:11px; color:#64748B; margin-top:2px; display:flex; align-items:center; gap:6px;">
+                <span>👤 ${logDisplay}</span>
+                <span style="color:#CBD5E1;">•</span>
+                <span>🕒 ${new Date(log.d).toLocaleString('uz-UZ', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
+        </div>`;
     });
-    const editBtn = myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button class="kv-edit-btn" style="flex:1;padding:11px;border-radius:10px;background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:700;font-size:13px;cursor:pointer;" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : '';
-    const deleteBtn = myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button class="kv-delete-btn" style="flex:1;padding:11px;border-radius:10px;background:#FEE2E2;color:#991B1B;border:1.5px solid #FECACA;font-weight:700;font-size:13px;cursor:pointer;" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : '';
-    const buttonsRow = (editBtn || deleteBtn) ? `<div style="display:flex;gap:8px;margin-bottom:12px;">${editBtn}${deleteBtn}</div>` : '';
-    document.getElementById('kvDetailModalBody').innerHTML = `<div class="modal-drag"></div>${buttonsRow}<div class="detail-header"><span class="detail-badge uzs" style="background:#EFF6FF;color:#1D4ED8;">📐 Ish Oqimi Tarixi</span><div class="detail-comment">📌 ${escapeHtml(rec.orderName || '—')}</div><div class="detail-date">📅 №${escapeHtml(String(rec.no || '—'))}|Sana:${escapeHtml(rec.date || '—')}</div></div><div class="detail-card" style="margin-bottom:15px;background:#F8FAFC;"><div class="detail-row"><span class="detail-key">Mas'ul hodim</span><span class="detail-val">${escapeHtml(rec.staffName || '—')}</span></div></div><div class="card" style="margin-bottom:15px;background:#F8FAFC;"><div style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--text-muted);margin-bottom:10px;">📉 Jarayon tarixi</div>${historyHtml || '<p style="font-size:12px;color:var(--text-muted);">Tarix bo\'sh</p>'}</div><div class="detail-card"><div class="detail-row"><span class="detail-key">Hozirgi Status</span><span class="detail-val"><b>${escapeHtml(status.toUpperCase())}</b></span></div><div class="detail-row"><span class="detail-key">Jami m²</span><span class="detail-val" style="color:#0F172A;font-size:18px;">${m2Val}m²</span></div></div>${claimBtnHtml}<button class="btn-secondary" style="margin-top:12px;width:100%;" onclick="closeKvDetailModal()">✕ Yopish</button>`;
+
+    const editBtn = myPermissions.canEdit || myRole === 'SuperAdmin' ? `<button style="width:36px; height:36px; border-radius:10px; background:#FEF3C7; color:#92400E; border:none; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer;" title="Tahrirlash" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️</button>` : '';
+    const deleteBtn = myPermissions.canDelete || myRole === 'SuperAdmin' ? `<button style="width:36px; height:36px; border-radius:10px; background:#FEE2E2; color:#991B1B; border:none; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer;" title="O'chirish" onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑</button>` : '';
+    
+    // Order number format: 230_04
+    const orderNoDisplay = `${escapeHtml(String(rec.no || '—'))}${escapeHtml(String(rec.month || '').replace(/^_+/, '_'))}`;
+
+    document.getElementById('kvDetailModalBody').innerHTML = `
+        <div class="modal-drag"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="detail-badge" style="background:#E0F2FE; color:#0369A1; font-weight:700; font-size:10px; padding:4px 10px; border-radius:20px; letter-spacing:0.5px;">📐 ISH OQIMI TARIXI</div>
+            <div style="display:flex; gap:8px;">
+                ${editBtn}
+                ${deleteBtn}
+            </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h2 style="margin:0; font-size:22px; color:#1E293B; font-weight:800; display:flex; align-items:center; gap:8px;">
+                📌 ${escapeHtml(rec.orderName || '—')}
+            </h2>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:6px;">
+                <span style="background:#F1F5F9; color:#475569; padding:2px 8px; border-radius:6px; font-weight:700; font-size:13px; font-family:monospace;">
+                    № ${orderNoDisplay}
+                </span>
+                <span style="color:#94A3B8; font-size:12px; display:flex; align-items:center; gap:4px;">
+                    📅 ${escapeHtml(rec.date || '—')}
+                </span>
+            </div>
+        </div>
+
+        <div class="detail-card" style="margin-bottom:20px; background:white; border:1px solid #E2E8F0; box-shadow:0 1px 2px rgba(0,0,0,0.05); padding:12px; border-radius:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:10px; color:#64748B; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Mas'ul hodim</div>
+                    <div style="font-size:15px; color:#1E293B; font-weight:700; margin-top:2px;">${escapeHtml(rec.staffName || '—')}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:10px; color:#64748B; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Hozirgi Status</div>
+                    <div style="font-size:12px; color:#0369A1; font-weight:800; margin-top:2px; background:#F0F9FF; padding:3px 10px; border-radius:6px; display:inline-block; border:1px solid #BAE6FD;">${escapeHtml(status.toUpperCase())}</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:20px; background:#F8FAFC; border-radius:16px; padding:15px; border:1px solid #F1F5F9;">
+            <div style="font-size:11px; font-weight:800; color:#64748B; margin-bottom:15px; display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:0.5px;">
+                <span style="width:24px; height:24px; background:white; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">📉</span> Jarayon Tarixi
+            </div>
+            <div style="padding-left:8px;">
+                ${historyHtml || '<p style="font-size:12px; color:#94A3B8; text-align:center; padding:20px 0;">Hozircha tarix bo\'sh</p>'}
+            </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius:18px; padding:20px; color:white; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 10px 15px -3px rgba(15, 23, 42, 0.2);">
+            <div>
+                <div style="font-size:12px; opacity:0.7; font-weight:600; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Jami Kvadratura</div>
+                <div style="font-size:32px; font-weight:800; letter-spacing:-1px;">${m2Val}<span style="font-size:18px; font-weight:600; margin-left:4px; opacity:0.8;">m²</span></div>
+            </div>
+            <div style="width:52px; height:52px; background:rgba(255,255,255,0.1); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; backdrop-filter:blur(4px);">
+                📐
+            </div>
+        </div>
+
+        ${claimBtnHtml}
+        <button class="btn-secondary" style="width:100%; height:48px; border-radius:14px; font-weight:700; font-size:14px; margin-top:8px; border:1px solid #E2E8F0;" onclick="closeKvDetailModal()">✕ Yopish</button>
+    `;
     document.getElementById('kvDetailModal').classList.remove('hidden');
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }

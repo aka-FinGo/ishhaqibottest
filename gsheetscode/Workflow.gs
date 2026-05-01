@@ -107,7 +107,7 @@ function processWorkflowStep(rowId, auth, actorTgId) {
     // Update Dynamic Columns in Kvadratlar sheet
     if (nextStep.index > 1) {
        // Calculation: Base columns (0-11) are 12. Dynamic start at index 12.
-       // Step 2 starts at col 12, Step 3 at 15, etc.
+       // Step 2 starts at col 12, Step 3 at 16, etc. (4 columns per step)
        var startColIdx = 12 + (nextStep.index - 2) * 4;
        
        var userName = auth.username || 'Noma\'lum';
