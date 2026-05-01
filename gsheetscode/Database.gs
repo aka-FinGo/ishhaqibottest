@@ -22,7 +22,9 @@ var COL = {
   OVR_DELETE:   15,
   OVR_EXPORT:   16,
   OVR_VIEW_DASH:17,
-  LAVOZIM:      18
+  LAVOZIM:      18,
+  GURUH:        19,
+  IS_SARDOR:    20
 };
 
 var DATA_COL = {
@@ -52,7 +54,7 @@ var EMP_HEADERS = [
   "SuperAdmin","Direktor","Admin",
   "canViewAll","canEdit","canDelete","canExport","canViewDash",
   "Role","OverrideCanAdd","OverrideViewAll","OverrideEdit","OverrideDelete","OverrideExport","OverrideViewDash",
-  "Lavozim"
+  "Lavozim", "Guruh", "IsSardor"
 ];
 
 var WORKFLOW_HEADERS = [

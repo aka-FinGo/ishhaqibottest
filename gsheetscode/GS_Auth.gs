@@ -45,6 +45,8 @@ function checkUserRoles(tgId) {
   auth.isBoss     = emp.isSuperAdmin;
   auth.permissions = emp.permissions;
   auth.positions  = emp.positions || [];
+  auth.group      = emp.group || '';
+  auth.isSardor   = !!emp.isSardor;
   return auth;
 }
 

@@ -84,16 +84,44 @@ function processWorkflowStep(rowId, auth, actorTgId) {
       return { success: false, error: 'Sizda "' + nextStep.position + '" lavozimi yo\'q' };
     }
 
+    // Group Leader Check (for steps > 1)
+    if (nextStep.index > 1 && !auth.isSuperAdmin) {
+       // User says: "Qaqoqlovchi va yig`uvchi va boshqa yangi qo`shiladigan lavozimlar uchun... guruh sardoriga metr kvadrat hisoblanishi kerak"
+       if (!auth.isSardor) {
+         return { success: false, error: 'Faqat "Guruh Sardori" ushbu bosqichni tasdiqlay oladi' };
+       }
+    }
+
     // Update logistics
     logs.push({
       step: nextStep.index,
       uid:  String(actorTgId),
-      d:    new Date().toISOString()
+      d:    new Date().toISOString(),
+      group: auth.group || ''
     });
 
     sh.getRange(row, KV_COL.STEP_INDEX + 1).setValue(nextStep.index);
     sh.getRange(row, KV_COL.STATUS     + 1).setValue(nextStep.status);
     sh.getRange(row, KV_COL.STEP_LOGS  + 1).setValue(JSON.stringify(logs));
+
+    // Update Dynamic Columns in Kvadratlar sheet
+    if (nextStep.index > 1) {
+       // Calculation: Base columns (0-11) are 12. Dynamic start at index 12.
+       // Step 2 starts at col 12, Step 3 at 15, etc.
+       var startColIdx = 12 + (nextStep.index - 2) * 3;
+       
+       var userName = auth.username || 'Noma\'lum';
+       if (auth.group) userName += " (" + auth.group + ")";
+       
+       var totalM2 = Number(values[KV_COL.TOTAL_M2]) || 0;
+       
+       // Check if column exists (sanity check)
+       if (sh.getLastColumn() >= startColIdx + 3) {
+         sh.getRange(row, startColIdx + 1).setValue(userName);      // Hodim
+         sh.getRange(row, startColIdx + 2).setValue(totalM2);      // m2
+         sh.getRange(row, startColIdx + 3).setValue(new Date());   // Sana
+       }
+    }
 
     return { success: true };
   });
