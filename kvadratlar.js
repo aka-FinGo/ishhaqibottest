@@ -1,6 +1,6 @@
 let kvFullRecords = [];
 let kvFilteredRecords = [];
-const KV_ITEMS_PER_PAGE = 50;
+const KV_ITEMS_PER_PAGE = 15;
 let kvCurrentPage = 1;
 
 const KV_MONTHS_UZ = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
@@ -315,6 +315,9 @@ function applyKvFilters() {
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
     kvFilteredRecords = kvFullRecords.filter(rec => {
+        // Filtrlash: faqat rowId yoki no mavjud bo'lgan haqiqiy yozuvlarni qoldiramiz
+        if (!rec || (!rec.rowId && !rec.no)) return false;
+
         if (month !== 'all') {
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             if (cleanMonth !== month) return false;
