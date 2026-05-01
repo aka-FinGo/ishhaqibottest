@@ -43,6 +43,7 @@ function ensureKvadratInfrastructure_(sh) {
   config.forEach(function(s) {
     if (s.index > 1) {
       dynamicHeaders.push(s.position + " (Hodim)");
+      dynamicHeaders.push(s.position + " (Hodim ID)");
       dynamicHeaders.push(s.position + " (m2)");
       dynamicHeaders.push(s.position + " (Sana)");
     }

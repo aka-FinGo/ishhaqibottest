@@ -298,7 +298,18 @@ function showKvDetailModal(idx) {
         const stepCfg = config.find(s => s.index === log.step);
         const stepIdx = stepCfg ? (Number(stepCfg.index || 1) - 1) : 0;
         const phaseColors = getWorkflowStepColors(stepIdx, totalSteps);
-        const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => e.tgId == log.uid)?.username || log.uid);
+        
+        // Robust Name Resolution
+        let name = log.uid;
+        if (String(log.uid) === String(rec.ownerTgId)) {
+            name = rec.staffName;
+        } else if (String(log.uid) === String(telegramId)) {
+            name = myUsername;
+        } else if (globalEmployeeList && Array.isArray(globalEmployeeList)) {
+            const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+            if (emp) name = emp.username || emp.tgUsername || log.uid;
+        }
+        
         let logDisplay = escapeHtml(name);
         if (log.group) logDisplay += ` (${escapeHtml(log.group)})`;
         historyHtml += `<div style="border-left:2px solid ${phaseColors.bg};padding-left:12px;margin-bottom:12px;position:relative;"><div style="width:10px;height:10px;border-radius:50%;background:${phaseColors.bg};position:absolute;left:-6px;top:4px;"></div><div style="font-size:12px;font-weight:700;color:${phaseColors.color};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div><div style="font-size:11px;color:var(--text-muted);">${logDisplay} • ${new Date(log.d).toLocaleString('uz-UZ')}</div></div>`;

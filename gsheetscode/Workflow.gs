@@ -108,7 +108,7 @@ function processWorkflowStep(rowId, auth, actorTgId) {
     if (nextStep.index > 1) {
        // Calculation: Base columns (0-11) are 12. Dynamic start at index 12.
        // Step 2 starts at col 12, Step 3 at 15, etc.
-       var startColIdx = 12 + (nextStep.index - 2) * 3;
+       var startColIdx = 12 + (nextStep.index - 2) * 4;
        
        var userName = auth.username || 'Noma\'lum';
        if (auth.group) userName += " (" + auth.group + ")";
@@ -116,10 +116,11 @@ function processWorkflowStep(rowId, auth, actorTgId) {
        var totalM2 = Number(values[KV_COL.TOTAL_M2]) || 0;
        
        // Check if column exists (sanity check)
-       if (sh.getLastColumn() >= startColIdx + 3) {
+       if (sh.getLastColumn() >= startColIdx + 4) {
          sh.getRange(row, startColIdx + 1).setValue(userName);      // Hodim
-         sh.getRange(row, startColIdx + 2).setValue(totalM2);      // m2
-         sh.getRange(row, startColIdx + 3).setValue(new Date());   // Sana
+         sh.getRange(row, startColIdx + 2).setValue(String(actorTgId)); // Hodim ID
+         sh.getRange(row, startColIdx + 3).setValue(totalM2);      // m2
+         sh.getRange(row, startColIdx + 4).setValue(new Date());   // Sana
        }
     }
 
