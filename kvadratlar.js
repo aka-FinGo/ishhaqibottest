@@ -291,6 +291,7 @@ function showKvDetailModal(idx) {
         const nextColors = getWorkflowStepColors(nextStepIdx, totalSteps);
         claimBtnHtml = `<button class="btn-main" style="background:${nextColors.bg};color:${nextColors.color};margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
+    let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
         const totalSteps = config.length >= 2 ? config.length : 3;
