@@ -308,7 +308,7 @@ function showKvDetailModal(idx) {
     const status = rec.status || 'yangi';
     const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
     const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
-    const currentStepIdx = (rec.currentStep !== undefined && rec.currentStep !== null) ? Number(rec.currentStep) : 0;
+    const currentStepIdx = Number(rec.currentStep) || 1;
     
     let claimBtnHtml = '';
     const nextStep = config.find(s => s.index === currentStepIdx + 1);

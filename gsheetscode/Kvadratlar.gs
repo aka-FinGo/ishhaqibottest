@@ -167,9 +167,9 @@ function kvadratAdd(data, auth, actorTgId) {
       resolvedStaffName,       // Hodimlar ro'yxatidan olingan ism
       String(actorTgId),
       0,
-      0, // Step 0: Baseline (so Step 1 will be shown)
+      1, // Step 1: Kiritildi (Loyihachi bosqichi yakunlangan deb hisoblanadi)
       "yangi",
-      JSON.stringify([{ step: 0, uid: String(actorTgId), d: today.toISOString(), action: 'Kiritildi' }])
+      JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString(), action: 'Kiritildi' }])
     ]);
 
     var row = sh.getLastRow();
@@ -213,7 +213,7 @@ function kvadratGetAll(options) {
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
       staffName:         resolvedName,
       ownerTgId:         ownerTgId,
-      currentStep:       (row[KV_COL.STEP_INDEX] !== "" && row[KV_COL.STEP_INDEX] !== null) ? Number(row[KV_COL.STEP_INDEX]) : 0,
+      currentStep:       Number(row[KV_COL.STEP_INDEX]) || 1,
       status:            String(row[KV_COL.STATUS] || 'yangi'),
       logs:              (function(){
         try { return JSON.parse(row[KV_COL.STEP_LOGS] || '[]'); }

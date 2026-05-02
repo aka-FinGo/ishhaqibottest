@@ -77,7 +77,7 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
     var isStrict = getWorkflowStrictMode();
     
     // If targetStepIndex is not provided, try to find the next sequential step
-    var currentStepIdx = (values[KV_COL.STEP_INDEX] !== "" && values[KV_COL.STEP_INDEX] !== null) ? Number(values[KV_COL.STEP_INDEX]) : 0;
+    var currentStepIdx = Number(values[KV_COL.STEP_INDEX]) || 1;
     var stepToProcess = targetStepIndex ? config.find(s => s.index === Number(targetStepIndex)) : config.find(s => s.index === currentStepIdx + 1);
 
     if (!stepToProcess) return { success: false, error: 'Bajariladigan bosqich topilmadi' };
