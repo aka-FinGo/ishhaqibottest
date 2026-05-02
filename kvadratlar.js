@@ -355,18 +355,34 @@ function showKvDetailModal(idx) {
     const logs = rec.logs || [];
     logs.forEach(log => {
         let stepCfg = config.find(s => s.stepId === log.stepId);
-        if (!stepCfg && log.step) stepCfg = config.find(s => s.index === log.step);
+        if (!stepCfg && log.step) stepCfg = config.find(s => s.index === Number(log.step));
         
         let sColor = '#6366f1';
-        if (typeof getWorkflowStepColors === 'function' && stepCfg) {
+        let statusLabel = 'Bajarildi';
+        
+        if (stepCfg) {
             const totalSteps = config.length >= 2 ? config.length : 3;
-            sColor = getWorkflowStepColors(config.indexOf(stepCfg), totalSteps).bg || sColor;
+            const cfgIdx = config.indexOf(stepCfg);
+            sColor = (typeof getWorkflowStepColors === 'function') ? (getWorkflowStepColors(cfgIdx, totalSteps).bg || sColor) : sColor;
+            statusLabel = stepCfg.status || stepCfg.action || 'Bajarildi';
+        } else if (log.step) {
+            statusLabel = `Bosqich ${log.step}`;
         }
-        const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId) === String(log.uid))?.username || log.uid);
+        
+        // Hodim ismini aniqlash (window.employeeList ham tekshiriladi)
+        const empList = window.employeeList || (typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
+        let name = log.uid;
+        if (String(log.uid) === String(rec.ownerTgId)) {
+            name = rec.staffName;
+        } else if (Array.isArray(empList)) {
+            const emp = empList.find(e => String(e.tgId) === String(log.uid));
+            if (emp) name = emp.username;
+        }
+
         historyHtml += `
             <div style="border-left:2px solid ${sColor}; padding-left:12px; margin-bottom:12px; position:relative;">
                 <div style="width:10px; height:10px; border-radius:50%; background:${sColor}; position:absolute; left:-6px; top:4px;"></div>
-                <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
+                <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(statusLabel)}</div>
                 <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
             </div>`;
     });

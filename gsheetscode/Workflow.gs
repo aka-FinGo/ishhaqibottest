@@ -113,6 +113,18 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
     if (currentStepIndexInArray === -1 && !isNaN(parseInt(currentStepVal, 10))) {
         currentStepIndexInArray = config.findIndex(s => s.index === Number(currentStepVal));
     }
+    
+    // SERVER-SIDE SUPER FALLBACK
+    if (currentStepIndexInArray === -1 && logs.length > 0) {
+      var lastLog = logs[logs.length - 1];
+      if (lastLog.stepId) currentStepIndexInArray = config.findIndex(s => s.stepId === lastLog.stepId);
+      if (currentStepIndexInArray === -1 && lastLog.step) currentStepIndexInArray = config.findIndex(s => s.index === Number(lastLog.step));
+    }
+    
+    if (currentStepIndexInArray === -1 && values[KV_COL.STATUS]) {
+       // Agar hali ham topilmasa, lekin status bo'lsa, status bo'yicha qidirib ko'ramiz
+       currentStepIndexInArray = config.findIndex(s => s.status === values[KV_COL.STATUS]);
+    }
     if (currentStepIndexInArray === -1) currentStepIndexInArray = 0; // Agar topilmasa 1-bosqich deb faraz qilamiz
     
     var currentStepConfig = config[currentStepIndexInArray] || config[0];
