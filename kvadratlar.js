@@ -328,20 +328,21 @@ function showKvDetailModal(idx) {
     let claimBtnHtml = '';
     const nextStep = config[currentConfigIndex + 1];
     
-    // Lavozimlardagi turli xil tutuq belgilarini bir xil qilib solishtirish
-    let hasPoss = false;
+    // Ruxsatni tekshirish mantiqi (AssignedTgId va PositionID orqali)
+    let canClaim = false;
     if (nextStep) {
-        const normalizePos = (p) => String(p || '').trim().toLowerCase().replace(/['`‘]/g, "'");
-        const targetPos = normalizePos(nextStep.position);
-        for (let i = 0; i < myPoss.length; i++) {
-            if (normalizePos(myPoss[i]) === targetPos) {
-                hasPoss = true;
-                break;
-            }
+        if (myRole === 'SuperAdmin') {
+            canClaim = true;
+        } else if (nextStep.assignedTgId) {
+            // Agar faqat maxsus bitta xodimga biriktirilgan bo'lsa
+            if (String(window.myTgId) === String(nextStep.assignedTgId)) canClaim = true;
+        } else if (nextStep.positionId) {
+            // Agar butun boshli lavozimga berilgan bo'lsa
+            if (myPoss.includes(nextStep.positionId)) canClaim = true;
         }
     }
 
-    if (nextStep && (myRole === 'SuperAdmin' || hasPoss)) {
+    if (canClaim) {
         let btnColor = '#10B981';
         if (typeof getWorkflowStepColors === 'function') {
             const totalSteps = config.length >= 2 ? config.length : 3;

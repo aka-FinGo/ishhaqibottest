@@ -105,3 +105,93 @@ function migrateWorkflowToIDs() {
     message: "Migratsiya yakunlandi. " + kvChanges + " ta buyurtma yangilandi."
   };
 }
+
+/**
+ * Ushbu funksiya "Lavozimlar", "WorkflowSteps" va "Hodimlar" jadvallarini
+ * yagona PositionID tizimiga o'tkazadi.
+ */
+function migratePositionsToIDs() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var posSheet = ss.getSheetByName("Lavozimlar");
+  var wfSheet = ss.getSheetByName("WorkflowSteps");
+  var empSheet = ss.getSheetByName("Hodimlar");
+  
+  if (!posSheet) return { success: false, error: "Lavozimlar topilmadi" };
+
+  // 1. Lavozimlarga PositionID qo'shish
+  var posData = posSheet.getDataRange().getValues();
+  var posHeaders = posData[0];
+  if (posHeaders.indexOf("PositionID") === -1) {
+    posHeaders.push("PositionID");
+    posSheet.getRange(1, 1, 1, posHeaders.length).setValues([posHeaders])
+            .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  }
+
+  var nameToIdMap = {}; // {"Yig'uvchi": "pos_2"}
+  var hasChanges = false;
+
+  for (var i = 1; i < posData.length; i++) {
+    var pName = String(posData[i][0] || '').trim();
+    if (!pName) continue;
+    var pId = String(posData[i][2] || '').trim();
+    if (!pId) {
+      pId = "pos_" + i;
+      posSheet.getRange(i + 1, 3).setValue(pId);
+      hasChanges = true;
+    }
+    // Har xil tutuq belgilarini bitta qilib xaritaga solamiz
+    var normalName = pName.toLowerCase().replace(/['`‘]/g, "'");
+    nameToIdMap[normalName] = pId;
+  }
+
+  // 2. WorkflowSteps dagi PositionName ni PositionID ga o'zgartirish
+  if (wfSheet) {
+    var wfData = wfSheet.getDataRange().getValues();
+    var wfHeaders = wfData[0];
+    if (wfHeaders[1] === "PositionName") {
+      wfSheet.getRange(1, 2).setValue("PositionID");
+      hasChanges = true;
+    }
+    if (wfHeaders.indexOf("AssignedTgId") === -1) {
+      wfSheet.getRange(1, 9).setValue("AssignedTgId");
+      hasChanges = true;
+    }
+    
+    for (var w = 1; w < wfData.length; w++) {
+      var wPosName = String(wfData[w][1] || '').trim();
+      if (wPosName && wPosName.indexOf('pos_') !== 0) {
+        var nName = wPosName.toLowerCase().replace(/['`‘]/g, "'");
+        if (nameToIdMap[nName]) {
+          wfSheet.getRange(w + 1, 2).setValue(nameToIdMap[nName]);
+          hasChanges = true;
+        }
+      }
+    }
+  }
+
+  // 3. Hodimlar jadvalidagi Lavozimlarni PositionID ga almashtirish
+  if (empSheet) {
+    var empData = empSheet.getDataRange().getValues();
+    for (var e = 1; e < empData.length; e++) {
+      var empPosStr = String(empData[e][12] || '').trim(); // COL.LAVOZIM
+      if (empPosStr && empPosStr.indexOf('pos_') === -1) { // Faqatgina ism bo'lsa
+        var pList = empPosStr.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+        var idList = [];
+        for (var p = 0; p < pList.length; p++) {
+          var nPos = pList[p].toLowerCase().replace(/['`‘]/g, "'");
+          if (nameToIdMap[nPos]) idList.push(nameToIdMap[nPos]);
+        }
+        if (idList.length > 0) {
+          empSheet.getRange(e + 1, 13).setValue(idList.join(', '));
+          hasChanges = true;
+        }
+      }
+    }
+  }
+
+  if (hasChanges) {
+    incrementDataVersion();
+  }
+
+  return { success: true, message: "Lavozimlar PositionID tizimiga muvaffaqiyatli o'tkazildi!" };
+}

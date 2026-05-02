@@ -21,13 +21,14 @@ function getWorkflowConfig() {
     
     steps.push({
       index:    sIndex,
-      position: String(row[1] || '').trim(),
+      positionId: String(row[1] || '').trim(), // PositionName o'rniga endi PositionID o'qiymiz
       action:   String(row[2] || '').trim(),
       status:   String(row[3] || '').trim(),
       isStart:  Number(row[4]) === 1,
       isEnd:    Number(row[5]) === 1,
       stepId:   sId,
-      colStart: Number(row[7]) || 0
+      colStart: Number(row[7]) || 0,
+      assignedTgId: String(row[8] || '').trim()
     });
   }
   
@@ -51,8 +52,8 @@ function saveWorkflowConfig(steps) {
   });
 
   sh.clear();
-  sh.appendRow(["StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd", "StepID", "ColStart"]);
-  sh.getRange(1, 1, 1, 8).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  sh.appendRow(["StepIndex", "PositionID", "ActionLabel", "StatusLabel", "IsStart", "IsEnd", "StepID", "ColStart", "AssignedTgId"]);
+  sh.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
 
   if (steps && steps.length) {
     steps.forEach((s, idx) => {
@@ -72,13 +73,14 @@ function saveWorkflowConfig(steps) {
 
       sh.appendRow([
         idx + 1,
-        s.position,
+        s.positionId,
         s.action,
         s.status,
         s.isStart ? 1 : 0,
         s.isEnd ? 1 : 0,
         stepId,
-        colStart
+        colStart,
+        s.assignedTgId || ''
       ]);
     });
   }
@@ -135,10 +137,18 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
       return { success: false, error: 'Ushbu bosqich avval tasdiqlangan' };
     }
 
-    // Permission Check: Does user have the required technical position?
-    var userPositions = auth.positions || [];
-    if (!auth.isSuperAdmin && (!userPositions.indexOf || userPositions.indexOf(stepToProcess.position) === -1)) {
-      return { success: false, error: 'Sizda "' + stepToProcess.position + '" lavozimi yo\'q' };
+    // Permission Check: Specific user or PositionID?
+    if (!auth.isSuperAdmin) {
+      if (stepToProcess.assignedTgId) {
+        if (String(actorTgId) !== String(stepToProcess.assignedTgId)) {
+          return { success: false, error: 'Bu bosqich faqat maxsus biriktirilgan xodim uchun ruxsat etilgan' };
+        }
+      } else {
+        var userPositions = auth.positions || [];
+        if (!userPositions.indexOf || userPositions.indexOf(stepToProcess.positionId) === -1) {
+          return { success: false, error: 'Sizda bu bosqich uchun tegishli lavozim yo\'q' };
+        }
+      }
     }
 
     // Group Leader Check (for steps > 1)

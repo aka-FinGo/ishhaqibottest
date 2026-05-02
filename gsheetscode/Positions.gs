@@ -16,9 +16,12 @@ function getAllPositions() {
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0]) {
+      var posId = String(row[2] || '').trim();
+      if (!posId) posId = "pos_" + i; // Fallback
       positions.push({
         name: String(row[0] || '').trim(),
-        icon: String(row[1] || '').trim()
+        icon: String(row[1] || '').trim(),
+        id: posId
       });
     }
   }
@@ -34,15 +37,18 @@ function savePositions(list) {
   if (!sh) sh = ss.insertSheet("Lavozimlar");
 
   sh.clear();
-  sh.appendRow(["PositionName", "Icon"]);
-  sh.getRange(1, 1, 1, 2).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  sh.appendRow(["PositionName", "Icon", "PositionID"]);
+  sh.getRange(1, 1, 1, 3).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
 
   if (list && list.length) {
-    list.forEach(p => {
+    list.forEach(function(p, idx) {
       if (p.name) {
+        var pId = String(p.id || '').trim();
+        if (!pId) pId = "pos_" + new Date().getTime() + "_" + idx;
         sh.appendRow([
           p.name,
-          p.icon || ''
+          p.icon || '',
+          pId
         ]);
       }
     });

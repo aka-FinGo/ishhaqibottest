@@ -51,11 +51,11 @@ var EMP_HEADERS = [
 ];
 
 var WORKFLOW_HEADERS = [
-  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd", "StepID", "ColStart"
+  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd", "StepID", "ColStart", "AssignedTgId"
 ];
 
 var POSITIONS_HEADERS = [
-  "PositionName", "Icon"
+  "PositionName", "Icon", "PositionID"
 ];
 
 function getSheets() {
@@ -150,15 +150,15 @@ function ensureDataInfrastructure_(dataSheet) {
 function ensureWorkflowInfrastructure_(sh) {
   sh.clear(); sh.appendRow(WORKFLOW_HEADERS);
   sh.getRange(1, 1, 1, WORKFLOW_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1, 0, "step_1", 0]);
-  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0, 0, "step_2", 12]);
-  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0, 0, "step_3", 16]);
+  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1, 0, "step_1", 0, ""]);
+  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0, 0, "step_2", 12, ""]);
+  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0, 0, "step_3", 16, ""]);
 }
 
 function ensurePositionsInfrastructure_(sh) {
   sh.clear(); sh.appendRow(POSITIONS_HEADERS);
   sh.getRange(1, 1, 1, POSITIONS_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-  sh.appendRow(["Loyihachi", "📐"]); sh.appendRow(["Yig'uvchi", "🔧"]); sh.appendRow(["Qadoqlovchi", "📦"]);
+  sh.appendRow(["Loyihachi", "📐", "pos_1"]); sh.appendRow(["Yig'uvchi", "🔧", "pos_2"]); sh.appendRow(["Qadoqlovchi", "📦", "pos_3"]);
 }
 
 function getDataRows_() {
