@@ -28,3 +28,11 @@ animation:kvSpin 0.8s linear infinite;
 
 /* ADMIN WORKFLOW CHECKBOX FIX */
 .is-start-checkbox { -webkit-appearance: checkbox !important; appearance: checkbox !important; width: 22px !important; height: 22px !important; border: 2px solid var(--green) !important; cursor: pointer !important; accent-color: var(--green) !important; }
+
+/* PREMIUM TOGGLE SWITCH */
+.premium-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+.premium-switch input { opacity: 0; width: 0; height: 0; }
+.premium-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E2E8F0; transition: .4s; border-radius: 34px; }
+.premium-slider:before { position: absolute; content: "; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+input:checked + .premium-slider { background-color: #10B981; }
+input:checked + .premium-slider:before { transform: translateX(24px); }

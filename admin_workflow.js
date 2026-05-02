@@ -35,18 +35,19 @@ function renderWorkflowSteps() {
 
     // Add toggle for strict mode and button for stage configuration
     const topControls = `
-        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:15px; box-shadow:var(--shadow-sm);">
+        <div style="background:#fff; border:1px solid var(--border); border-radius:18px; padding:18px; margin-bottom:20px; box-shadow:var(--shadow-sm);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <div>
-                    <div style="font-size:14px; font-weight:700; color:var(--navy);">Qat'iy ketma-ketlik</div>
-                    <div style="font-size:11px; color:var(--text-muted);">Xodimlar faqat navbati kelgan bosqichni tasdiqlay oladi</div>
+                <div style="flex:1;">
+                    <div style="font-size:15px; font-weight:800; color:var(--navy);">Qat'iy ketma-ketlik</div>
+                    <div style="font-size:11px; color:var(--text-muted); line-height:1.3; margin-top:2px;">Xodimlar faqat navbati kelgan bosqichni tasdiqlay oladi</div>
                 </div>
-                <label class="switch-row" style="margin:0;">
+                <label class="premium-switch">
                     <input type="checkbox" id="strictWorkflowToggle" ${isStrict ? 'checked' : ''} onchange="toggleWorkflowStrict(this.checked)">
+                    <span class="premium-slider"></span>
                 </label>
             </div>
-            <button id="stageConfigBtn" class="btn-secondary" style="width: 100%; border-color:#3b82f6; color:#3b82f6; margin-top:5px;">
-                Boshlanish / Yakunlash bosqichi
+            <button id="stageConfigBtn" class="btn-secondary" style="width: 100%; height:44px; border-color:var(--blue); color:var(--blue); border-radius:12px; font-weight:700; background:rgba(59,130,246,0.05);">
+                ⚙️ Boshlanish / Yakunlash bosqichi
             </button>
         </div>
     `;
@@ -95,16 +96,9 @@ function renderWorkflowSteps() {
                 </div>
             </div>
 
-            <div style="margin-bottom:12px;">
+            <div style="margin-bottom:4px;">
                 <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">📊 Status (Amaldan keyin)</label>
                 <input type="text" class="status-input" data-idx="${idx}" value="${escapeHtml(step.status)}" placeholder="Masalan: Kesildi" style="border-radius:12px; font-weight:600;">
-            </div>
-
-            <div style="padding:10px; background:#F8FAFC; border-radius:12px; border:1px dashed #E2E8F0;">
-                <label style="display:flex; align-items:center; gap:10px; font-size:12px; cursor:pointer; font-weight:700; color:var(--navy);">
-                    <input type="checkbox" class="is-start-checkbox" data-idx="${idx}" ${step.isStart ? 'checked' : ''} style="width:20px; height:20px; cursor:pointer; accent-color:var(--green);">
-                    <span>Bu buyurtmani yaratadigan qadam (Start)</span>
-                </label>
             </div>
         </div>`;
     });
