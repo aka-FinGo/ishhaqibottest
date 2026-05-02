@@ -17,3 +17,11 @@ animation:kvSpin 0.8s linear infinite;
 /* BUTTON VISIBILITY IMPROVEMENTS */
 .btn-main { background: var(--green) !important; color: #fff !important; opacity: 1 !important; font-weight: 800 !important; }
 .btn-secondary { background: #F8FAFC !important; color: #475569 !important; border: 1.5px solid #E2E8F0 !important; }
+
+/* TOGGLE SWITCH STYLE */
+.switch-row { position: relative; display: inline-block; width: 46px; height: 24px; }
+.switch-row input { opacity: 0; width: 0; height: 0; }
+.switch-row::before { content: "; position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E2E8F0; transition: .4s; border-radius: 24px; }
+.switch-row::after { content: ; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.switch-row:has(input:checked)::before { background-color: #10B981; }
+.switch-row:has(input:checked)::after { transform: translateX(22px); }
