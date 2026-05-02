@@ -90,34 +90,21 @@ function renderWorkflowSteps() {
                     <select class="position-select" data-idx="${idx}" style="width:100%; border-radius:12px; font-weight:600;">
                         <option value="">-- Tanlang --</option>
                         ${TECHNICAL_POSITIONS.map(p => `
-                            <option value="${p.id || escapeHtml(p.name)}" ${step.positionId === p.id ? 'selected' : (step.position === p.name ? 'selected' : '')}>
+                            <option value="${escapeHtml(p.name)}" ${step.position === p.name ? 'selected' : ''}>
                                 ${p.icon} ${p.name}
                             </option>
                         `).join('')}
                     </select>
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">🔑 Maxsus Xodim (Ixtiyoriy)</label>
-                    <select class="assigned-tgid-select" data-idx="${idx}" style="width:100%; border-radius:12px; font-weight:600;">
-                        <option value="">-- Barchaga ruxsat (Lavozim bo'yicha) --</option>
-                        ${Array.isArray(window.employeeList) ? window.employeeList.map(emp => `
-                            <option value="${emp.tgId}" ${String(step.assignedTgId) === String(emp.tgId) ? 'selected' : ''}>
-                                ${escapeHtml(emp.username)}
-                            </option>
-                        `).join('') : ''}
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-row" style="margin-bottom:12px; display:flex; gap:10px;">
-                <div style="flex:1;">
                     <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">🔘 Tugma matni</label>
                     <input type="text" class="action-input" data-idx="${idx}" value="${escapeHtml(step.action)}" placeholder="Masalan: Men kesdim" style="border-radius:12px; font-weight:600;">
                 </div>
-                <div style="flex:1;">
-                    <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">📊 Status (Amaldan keyin)</label>
-                    <input type="text" class="status-input" data-idx="${idx}" value="${escapeHtml(step.status)}" placeholder="Masalan: Kesildi" style="border-radius:12px; font-weight:600;">
-                </div>
+            </div>
+
+            <div style="margin-bottom:4px;">
+                <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">📊 Status (Amaldan keyin)</label>
+                <input type="text" class="status-input" data-idx="${idx}" value="${escapeHtml(step.status)}" placeholder="Masalan: Kesildi" style="border-radius:12px; font-weight:600;">
             </div>
         </div>`;
     });
@@ -155,17 +142,7 @@ function attachWorkflowListeners() {
     container.querySelectorAll('.position-select').forEach(select => {
         select.addEventListener('change', (e) => {
             const idx = parseInt(e.target.dataset.idx);
-            updateStepData(idx, 'positionId', e.target.value);
-            // Qulaylik uchun position nomini ham saqlab qo'yamiz (garchi UI PositionID ga o'tgan bo'lsada)
-            const opt = e.target.options[e.target.selectedIndex];
-            if (opt && opt.text) updateStepData(idx, 'position', opt.text.trim().replace(/^[^\w\s]+/, '').trim());
-        });
-    });
-
-    container.querySelectorAll('.assigned-tgid-select').forEach(select => {
-        select.addEventListener('change', (e) => {
-            const idx = parseInt(e.target.dataset.idx);
-            updateStepData(idx, 'assignedTgId', e.target.value);
+            updateStepData(idx, 'position', e.target.value);
         });
     });
 
@@ -192,9 +169,7 @@ function updateStepData(idx, field, val) {
 
 function addNewWorkflowStep() {
     currentWorkflowSteps.push({
-        positionId: '',
         position: '',
-        assignedTgId: '',
         action: 'Bajardim',
         status: 'Bajarildi',
         isStart: false

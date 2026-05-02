@@ -51,11 +51,11 @@ var EMP_HEADERS = [
 ];
 
 var WORKFLOW_HEADERS = [
-  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd", "StepID", "ColStart", "AssignedTgId"
+  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart"
 ];
 
 var POSITIONS_HEADERS = [
-  "PositionName", "Icon", "PositionID"
+  "PositionName", "Icon"
 ];
 
 function getSheets() {
@@ -150,15 +150,15 @@ function ensureDataInfrastructure_(dataSheet) {
 function ensureWorkflowInfrastructure_(sh) {
   sh.clear(); sh.appendRow(WORKFLOW_HEADERS);
   sh.getRange(1, 1, 1, WORKFLOW_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1, 0, "step_1", 0, ""]);
-  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0, 0, "step_2", 12, ""]);
-  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0, 0, "step_3", 16, ""]);
+  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1]);
+  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0]);
+  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0]);
 }
 
 function ensurePositionsInfrastructure_(sh) {
   sh.clear(); sh.appendRow(POSITIONS_HEADERS);
   sh.getRange(1, 1, 1, POSITIONS_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-  sh.appendRow(["Loyihachi", "📐", "pos_1"]); sh.appendRow(["Yig'uvchi", "🔧", "pos_2"]); sh.appendRow(["Qadoqlovchi", "📦", "pos_3"]);
+  sh.appendRow(["Loyihachi", "📐"]); sh.appendRow(["Yig'uvchi", "🔧"]); sh.appendRow(["Qadoqlovchi", "📦"]);
 }
 
 function getDataRows_() {
@@ -246,16 +246,8 @@ function initUser(tgId, auth, data) {
   var allPositions   = (typeof getAllPositions === 'function') ? getAllPositions() : [];
   var empList        = (typeof buildUsernameMap === 'function') ? buildUsernameMap() : {};
 
-  // Fetch Kvadratlar (Measurements) data
-  var kvData = [];
-  try {
-    var kvRes = kvadratGetAll();
-    if (kvRes && kvRes.success) kvData = kvRes.data;
-  } catch(e) {}
-
   return {
     success: true,
-    dataVersion: getDataVersion(), // Smart Versioning
     inList: auth.inList,
     username: auth.username,
     canAdd: auth.canAdd,
@@ -269,8 +261,7 @@ function initUser(tgId, auth, data) {
     workflowConfig: workflowConfig,
     isWorkflowStrict: getWorkflowStrictMode(),
     data: userRecords,
-    employeeList: empList,
-    kvData: kvData
+    employeeList: empList
   };
 }
 
@@ -285,26 +276,5 @@ function getWorkflowStrictMode() {
 function setWorkflowStrictMode(isStrict) {
   var p = PropertiesService.getScriptProperties();
   p.setProperty('WORKFLOW_STRICT_MODE', isStrict ? '1' : '0');
-  incrementDataVersion(); // Sozlama o'zgarsa ham versiya o'zgaradi
   return { success: true };
-}
-
-/**
- * Smart Versioning System
- */
-function getDataVersion() {
-  var p = PropertiesService.getScriptProperties();
-  var v = p.getProperty('DATA_VERSION');
-  if (!v) {
-    v = '1';
-    p.setProperty('DATA_VERSION', v);
-  }
-  return v;
-}
-
-function incrementDataVersion() {
-  var p = PropertiesService.getScriptProperties();
-  var current = parseInt(p.getProperty('DATA_VERSION') || '1', 10);
-  p.setProperty('DATA_VERSION', String(current + 1));
-  resetDataCache_();
 }

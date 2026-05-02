@@ -28,7 +28,8 @@ function addRecord(data, auth, actorTgId) {
     notifyPayload = { employeeName: displayName, amountUZS: Number(data.amountUZS) || 0, amountUSD: Number(data.amountUSD) || 0, rate: Number(data.rate) || 0, comment: data.comment || '', date: parsedDate.display, actionPeriod: forPeriod };
     
     // OPTIMIZED: Reset data cache after write
-    incrementDataVersion();
+    resetDataCache_();
+    
     return { success: true, rowId: row };
   });
   if (!writeResult.success) return writeResult;
@@ -110,7 +111,7 @@ function selfEditRecord(data, actorTgId) {
     dataSheet.getRange(rowId, 7, 1, 3).setNumberFormats([['dd/MM/yyyy', '0', '@']]);
     addAuditLog_(actorTgId, 'edit_record', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), reason);
     
-    incrementDataVersion();
+    resetDataCache_();
     return { success: true };
   });
   return writeResult;
@@ -137,7 +138,7 @@ function selfDeleteRecord(rowId, actorTgId, reason) {
 
     dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'delete_record', rowIdNum, rowToRecordForAudit_(rowData), 'deleted', reasonText);
-    incrementDataVersion();
+    resetDataCache_();
     return { success: true };
   });
   return writeResult;

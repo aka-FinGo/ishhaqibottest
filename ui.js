@@ -90,44 +90,32 @@ let _appInitialized = false;
 let _appInitRetries = 0;
 const MAX_INIT_RETRIES = 3;
 
-// Eski kesh funksiyalari o'rniga AppCache ishlatiladi (cache.js da)
-
-let _syncToastEl = null;
-function showSyncToast() {
-    if (!_syncToastEl) {
-        _syncToastEl = document.createElement('div');
-        _syncToastEl.style.cssText = "position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.9); color:#fff; padding:10px 18px; border-radius:30px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; z-index:9999; backdrop-filter:blur(8px); box-shadow:0 10px 25px rgba(0,0,0,0.3); transition: opacity 0.3s; pointer-events:none;";
-        _syncToastEl.innerHTML = `<div class="kv-spinner" style="width:16px;height:16px;border-width:2px;border-top-color:#10B981;"></div><span>Sinxronizatsiya...</span>`;
-        document.body.appendChild(_syncToastEl);
-    }
-    _syncToastEl.style.display = 'flex';
-    _syncToastEl.style.opacity = '1';
-}
-function hideSyncToast() {
-    if (_syncToastEl) {
-        _syncToastEl.style.opacity = '0';
-        setTimeout(() => { if (_syncToastEl.style.opacity === '0') _syncToastEl.style.display = 'none'; }, 300);
-    }
-}
-
-async function forceSyncBackground() {
-    showSyncToast();
+function loadCachedData() {
     try {
-        const res = await apiRequest({
-            action: 'init',
-            clientVersion: AppCache.getVersion(),
-            firstName: user ? (user.first_name || '') : '',
-            lastName: user ? (user.last_name || '') : '',
-            tgUsername: user ? (user.username || '') : ''
-        });
-        if (res && res.success) {
-            applyDataFromServer(res, false);
-            AppCache.save(res);
+        const cachedData = localStorage.getItem('myFullRecords');
+        if (cachedData) {
+            const parsed = JSON.parse(cachedData);
+            if (Array.isArray(parsed)) {
+                myFullRecords = parsed;
+                myFilteredRecords = [...myFullRecords];
+                console.log('✅ Cache dan yuklandi:', myFullRecords.length, 'ta amal');
+                return true;
+            }
         }
-    } catch(e) {
-        console.warn('Sync error:', e);
-    } finally {
-        hideSyncToast();
+    } catch (e) {
+        console.error('❌ Cache parsing xatosi:', e);
+        try { localStorage.removeItem('myFullRecords'); } catch (e2) { }
+    }
+    return false;
+}
+
+function saveCacheData(data) {
+    try {
+        localStorage.setItem('myFullRecords', JSON.stringify(data));
+        console.log('✅ Cache saqlandi');
+    } catch (e) {
+        if (e.name === 'QuotaExceededError') console.warn('⚠️ localStorage quota to\'lgan');
+        else console.error('❌ Cache save xatosi:', e);
     }
 }
 
@@ -135,146 +123,80 @@ async function initializeApp() {
     try {
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
-
-        // 1. Keshdan o'qish (Tezkor UI)
-        const cached = AppCache.get();
-        if (cached && cached.payload) {
-            console.log('🚀 Keshdan ma\'lumotlar yuklanmoqda...');
-            applyDataFromServer(cached.payload, true);
+        const cacheLoaded = loadCachedData();
+        if (cacheLoaded && myFullRecords.length > 0) {
+            if (typeof initMyFilters === 'function') initMyFilters();
         }
-
-        showSyncToast(); // Ma'lumotlarni tekshirish boshlandi
-
-        // 2. Serverdan yangiliklarni tekshirish
-        console.log('🔄 Serverdan yangilanishlar tekshirilmoqda...');
-        const localVersion = AppCache.getVersion();
-        
-        const res = await apiRequest({
+        console.log('🔄 Server dan ma\'lumot yuklanyapti...');
+        const data = await apiRequest({
             action: 'init',
-            clientVersion: localVersion,
             firstName: user ? (user.first_name || '') : '',
             lastName: user ? (user.last_name || '') : '',
             tgUsername: user ? (user.username || '') : ''
         }, { timeoutMs: 30000 });
 
-        hideSyncToast(); // Tekshiruv tugadi
-
-        if (res && res.success) {
-            // Agar versiya o'zgargan bo'lsa yoki kesh bo'sh bo'lsa yangilaymiz
-            if (String(res.dataVersion) !== String(localVersion) || !cached) {
-                console.log('🆕 Yangi ma\'lumotlar olindi (v' + res.dataVersion + ')');
-                applyDataFromServer(res, false);
-                AppCache.save(res);
+        if (data && data.success) {
+            myFullRecords = data.data || [];
+            saveCacheData(myFullRecords);
+            myFilteredRecords = [...myFullRecords];
+            myInList = data.inList || false;
+            myCanAdd = data.canAdd !== false;
+            myUsername = data.username || '';
+            adminContactId = String(data.adminContactId || '').trim();
+            const _empRaw = data.employeeList || {};
+            window._kvEmpMap = _empRaw;
+            globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
+            const displayName = myUsername || firstName;
+            document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
+            if (data.isSuperAdmin) myRole = 'SuperAdmin';
+            else if (data.isAdmin) myRole = 'Admin';
+            else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
+            else myRole = 'User';
+            myIsSardor = !!data.isSardor;
+            const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
+            if (myRole === 'SuperAdmin') {
+                myPermissions = {
+                    canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true,
+                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
+                    isWorkflowStrict: !!data.isWorkflowStrict
+                };
             } else {
-                console.log('✅ Ma\'lumotlar joriy holatda (v' + localVersion + ')');
+                const p = data.permissions || {};
+                myPermissions = {
+                    canViewAll: asBool(p.canViewAll), canEdit: asBool(p.canEdit), canDelete: asBool(p.canDelete),
+                    canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash),
+                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
+                    isWorkflowStrict: !!data.isWorkflowStrict
+                };
             }
-            _appInitialized = true;
-            startBackgroundCheck(); // Fondagi tekshiruvni yoqish
-        } else {
-            throw new Error(res?.error || 'Init xatosi');
-        }
+            if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
+            canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
+            canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
+            if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+            if (myRole === 'SuperAdmin' || myRole === 'Admin') {
+                const navAdmin = document.getElementById('nav-admin');
+                if (navAdmin) navAdmin.classList.remove('hidden');
+            }
+            setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
+            setCompanyExportVisibility(canExportCompanyData);
+            updateContactAdminButton();
+            if (data.autoAdded) showToastMsg("✅ Siz ro'yxatga qo'shildingiz. Ruxsat uchun admin bilan bog'laning.");
+            if (typeof initMyFilters === 'function') initMyFilters();
+            _appInitialized = true; _appInitRetries = 0;
+        } else { throw new Error(data?.error || 'Init xatosi'); }
     } catch (error) {
-        hideSyncToast();
         console.error('❌ Init xatosi:', error);
-        if (!_appInitialized && _appInitRetries < MAX_INIT_RETRIES) {
+        if (_appInitRetries < MAX_INIT_RETRIES) {
             _appInitRetries++;
-            setTimeout(initializeApp, 2000 * _appInitRetries);
+            const delay = 2000 * _appInitRetries;
+            setTimeout(initializeApp, delay);
+            showToastMsg(`⚠️ Qayta urinish... (${_appInitRetries}/${MAX_INIT_RETRIES})`);
+        } else {
+            _appInitialized = false;
+            showToastMsg('❌ ' + (error.message || "Server bilan bog'lanib bo'mladi"), true);
+            if (myFullRecords.length > 0) showToastMsg('📱 Offline rejimda ishlayapti (cache ma\'lumotlar)', false);
         }
     }
-}
-
-function applyDataFromServer(data, isFromCache = false) {
-    if (!data) return;
-
-    myFullRecords = data.data || [];
-    myFilteredRecords = [...myFullRecords];
-    myInList = data.inList || false;
-    myCanAdd = data.canAdd !== false;
-    myUsername = data.username || '';
-    adminContactId = String(data.adminContactId || '').trim();
-    
-    const _empRaw = data.employeeList || {};
-    window._kvEmpMap = _empRaw;
-    globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
-
-    // Kvadratlar (Measurements) ma'lumotlarini yangilash
-    kvFullRecords = data.kvData || [];
-    if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
-    
-    const displayName = myUsername || (user ? user.first_name : 'Xodim');
-    document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
-
-    if (data.isSuperAdmin) myRole = 'SuperAdmin';
-    else if (data.isAdmin) myRole = 'Admin';
-    else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
-    else myRole = 'User';
-
-    myIsSardor = !!data.isSardor;
-    const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
-    
-    const p = data.permissions || {};
-    myPermissions = {
-        canViewAll: asBool(p.canViewAll) || myRole === 'SuperAdmin',
-        canEdit: asBool(p.canEdit) || myRole === 'SuperAdmin',
-        canDelete: asBool(p.canDelete) || myRole === 'SuperAdmin',
-        canExport: asBool(p.canExport) || myRole === 'SuperAdmin',
-        canViewDash: asBool(p.canViewDash) || myRole === 'SuperAdmin',
-        positions: data.positions || [],
-        workflowConfig: data.workflowConfig || [],
-        allPositions: data.allPositions || [],
-        isWorkflowStrict: !!data.isWorkflowStrict
-    };
-
-    if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
-    
-    canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
-    canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
-
-    if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
-    
-    const navAdmin = document.getElementById('nav-admin');
-    if (navAdmin) navAdmin.classList.toggle('hidden', myRole !== 'SuperAdmin' && myRole !== 'Admin');
-
-    setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
-    setCompanyExportVisibility(canExportCompanyData);
-    updateContactAdminButton();
-
-    if (typeof initMyFilters === 'function') initMyFilters();
-    
-    // Agar keshdan bo'lsa yoki odatiy yangilanish bo'lsa, joriy ochiq sahifalarni darhol yangilaymiz
-    if (isFromCache || _appInitialized) {
-        applyMyFilters();
-        
-        const activeTab = document.querySelector('.tab-content.active');
-        if (activeTab && activeTab.id === 'kvadratTab') {
-            if (typeof applyKvFilters === 'function') applyKvFilters();
-        }
-        if (activeTab && activeTab.id === 'dashboardTab') {
-            const dashActions = document.getElementById('dashboardActionsArea');
-            if (dashActions && !dashActions.classList.contains('hidden')) {
-                if (typeof loadAdminData === 'function') loadAdminData();
-            }
-        }
-    } else if (isFromCache) {
-        applyMyFilters(); // birinchi yuklanishda keshdan chizish
-    }
-}
-
-let _bgCheckTimer = null;
-function startBackgroundCheck() {
-    if (_bgCheckTimer) clearInterval(_bgCheckTimer);
-    _bgCheckTimer = setInterval(async () => {
-        try {
-            const localVersion = AppCache.getVersion();
-            const res = await apiRequest({ action: 'check_updates' });
-            if (res && res.success && String(res.dataVersion) !== String(localVersion)) {
-                console.log('🔄 Fondagi yangilanish aniqlandi. Versiya:', res.dataVersion);
-                forceSyncBackground();
-            }
-        } catch (e) {
-            console.warn('⚠️ Fondagi tekshiruvda xato:', e);
-        }
-    }, 60000); // Har 60 soniyada tekshirish
 }
 
 window.addEventListener('load', initializeApp);

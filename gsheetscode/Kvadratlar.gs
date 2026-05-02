@@ -39,57 +39,67 @@ function getKvadratSheet() {
 
 function ensureKvadratInfrastructure_(sh) {
   var config = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
-  
-  // Asosiy ustunlar uchun joy tayyorlash
-  var requiredBase = KV_BASE_HEADERS.length;
-  if (sh.getMaxColumns() < requiredBase) {
-    sh.insertColumnsAfter(sh.getMaxColumns(), requiredBase - sh.getMaxColumns());
-  }
-  sh.getRange(1, 1, 1, requiredBase).setValues([KV_BASE_HEADERS])
-    .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-  
-  // Maksimal kerakli ustunni aniqlash
-  var maxRequiredCol = requiredBase;
+  var dynamicHeaders = [];
   config.forEach(function(s) {
-    if (s.colStart > 0 && s.colStart + 4 > maxRequiredCol) {
-      maxRequiredCol = s.colStart + 4;
+    if (s.index > 1) {
+      dynamicHeaders.push(s.position + " (Hodim)");
+      dynamicHeaders.push(s.position + " (Hodim ID)");
+      dynamicHeaders.push(s.position + " (m2)");
+      dynamicHeaders.push(s.position + " (Sana)");
     }
   });
   
-  if (sh.getMaxColumns() < maxRequiredCol) {
-    sh.insertColumnsAfter(sh.getMaxColumns(), maxRequiredCol - sh.getMaxColumns());
+  var fullHeaders = KV_BASE_HEADERS.concat(dynamicHeaders);
+  var currentLastCol = sh.getLastColumn();
+  var currentHeaders = sh.getRange(1, 1, 1, Math.max(currentLastCol, 1)).getValues()[0];
+  
+  var updateNeeded = false;
+  var infraVer = "v3"; // Version to force format updates
+  var currentInfra = sh.getRange(1, 1).getComment();
+  
+  if (currentLastCol < fullHeaders.length || currentInfra !== infraVer) {
+    updateNeeded = true;
+  } else {
+    for (var i = 0; i < fullHeaders.length; i++) {
+      if (String(currentHeaders[i] || '') !== fullHeaders[i]) {
+        updateNeeded = true;
+        break;
+      }
+    }
   }
   
-  var infraVer = "v4"; // Version to force format updates
-  var currentInfra = sh.getRange(1, 1).getComment();
-  var isNewInfra = currentInfra !== infraVer;
-  
-  // Faqat joriy (faol) bosqichlar uchun ustunlarni yozish
-  config.forEach(function(s) {
-    if (s.colStart > 0) {
-      var startCol = s.colStart + 1; // 1-based index
-      sh.getRange(1, startCol).setValue(s.position + " (Hodim)")
-        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-      sh.getRange(1, startCol + 1).setValue(s.position + " (Hodim ID)")
-        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-      sh.getRange(1, startCol + 2).setValue(s.position + " (m2)")
-        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-      sh.getRange(1, startCol + 3).setValue(s.position + " (Sana)")
-        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-      
-      // Formats
-      if (isNewInfra) {
+  if (updateNeeded) {
+    var requiredTotal = fullHeaders.length;
+    if (sh.getMaxColumns() < requiredTotal) {
+      sh.insertColumnsAfter(sh.getMaxColumns(), requiredTotal - sh.getMaxColumns());
+    }
+    sh.getRange(1, 1, 1, requiredTotal).setValues([fullHeaders])
+      .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+    
+    // Set column formats to prevent data type issues (e.g. m2 being seen as date)
+    config.forEach(function(s) {
+      if (s.index > 1) {
+        var startCol = 13 + (s.index - 2) * 4; // 1-indexed column
+        // Row 2 to bottom
         var numRows = sh.getMaxRows() - 1;
         if (numRows > 0) {
+          // Col 1: Hodim (Text), Col 2: Hodim ID (Text)
           sh.getRange(2, startCol, numRows, 2).setNumberFormat("@");
+          // Col 3: m2 (Number)
           sh.getRange(2, startCol + 2, numRows, 1).setNumberFormat("0.00");
+          // Col 4: Sana (Date)
           sh.getRange(2, startCol + 3, numRows, 1).setNumberFormat("dd.mm.yyyy HH:mm");
         }
       }
-    }
-  });
+    });
 
-  if (isNewInfra) sh.getRange(1, 1).setComment(infraVer);
+    sh.getRange(1, 1).setComment(infraVer);
+
+    // If it's a migration (e.g. Yil column was missing at index 3)
+    if (currentHeaders[3] !== "Yil") {
+       migrateKvadratYears();
+    }
+  }
 }
 
 // Sanitize month string — accepts "_03", "03", "3" → stores "_03"
@@ -147,9 +157,6 @@ function kvadratAdd(data, auth, actorTgId) {
       orderNo = String(nextNo);
     }
 
-    var config = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
-    var firstStep = config[0] || { stepId: "step_1", status: "yangi", index: 1 };
-
     sh.appendRow([
       today,
       orderNo,
@@ -160,9 +167,9 @@ function kvadratAdd(data, auth, actorTgId) {
       resolvedStaffName,       // Hodimlar ro'yxatidan olingan ism
       String(actorTgId),
       0,
-      firstStep.stepId, // O'zgarmas ID yozamiz
-      firstStep.status,
-      JSON.stringify([{ stepId: firstStep.stepId, step: firstStep.index, uid: String(actorTgId), d: today.toISOString() }])
+      0, // Step 0: Baseline (so Step 1 will be shown)
+      "yangi",
+      JSON.stringify([{ step: 0, uid: String(actorTgId), d: today.toISOString(), action: 'Kiritildi' }])
     ]);
 
     var row = sh.getLastRow();
@@ -171,7 +178,6 @@ function kvadratAdd(data, auth, actorTgId) {
     sh.getRange(row, 4).setNumberFormat('@'); // Year format
     sh.getRange(row, 5).setNumberFormat('0.00');
 
-    incrementDataVersion();
     return { success: true, rowId: row };
   });
 }
@@ -207,7 +213,7 @@ function kvadratGetAll(options) {
       orderName:  String(row[KV_COL.ORDER_NAME] || ''),
       staffName:         resolvedName,
       ownerTgId:         ownerTgId,
-      currentStep:       Number(row[KV_COL.STEP_INDEX]) || 1,
+      currentStep:       (row[KV_COL.STEP_INDEX] !== "" && row[KV_COL.STEP_INDEX] !== null) ? Number(row[KV_COL.STEP_INDEX]) : 0,
       status:            String(row[KV_COL.STATUS] || 'yangi'),
       logs:              (function(){
         try { return JSON.parse(row[KV_COL.STEP_LOGS] || '[]'); }
@@ -267,7 +273,6 @@ function kvadratEdit(data, auth, actorTgId) {
     }
     
     addAuditLog_(actorTgId, 'kvadrat_edit', row, null, null, reason);
-    incrementDataVersion();
     return { success: true };
   });
 }
@@ -323,7 +328,6 @@ function kvadratDelete(data, auth, actorTgId) {
 
     sh.getRange(row, KV_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'kvadrat_delete', row, null, 'deleted', reason);
-    incrementDataVersion();
     return { success: true };
   });
 }

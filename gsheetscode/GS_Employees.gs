@@ -117,7 +117,6 @@ function addHodim(data) {
     newRow[COL.IS_SARDOR]    = data.isSardor ? 1 : 0;
     empSheet.appendRow(newRow);
     resetEmployeeCache_();
-    incrementDataVersion();
     return { success: true };
   });
 }
@@ -156,7 +155,6 @@ function updateHodim(data) {
         updateRow[COL.IS_SARDOR]    = data.isSardor ? 1 : 0;
         empSheet.getRange(r, 1, 1, EMP_HEADERS.length).setValues([updateRow]);
         resetEmployeeCache_();
-        incrementDataVersion();
         return { success: true };
       }
     }
@@ -173,7 +171,6 @@ function deleteHodim(tgId) {
       if (String(rows[i][0]) === String(tgId)) {
         empSheet.deleteRow(i + 1);
         resetEmployeeCache_();
-        incrementDataVersion();
         return { success: true };
       }
     }
@@ -212,7 +209,6 @@ function autoRegisterPendingUserIfMissing_(tgId, data, source) {
   if (!writeRes.success) return writeRes;
   if (created) {
     resetEmployeeCache_();
-    incrementDataVersion();
     notifyAccessRequestToAdmin_(targetId, displayName, source || 'init');
   }
   return { success:true, created:created };

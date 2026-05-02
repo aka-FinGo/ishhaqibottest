@@ -11,6 +11,10 @@ function kvMonthLabel(monthStr) {
     return (num >= 1 && num <= 12) ? KV_MONTHS_UZ[num] : (clean || '—');
 }
 
+function normalizePos(s) {
+    return String(s || '').toLowerCase().replace(/['`‘’]/g, "'").trim();
+}
+
 let activeKvProc = null;
 
 function kvShowProc(msg) {
@@ -38,6 +42,21 @@ function kvHideProc(isSuccess = null, finalMsg = null) {
     }
 }
 
+async function kvRefreshAll(btn) {
+    if (btn) btn.classList.add('spinning');
+    kvShowProc('Ma\'lumotlar yangilanmoqda...');
+    try {
+        await initKvadratTab();
+        kvHideProc(true, 'Yangilandi');
+    } catch (e) {
+        kvHideProc(false, 'Yangilashda xato');
+    } finally {
+        const refreshButtons = document.querySelectorAll('.btn-secondary[title="Yangilash"]');
+        refreshButtons.forEach(button => {
+            button.classList.remove('spinning');
+        });
+    }
+}
 
 function populateKvadratMeta(staffList) {
     const staffFilter = document.getElementById('kvFilterStaff');
@@ -109,37 +128,31 @@ async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
     
-    // Agar ilova ishga tushib bo'lgan bo'lsa (yoki keshda ma'lumot bo'lsa) darhol chizamiz
-    if ((typeof _appInitialized !== 'undefined' && _appInitialized) || (kvFullRecords && kvFullRecords.length > 0)) {
-        applyKvFilters();
-    } else {
-        listContainer.innerHTML = `
-            <div class="skeleton-container" style="padding:0;">
-                ${Array(5).fill('<div class="skeleton-card" style="margin-bottom:12px;"><div class="skeleton" style="height:20px;width:40%;margin-bottom:10px;"></div><div class="skeleton" style="height:15px;width:70%;"></div></div>').join('')}
-            </div>`;
+    listContainer.innerHTML = `
+        <div class="skeleton-container" style="padding:0;">
+            ${Array(5).fill('<div class="skeleton-card" style="margin-bottom:12px;"><div class="skeleton" style="height:20px;width:40%;margin-bottom:10px;"></div><div class="skeleton" style="height:15px;width:70%;"></div></div>').join('')}
+        </div>`;
+
+    try {
+        const data = await apiRequest({ action: 'kvadrat_get_all' });
+        if (data.success) {
+            kvFullRecords = data.data || [];
+            if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
+            applyKvFilters();
+        } else {
+            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Xato: ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
+        }
+    } catch (e) {
+        console.error('initKvadratTab error:', e);
+        // Agar network error bo'lsa va dashboardda ma'lumot bo'lsa - favqulodda sinxronlash
+        if (typeof kvDashboardRecords !== 'undefined' && kvDashboardRecords.length > 0) {
+            kvFullRecords = kvDashboardRecords;
+            applyKvFilters();
+        } else {
+            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
+        }
     }
     updateKvFabVisibility();
-}
-
-async function kvRefreshAll(btn) {
-    if (btn) btn.classList.add('spinning');
-    kvShowProc('Ma\'lumotlar yangilanmoqda...');
-    try {
-        // Force refresh by clearing cache and calling init
-        AppCache.clear();
-        await initializeApp();
-        if (document.getElementById('kvadratTab').classList.contains('active')) {
-             applyKvFilters();
-        }
-        kvHideProc(true, 'Yangilandi');
-    } catch (e) {
-        kvHideProc(false, 'Yangilashda xato');
-    } finally {
-        const refreshButtons = document.querySelectorAll('.btn-secondary[title="Yangilash"], .kv-refresh-btn');
-        refreshButtons.forEach(button => {
-            button.classList.remove('spinning');
-        });
-    }
 }
 
 function updateKvFabVisibility() {
@@ -222,27 +235,13 @@ function renderKvList() {
             const monthClean = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             
             // Workflow vizualizatsiyasi
+            const currentStepIdx = Number(rec.currentStep) || 1;
             const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
-            const currentStepVal = String(rec.currentStep || '');
-            let currentConfigIndex = config.findIndex(s => s.stepId === currentStepVal);
-            if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
-                currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
-            }
-            
-            // SUPER FALLBACK: Agar CurrentStep ishlamasa, tarix (logs) dagi eng oxirgisini olamiz
-            if (currentConfigIndex === -1 && rec.logs && rec.logs.length > 0) {
-                const lastLog = rec.logs[rec.logs.length - 1];
-                if (lastLog.stepId) currentConfigIndex = config.findIndex(s => s.stepId === lastLog.stepId);
-                if (currentConfigIndex === -1 && lastLog.step) currentConfigIndex = config.findIndex(s => s.index === lastLog.step);
-            }
-            
-            if (currentConfigIndex === -1) currentConfigIndex = 0;
-            
             const totalSteps = config.length >= 2 ? config.length : 3;
             
             let phaseColor = '#CBD5E1'; // default gray
             if (typeof getWorkflowStepColors === 'function') {
-                const colors = getWorkflowStepColors(currentConfigIndex, totalSteps);
+                const colors = getWorkflowStepColors(Math.max(0, currentStepIdx - 1), totalSteps);
                 phaseColor = colors.bg || phaseColor;
             }
 
@@ -309,80 +308,38 @@ function showKvDetailModal(idx) {
     const status = rec.status || 'yangi';
     const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
     const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
-    
-    const currentStepVal = String(rec.currentStep || '');
-    let currentConfigIndex = config.findIndex(s => s.stepId === currentStepVal);
-    if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
-        currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
-    }
-    
-    // SUPER FALLBACK: Agar CurrentStep ishlamasa, tarix (logs) dagi eng oxirgisini olamiz
-    if (currentConfigIndex === -1 && rec.logs && rec.logs.length > 0) {
-        const lastLog = rec.logs[rec.logs.length - 1];
-        if (lastLog.stepId) currentConfigIndex = config.findIndex(s => s.stepId === lastLog.stepId);
-        if (currentConfigIndex === -1 && lastLog.step) currentConfigIndex = config.findIndex(s => s.index === lastLog.step);
-    }
-    
-    if (currentConfigIndex === -1) currentConfigIndex = 0;
+    const currentStepIdx = (rec.currentStep !== undefined && rec.currentStep !== null) ? Number(rec.currentStep) : 0;
     
     let claimBtnHtml = '';
-    const nextStep = config[currentConfigIndex + 1];
+    const nextStep = config.find(s => s.index === currentStepIdx + 1);
     
-    // Ruxsatni tekshirish mantiqi (AssignedTgId va PositionID orqali)
-    let canClaim = false;
-    if (nextStep) {
-        if (myRole === 'SuperAdmin') {
-            canClaim = true;
-        } else if (nextStep.assignedTgId) {
-            // Agar faqat maxsus bitta xodimga biriktirilgan bo'lsa
-            if (String(window.myTgId) === String(nextStep.assignedTgId)) canClaim = true;
-        } else if (nextStep.positionId) {
-            // Agar butun boshli lavozimga berilgan bo'lsa
-            if (myPoss.includes(nextStep.positionId)) canClaim = true;
-        }
-    }
+    // Lavozimlarni normallashtirib solishtiramiz
+    const normalizedMyPoss = myPoss.map(p => normalizePos(p));
+    const nextStepPos = nextStep ? normalizePos(nextStep.position) : '';
 
-    if (canClaim) {
+    if (nextStep && (myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(nextStepPos) !== -1)) {
         let btnColor = '#10B981';
         if (typeof getWorkflowStepColors === 'function') {
             const totalSteps = config.length >= 2 ? config.length : 3;
-            btnColor = getWorkflowStepColors(currentConfigIndex + 1, totalSteps).bg || btnColor;
+            btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
         }
-        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork('${rec.rowId}')">✅ ${escapeHtml(nextStep.action)}</button>`;
+        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
     let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
-        let stepCfg = config.find(s => s.stepId === log.stepId);
-        if (!stepCfg && log.step) stepCfg = config.find(s => s.index === Number(log.step));
-        
+        const stepCfg = config.find(s => s.index === log.step);
         let sColor = '#6366f1';
-        let statusLabel = 'Bajarildi';
-        
-        if (stepCfg) {
+        if (typeof getWorkflowStepColors === 'function') {
             const totalSteps = config.length >= 2 ? config.length : 3;
-            const cfgIdx = config.indexOf(stepCfg);
-            sColor = (typeof getWorkflowStepColors === 'function') ? (getWorkflowStepColors(cfgIdx, totalSteps).bg || sColor) : sColor;
-            statusLabel = stepCfg.status || stepCfg.action || 'Bajarildi';
-        } else if (log.step) {
-            statusLabel = `Bosqich ${log.step}`;
+            sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
         }
-        
-        // Hodim ismini aniqlash (window.employeeList ham tekshiriladi)
-        const empList = window.employeeList || (typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
-        let name = log.uid;
-        if (String(log.uid) === String(rec.ownerTgId)) {
-            name = rec.staffName;
-        } else if (Array.isArray(empList)) {
-            const emp = empList.find(e => String(e.tgId) === String(log.uid));
-            if (emp) name = emp.username;
-        }
-
+        const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId) === String(log.uid))?.username || log.uid);
         historyHtml += `
             <div style="border-left:2px solid ${sColor}; padding-left:12px; margin-bottom:12px; position:relative;">
                 <div style="width:10px; height:10px; border-radius:50%; background:${sColor}; position:absolute; left:-6px; top:4px;"></div>
-                <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(statusLabel)}</div>
+                <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
                 <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
             </div>`;
     });
@@ -567,17 +524,7 @@ async function saveKv() {
         if (data.success) {
             showToastMsg('✅ Saqlandi');
             closeKvModal();
-            // Optimistic Update: Yangi yoki tahrirlangan ma'lumotni keshga yalandan qo'shib qo'yish
-            if (rowId) {
-                const idx = kvFullRecords.findIndex(r => String(r.rowId) === String(rowId));
-                if (idx !== -1) {
-                    kvFullRecords[idx] = { ...kvFullRecords[idx], no: orderNumber, orderName, totalM2, staffName, month: `_${month}`, year };
-                }
-            } else {
-                kvFullRecords.unshift({ rowId: data.rowId || Date.now(), no: orderNumber, orderName, totalM2, staffName, month: `_${month}`, year, currentStep: 1, logs: [] });
-            }
-            applyKvFilters();
-            forceSyncBackground(); // Haqiqiy saqlanganini fonda tekshirish
+            initKvadratTab();
         } else {
             showToastMsg('❌ ' + (data.error || 'Xato'), true);
         }
@@ -612,10 +559,7 @@ async function deleteKv(rowId) {
         const data = await apiRequest({ action: 'kvadrat_delete', rowId, reason });
         if (data.success) {
             kvHideProc(true, 'O\'chirildi');
-            // Optimistic
-            kvFullRecords = kvFullRecords.filter(r => String(r.rowId) !== String(rowId));
-            applyKvFilters();
-            forceSyncBackground();
+            initKvadratTab();
         } else {
             kvHideProc(false, data.error || 'Xato');
         }
@@ -630,33 +574,7 @@ async function claimKvWork(rowId) {
         const data = await apiRequest({ action: 'kvadrat_claim', rowId });
         if (data.success) {
             kvHideProc(true, 'Bajarildi!');
-            // Optimistic Update
-            const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
-            if (rec) {
-                const config = myPermissions.workflowConfig || [];
-                const currentStepVal = String(rec.currentStep || '');
-                let currentConfigIndex = config.findIndex(s => s.stepId === currentStepVal);
-                if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
-                    currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
-                }
-                
-                // SUPER FALLBACK
-                if (currentConfigIndex === -1 && rec.logs && rec.logs.length > 0) {
-                    const lastLog = rec.logs[rec.logs.length - 1];
-                    if (lastLog.stepId) currentConfigIndex = config.findIndex(s => s.stepId === lastLog.stepId);
-                    if (currentConfigIndex === -1 && lastLog.step) currentConfigIndex = config.findIndex(s => s.index === lastLog.step);
-                }
-                
-                if (currentConfigIndex === -1) currentConfigIndex = 0;
-                
-                const nextStep = config[currentConfigIndex + 1];
-                if (nextStep) {
-                    rec.currentStep = nextStep.stepId || ("step_" + nextStep.index);
-                    rec.status = nextStep.status;
-                }
-            }
-            applyKvFilters();
-            forceSyncBackground(); // Asl holatni serverdan tasdiqlash
+            initKvadratTab();
         } else {
             kvHideProc(false, data.error || 'Xato');
         }
