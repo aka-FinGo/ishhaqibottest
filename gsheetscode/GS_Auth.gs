@@ -116,23 +116,14 @@ function buildModelFromRoleAndOverrides_(roleKey, overrides) {
 }
 
 function hasNewPermissionModel_(row) {
-  if (String(row[COL.ROLE] || '').trim()) return true;
-  return parseOverrideBit_(row[COL.OVR_CAN_ADD]) !== null ||
-         parseOverrideBit_(row[COL.OVR_VIEW_ALL]) !== null ||
-         parseOverrideBit_(row[COL.OVR_EDIT]) !== null ||
-         parseOverrideBit_(row[COL.OVR_DELETE]) !== null ||
-         parseOverrideBit_(row[COL.OVR_EXPORT]) !== null ||
-         parseOverrideBit_(row[COL.OVR_VIEW_DASH]) !== null;
+  // Simplified: If it has a Role, it's the new model. Overrides columns are gone from sheet.
+  return !!String(row[COL.ROLE] || '').trim();
 }
 
 function readOverridesFromRow_(row) {
+  // Overrides are no longer stored in the sheet.
   return {
-    canAdd: parseOverrideBit_(row[COL.OVR_CAN_ADD]),
-    canViewAll: parseOverrideBit_(row[COL.OVR_VIEW_ALL]),
-    canEdit: parseOverrideBit_(row[COL.OVR_EDIT]),
-    canDelete: parseOverrideBit_(row[COL.OVR_DELETE]),
-    canExport: parseOverrideBit_(row[COL.OVR_EXPORT]),
-    canViewDash: parseOverrideBit_(row[COL.OVR_VIEW_DASH])
+    canAdd: null, canViewAll: null, canEdit: null, canDelete: null, canExport: null, canViewDash: null
   };
 }
 

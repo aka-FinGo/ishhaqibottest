@@ -46,7 +46,7 @@ function showCustomConfirm(title, message, confirmText, cancelText, requireReaso
     let overlay = document.getElementById(overlayId);
     if (overlay) overlay.remove();
     const html = `
-        <div id="${overlayId}" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1001;backdrop-filter:blur(4px);">
+        <div id="${overlayId}" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:3000;backdrop-filter:blur(4px);">
             <div style="background:white;border-radius:16px;padding:24px;margin:20px;max-width:90%;width:350px;box-shadow:0 10px 25px rgba(0,0,0,0.2);animation:modalSlideIn 0.3s cubic-bezier(0.16,1,0.3,1);">
                 <h3 style="margin:0 0 12px;color:#1e293b;font-size:18px;">${title}</h3>
                 <p style="color:#64748b;margin:0 0 20px;font-size:14px;line-height:1.5;">${message}</p>
