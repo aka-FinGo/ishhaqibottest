@@ -197,8 +197,23 @@ function applyDataFromServer(data, isFromCache = false) {
 
     if (typeof initMyFilters === 'function') initMyFilters();
     
-    // Agar keshdan bo'lsa, xarajatlar ro'yxatini darhol chizamiz
-    if (isFromCache) applyMyFilters();
+    // Agar keshdan bo'lsa yoki odatiy yangilanish bo'lsa, joriy ochiq sahifalarni darhol yangilaymiz
+    if (isFromCache || _appInitialized) {
+        applyMyFilters();
+        
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'kvadratTab') {
+            if (typeof applyKvFilters === 'function') applyKvFilters();
+        }
+        if (activeTab && activeTab.id === 'dashboardTab') {
+            const dashActions = document.getElementById('dashboardActionsArea');
+            if (dashActions && !dashActions.classList.contains('hidden')) {
+                if (typeof loadAdminData === 'function') loadAdminData();
+            }
+        }
+    } else if (isFromCache) {
+        applyMyFilters(); // birinchi yuklanishda keshdan chizish
+    }
 }
 
 let _bgCheckTimer = null;

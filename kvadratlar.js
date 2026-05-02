@@ -109,8 +109,8 @@ async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
     
-    // Agar keshda ma'lumot bo'lsa, darhol chizamiz
-    if (kvFullRecords && kvFullRecords.length > 0) {
+    // Agar ilova ishga tushib bo'lgan bo'lsa (yoki keshda ma'lumot bo'lsa) darhol chizamiz
+    if ((typeof _appInitialized !== 'undefined' && _appInitialized) || (kvFullRecords && kvFullRecords.length > 0)) {
         applyKvFilters();
     } else {
         listContainer.innerHTML = `
