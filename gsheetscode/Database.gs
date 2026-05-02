@@ -51,7 +51,7 @@ var EMP_HEADERS = [
 ];
 
 var WORKFLOW_HEADERS = [
-  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart"
+  "StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd", "StepID", "ColStart"
 ];
 
 var POSITIONS_HEADERS = [
@@ -150,9 +150,9 @@ function ensureDataInfrastructure_(dataSheet) {
 function ensureWorkflowInfrastructure_(sh) {
   sh.clear(); sh.appendRow(WORKFLOW_HEADERS);
   sh.getRange(1, 1, 1, WORKFLOW_HEADERS.length).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1]);
-  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0]);
-  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0]);
+  sh.appendRow([1, "Loyihachi", "Kiritish", "Yangi", 1, 0, "step_1", 0]);
+  sh.appendRow([2, "Yig'uvchi", "Men yig'dim", "Yig'ildi", 0, 0, "step_2", 12]);
+  sh.appendRow([3, "Qadoqlovchi", "Men qadoqladim", "Tayyor", 0, 0, "step_3", 16]);
 }
 
 function ensurePositionsInfrastructure_(sh) {

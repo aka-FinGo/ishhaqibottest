@@ -39,67 +39,57 @@ function getKvadratSheet() {
 
 function ensureKvadratInfrastructure_(sh) {
   var config = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
-  var dynamicHeaders = [];
+  
+  // Asosiy ustunlar uchun joy tayyorlash
+  var requiredBase = KV_BASE_HEADERS.length;
+  if (sh.getMaxColumns() < requiredBase) {
+    sh.insertColumnsAfter(sh.getMaxColumns(), requiredBase - sh.getMaxColumns());
+  }
+  sh.getRange(1, 1, 1, requiredBase).setValues([KV_BASE_HEADERS])
+    .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  
+  // Maksimal kerakli ustunni aniqlash
+  var maxRequiredCol = requiredBase;
   config.forEach(function(s) {
-    if (s.index > 1) {
-      dynamicHeaders.push(s.position + " (Hodim)");
-      dynamicHeaders.push(s.position + " (Hodim ID)");
-      dynamicHeaders.push(s.position + " (m2)");
-      dynamicHeaders.push(s.position + " (Sana)");
+    if (s.colStart > 0 && s.colStart + 4 > maxRequiredCol) {
+      maxRequiredCol = s.colStart + 4;
     }
   });
   
-  var fullHeaders = KV_BASE_HEADERS.concat(dynamicHeaders);
-  var currentLastCol = sh.getLastColumn();
-  var currentHeaders = sh.getRange(1, 1, 1, Math.max(currentLastCol, 1)).getValues()[0];
-  
-  var updateNeeded = false;
-  var infraVer = "v3"; // Version to force format updates
-  var currentInfra = sh.getRange(1, 1).getComment();
-  
-  if (currentLastCol < fullHeaders.length || currentInfra !== infraVer) {
-    updateNeeded = true;
-  } else {
-    for (var i = 0; i < fullHeaders.length; i++) {
-      if (String(currentHeaders[i] || '') !== fullHeaders[i]) {
-        updateNeeded = true;
-        break;
-      }
-    }
+  if (sh.getMaxColumns() < maxRequiredCol) {
+    sh.insertColumnsAfter(sh.getMaxColumns(), maxRequiredCol - sh.getMaxColumns());
   }
   
-  if (updateNeeded) {
-    var requiredTotal = fullHeaders.length;
-    if (sh.getMaxColumns() < requiredTotal) {
-      sh.insertColumnsAfter(sh.getMaxColumns(), requiredTotal - sh.getMaxColumns());
-    }
-    sh.getRange(1, 1, 1, requiredTotal).setValues([fullHeaders])
-      .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
-    
-    // Set column formats to prevent data type issues (e.g. m2 being seen as date)
-    config.forEach(function(s) {
-      if (s.index > 1) {
-        var startCol = 13 + (s.index - 2) * 4; // 1-indexed column
-        // Row 2 to bottom
+  var infraVer = "v4"; // Version to force format updates
+  var currentInfra = sh.getRange(1, 1).getComment();
+  var isNewInfra = currentInfra !== infraVer;
+  
+  // Faqat joriy (faol) bosqichlar uchun ustunlarni yozish
+  config.forEach(function(s) {
+    if (s.colStart > 0) {
+      var startCol = s.colStart + 1; // 1-based index
+      sh.getRange(1, startCol).setValue(s.position + " (Hodim)")
+        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      sh.getRange(1, startCol + 1).setValue(s.position + " (Hodim ID)")
+        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      sh.getRange(1, startCol + 2).setValue(s.position + " (m2)")
+        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      sh.getRange(1, startCol + 3).setValue(s.position + " (Sana)")
+        .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      
+      // Formats
+      if (isNewInfra) {
         var numRows = sh.getMaxRows() - 1;
         if (numRows > 0) {
-          // Col 1: Hodim (Text), Col 2: Hodim ID (Text)
           sh.getRange(2, startCol, numRows, 2).setNumberFormat("@");
-          // Col 3: m2 (Number)
           sh.getRange(2, startCol + 2, numRows, 1).setNumberFormat("0.00");
-          // Col 4: Sana (Date)
           sh.getRange(2, startCol + 3, numRows, 1).setNumberFormat("dd.mm.yyyy HH:mm");
         }
       }
-    });
-
-    sh.getRange(1, 1).setComment(infraVer);
-
-    // If it's a migration (e.g. Yil column was missing at index 3)
-    if (currentHeaders[3] !== "Yil") {
-       migrateKvadratYears();
     }
-  }
+  });
+
+  if (isNewInfra) sh.getRange(1, 1).setComment(infraVer);
 }
 
 // Sanitize month string — accepts "_03", "03", "3" → stores "_03"

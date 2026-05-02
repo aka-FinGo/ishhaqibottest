@@ -222,13 +222,19 @@ function renderKvList() {
             const monthClean = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             
             // Workflow vizualizatsiyasi
-            const currentStepIdx = Number(rec.currentStep) || 1;
             const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+            const currentStepVal = String(rec.currentStep || '');
+            let currentConfigIndex = config.findIndex(s => s.stepId === currentStepVal);
+            if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
+                currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
+            }
+            if (currentConfigIndex === -1) currentConfigIndex = 0;
+            
             const totalSteps = config.length >= 2 ? config.length : 3;
             
             let phaseColor = '#CBD5E1'; // default gray
             if (typeof getWorkflowStepColors === 'function') {
-                const colors = getWorkflowStepColors(Math.max(0, currentStepIdx - 1), totalSteps);
+                const colors = getWorkflowStepColors(currentConfigIndex, totalSteps);
                 phaseColor = colors.bg || phaseColor;
             }
 
@@ -295,27 +301,35 @@ function showKvDetailModal(idx) {
     const status = rec.status || 'yangi';
     const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
     const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
-    const currentStepIdx = Number(rec.currentStep) || 1;
+    
+    const currentStepVal = String(rec.currentStep || '');
+    let currentConfigIndex = config.findIndex(s => s.stepId === currentStepVal);
+    if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
+        currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
+    }
+    if (currentConfigIndex === -1) currentConfigIndex = 0;
     
     let claimBtnHtml = '';
-    const nextStep = config.find(s => s.index === currentStepIdx + 1);
+    const nextStep = config[currentConfigIndex + 1];
     if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
         let btnColor = '#10B981';
         if (typeof getWorkflowStepColors === 'function') {
             const totalSteps = config.length >= 2 ? config.length : 3;
-            btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
+            btnColor = getWorkflowStepColors(currentConfigIndex + 1, totalSteps).bg || btnColor;
         }
-        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
+        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork('${rec.rowId}')">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
     let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {
-        const stepCfg = config.find(s => s.index === log.step);
+        let stepCfg = config.find(s => s.stepId === log.stepId);
+        if (!stepCfg && log.step) stepCfg = config.find(s => s.index === log.step);
+        
         let sColor = '#6366f1';
-        if (typeof getWorkflowStepColors === 'function') {
+        if (typeof getWorkflowStepColors === 'function' && stepCfg) {
             const totalSteps = config.length >= 2 ? config.length : 3;
-            sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
+            sColor = getWorkflowStepColors(config.indexOf(stepCfg), totalSteps).bg || sColor;
         }
         const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId) === String(log.uid))?.username || log.uid);
         historyHtml += `
@@ -572,7 +586,19 @@ async function claimKvWork(rowId) {
             // Optimistic Update
             const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
             if (rec) {
-                rec.currentStep = (Number(rec.currentStep) || 1) + 1;
+                const config = myPermissions.workflowConfig || [];
+                const currentStepVal = String(rec.currentStep || '');
+                let currentConfigIndex = config.findIndex(s => s.stepId === currentStepVal);
+                if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
+                    currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
+                }
+                if (currentConfigIndex === -1) currentConfigIndex = 0;
+                
+                const nextStep = config[currentConfigIndex + 1];
+                if (nextStep) {
+                    rec.currentStep = nextStep.stepId;
+                    rec.status = nextStep.status;
+                }
             }
             applyKvFilters();
             forceSyncBackground(); // Asl holatni serverdan tasdiqlash
