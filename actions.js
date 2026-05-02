@@ -38,7 +38,7 @@ async function saveEdit(){
     // Ruxsatni tekshirish
     const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
     const canEditAll = isAdmin && myPermissions.canEdit;
-    const isOwner = String(r.tgId) === String(telegramId);
+    const isOwner = String(r.telegramId) === String(telegramId);
 
     if (!canEditAll && !isOwner) {
         showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni tahrirlay olasiz', true);
@@ -110,7 +110,7 @@ async function deleteRecord(rowId) {
 
     const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
     const canDeleteAll = isAdmin && myPermissions.canDelete;
-    const isOwner = String(r.tgId) === String(telegramId);
+    const isOwner = String(r.telegramId) === String(telegramId);
 
     if (!canDeleteAll && !isOwner) {
         showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni o\'chira olasiz', true);
@@ -142,7 +142,7 @@ async function deleteOwnRecord(rowId) {
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    if (String(r.tgId) !== String(telegramId)) {
+    if (String(r.telegramId) !== String(telegramId)) {
         showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni o\'chira olasiz', true);
         return;
     }

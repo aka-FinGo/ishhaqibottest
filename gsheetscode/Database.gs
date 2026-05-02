@@ -231,6 +231,7 @@ function initUser(tgId, auth, data) {
     if (String(row[DATA_COL.TG_ID]) === targetId) {
       userRecords.push({
         rowId: i + 1,
+        telegramId: targetId,
         amountUZS: Number(row[DATA_COL.AMOUNT_UZS]) || 0,
         amountUSD: Number(row[DATA_COL.AMOUNT_USD]) || 0,
         rate: Number(row[DATA_COL.RATE]) || 0,
