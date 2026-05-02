@@ -124,7 +124,22 @@ function _initKvFormYears() {
 async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
-    listContainer.innerHTML = `<div class="kv-table-wrap"><table class="kv-table"><thead><tr><th>№</th><th>Buyurtma №</th><th>Oy</th><th>m²</th><th>ST</th></tr></thead><tbody>${Array(5).fill('<tr><td colspan="5"><div class="skeleton" style="height:25px;margin:5px 0;"></div></tr>').join('')}</tbody></table></div>`;
+    
+    // Yaxshilangan skeleton loading
+    listContainer.innerHTML = `
+        <div class="kv-table-wrap" style="border:none; box-shadow:none;">
+            ${Array(6).fill(`
+                <div class="skeleton-card" style="margin-bottom:12px; border-radius:16px;">
+                    <div class="skeleton" style="height:20px; width:40%; margin-bottom:10px;"></div>
+                    <div class="skeleton" style="height:14px; width:70%; margin-bottom:15px;"></div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div class="skeleton" style="height:24px; width:60px; border-radius:12px;"></div>
+                        <div class="skeleton" style="height:24px; width:100px; border-radius:12px;"></div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+
     try {
         const data = await apiRequest({
             action: 'kvadrat_get_all'
@@ -136,10 +151,22 @@ async function initKvadratTab() {
             }
             applyKvFilters();
         } else {
-            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
+            listContainer.innerHTML = `
+                <div class="empty-state" style="background:#fff; border:1px solid var(--border); border-radius:24px; padding:40px 20px; text-align:center;">
+                    <div style="font-size:48px; margin-bottom:16px;">⚠️</div>
+                    <p style="color:var(--red); font-weight:700;">❌ Yuklashda xato yuz berdi</p>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(data.error || 'Server xatosi')}</p>
+                    <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 24px; margin-top:16px;">🔄 Qayta urinish</button>
+                </div>`;
         }
     } catch (e) {
-        listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
+        listContainer.innerHTML = `
+            <div class="empty-state" style="background:#fff; border:1px solid var(--border); border-radius:24px; padding:40px 20px; text-align:center;">
+                <div style="font-size:48px; margin-bottom:16px;">🌐</div>
+                <p style="color:var(--red); font-weight:700;">❌ Tarmoq xatosi</p>
+                <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(e.message)}</p>
+                <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 24px; margin-top:16px;">🔄 Qayta urinish</button>
+            </div>`;
     }
     updateKvFabVisibility();
 }
@@ -166,18 +193,34 @@ function renderKvList() {
     const container = document.getElementById('kvList');
     const totalDisplay = document.getElementById('kvTotalM2');
     if (!container) return;
-    if (!kvFilteredRecords.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📐</div>
-                <p>Ushbu filtrlar bo'yicha ma'lumotlar topilmadi</p>
-                <span style="font-size:12px; color:var(--text-light); margin-top:8px; display:block;">Boshqa filtrlarni sinab ko'ring yoki ma'lumotni yangilang</span>
-            </div>`;
-        if (totalDisplay) totalDisplay.innerText = '0';
-        return;
-    }
 
-    let lastDavr = null;
+    try {
+        if (!kvFilteredRecords || !kvFilteredRecords.length) {
+            container.innerHTML = `
+                <div class="empty-state" style="background:#fff; border:2px dashed #CBD5E1; border-radius:24px; padding:60px 20px; text-align:center; margin:20px 0;">
+                    <div class="empty-icon" style="font-size:48px; margin-bottom:16px;">📏</div>
+                    <p style="font-size:16px; font-weight:700; color:#1E293B; margin:0;">Ma'lumotlar topilmadi</p>
+                    <p style="font-size:13px; color:#64748B; margin-top:8px;">Tanlangan filtrlar bo'yicha hech qanday buyurtma mavjud emas.</p>
+                    <button class="btn-secondary" onclick="kvRefreshAll()" style="width:auto; padding:8px 20px; margin-top:16px;">🔄 Yangilash</button>
+                </div>`;
+            if (totalDisplay) totalDisplay.innerText = '0';
+            return;
+        }
+
+        const totalM2ForFiltered = kvFilteredRecords.reduce((sum, rec) => sum + (Number(rec.totalM2) || 0), 0);
+        if (totalDisplay) {
+            totalDisplay.innerText = totalM2ForFiltered.toLocaleString('uz-UZ', { maximumFractionDigits: 1 });
+        }
+
+        let lastDavr = null;
+        const sortedKvData = [...kvFilteredRecords].sort((a, b) => {
+            const davrA = a.year && a.month ? `${a.year}-${String(a.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', a.date, '');
+            const davrB = b.year && b.month ? `${b.year}-${String(b.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', b.date, '');
+            if (davrB !== davrA) return davrB.localeCompare(davrA);
+            const noA = parseInt(a.no, 10) || 0;
+            const noB = parseInt(b.no, 10) || 0;
+            return noB - noA;
+        });
     const sortedKvData = [...kvFilteredRecords].sort((a, b) => {
         // Yil va Oy bo'yicha saralash (Davr)
         const davrA = a.year && a.month ? `${a.year}-${String(a.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', a.date, '');
@@ -263,10 +306,12 @@ function renderKvList() {
     container.innerHTML = '';
     container.appendChild(fragment);
 
-    if (totalDisplay) totalDisplay.innerText = totalM2ForFiltered.toLocaleString('uz-UZ', {
-        maximumFractionDigits: 2
-    });
     if (typeof renderKvWorkerStats === 'function') renderKvWorkerStats(kvFilteredRecords);
+
+    } catch (err) {
+        console.error('renderKvList error:', err);
+        container.innerHTML = `<div class="empty-state" style="color:var(--red); padding:20px; text-align:center;">❌ Ro'yxatni chizishda xato: ${escapeHtml(err.message)}</div>`;
+    }
 }
 
 function goToKvPage(page) {
