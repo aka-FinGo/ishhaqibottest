@@ -146,24 +146,35 @@ async function initKvadratTab() {
         });
         if (data.success) {
             kvFullRecords = data.data || [];
+            console.log('✅ Kvadrat records loaded:', kvFullRecords.length);
+            
+            if (kvFullRecords.length === 0) {
+                showToastMsg('ℹ️ Serverdan 0 ta ma\'lumot keldi (Jadval bo\'sh bo\'lishi mumkin)');
+            } else {
+                showToastMsg(`✅ ${kvFullRecords.length} ta ma'lumot yuklandi`);
+            }
+
             if (typeof kvDashboardRecords !== 'undefined') {
                 kvDashboardRecords = kvFullRecords;
             }
             applyKvFilters();
         } else {
+            const errorMsg = data.error || 'Server xatosi';
+            console.error('❌ Kvadrat load error:', errorMsg);
             listContainer.innerHTML = `
                 <div class="empty-state" style="background:#fff; border:1px solid var(--border); border-radius:24px; padding:40px 20px; text-align:center;">
                     <div style="font-size:48px; margin-bottom:16px;">⚠️</div>
                     <p style="color:var(--red); font-weight:700;">❌ Yuklashda xato yuz berdi</p>
-                    <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(data.error || 'Server xatosi')}</p>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(errorMsg)}</p>
                     <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 24px; margin-top:16px;">🔄 Qayta urinish</button>
                 </div>`;
         }
     } catch (e) {
+        console.error('❌ Kvadrat network/js error:', e);
         listContainer.innerHTML = `
             <div class="empty-state" style="background:#fff; border:1px solid var(--border); border-radius:24px; padding:40px 20px; text-align:center;">
                 <div style="font-size:48px; margin-bottom:16px;">🌐</div>
-                <p style="color:var(--red); font-weight:700;">❌ Tarmoq xatosi</p>
+                <p style="color:var(--red); font-weight:700;">❌ Tizimda xato yuz berdi</p>
                 <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(e.message)}</p>
                 <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 24px; margin-top:16px;">🔄 Qayta urinish</button>
             </div>`;
