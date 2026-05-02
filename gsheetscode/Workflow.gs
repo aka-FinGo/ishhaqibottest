@@ -58,35 +58,48 @@ function saveWorkflowConfig(steps) {
 }
 
 /**
- * Validates and processes the next step in an order's workflow.
+ * Validates and processes a specific step in an order's workflow.
+ * Now supports independent step completion (steps can be done out of order).
  */
-function processWorkflowStep(rowId, auth, actorTgId) {
+function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
   return withWriteLock_(function() {
     var sh = getKvadratSheet();
     var row = parseInt(rowId, 10);
     if (!row || row <= 1 || row > sh.getLastRow()) return { success: false, error: 'Buyurtma topilmadi' };
 
     var values = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
-    var currentStepIdx = Number(values[KV_COL.STEP_INDEX]) || 1;
     var logs = [];
     try {
       logs = JSON.parse(values[KV_COL.STEP_LOGS] || '[]');
     } catch(e) {}
 
     var config = getWorkflowConfig();
-    var nextStep = config.find(s => s.index === currentStepIdx + 1);
+    var isStrict = getWorkflowStrictMode();
+    
+    // If targetStepIndex is not provided, try to find the next sequential step
+    var currentStepIdx = Number(values[KV_COL.STEP_INDEX]) || 1;
+    var stepToProcess = targetStepIndex ? config.find(s => s.index === Number(targetStepIndex)) : config.find(s => s.index === currentStepIdx + 1);
 
-    if (!nextStep) return { success: false, error: 'Ushbu buyurtma yakuniga yetgan' };
+    if (!stepToProcess) return { success: false, error: 'Bajariladigan bosqich topilmadi' };
+    
+    // STRICT MODE CHECK: If strict, must follow order (currentStepIdx + 1)
+    if (isStrict && stepToProcess.index !== currentStepIdx + 1) {
+      return { success: false, error: 'Qat\'iy tartib yoqilgan. Siz faqat keyingi bosqichni (' + (currentStepIdx + 1) + ') tasdiqlay olasiz.' };
+    }
+
+    // Check if this specific step is already done
+    if (logs.some(l => l.step === stepToProcess.index)) {
+      return { success: false, error: 'Ushbu bosqich avval tasdiqlangan' };
+    }
 
     // Permission Check: Does user have the required technical position?
     var userPositions = auth.positions || [];
-    if (!auth.isSuperAdmin && (!userPositions.indexOf || userPositions.indexOf(nextStep.position) === -1)) {
-      return { success: false, error: 'Sizda "' + nextStep.position + '" lavozimi yo\'q' };
+    if (!auth.isSuperAdmin && (!userPositions.indexOf || userPositions.indexOf(stepToProcess.position) === -1)) {
+      return { success: false, error: 'Sizda "' + stepToProcess.position + '" lavozimi yo\'q' };
     }
 
     // Group Leader Check (for steps > 1)
-    if (nextStep.index > 1 && !auth.isSuperAdmin) {
-       // User says: "Qaqoqlovchi va yig`uvchi va boshqa yangi qo`shiladigan lavozimlar uchun... guruh sardoriga metr kvadrat hisoblanishi kerak"
+    if (stepToProcess.index > 1 && !auth.isSuperAdmin) {
        if (!auth.isSardor) {
          return { success: false, error: 'Faqat "Guruh Sardori" ushbu bosqichni tasdiqlay oladi' };
        }
@@ -94,21 +107,27 @@ function processWorkflowStep(rowId, auth, actorTgId) {
 
     // Update logistics
     logs.push({
-      step: nextStep.index,
+      step: stepToProcess.index,
       uid:  String(actorTgId),
       d:    new Date().toISOString(),
       group: auth.group || ''
     });
 
-    sh.getRange(row, KV_COL.STEP_INDEX + 1).setValue(nextStep.index);
-    sh.getRange(row, KV_COL.STATUS     + 1).setValue(nextStep.status);
+    // Update the main status only if this step is "next" or "higher" than current, 
+    // or if we want the status to reflect the "latest" activity.
+    // For now, let's update status if it's a step > currentStepIdx
+    if (stepToProcess.index > currentStepIdx) {
+      sh.getRange(row, KV_COL.STEP_INDEX + 1).setValue(stepToProcess.index);
+      sh.getRange(row, KV_COL.STATUS     + 1).setValue(stepToProcess.status);
+    }
+    
     sh.getRange(row, KV_COL.STEP_LOGS  + 1).setValue(JSON.stringify(logs));
 
     // Update Dynamic Columns in Kvadratlar sheet
-    if (nextStep.index > 1) {
+    if (stepToProcess.index > 1) {
        // Calculation: Base columns (0-11) are 12. Dynamic start at index 12.
        // Step 2 starts at col 12, Step 3 at 16, etc. (4 columns per step)
-       var startColIdx = 12 + (nextStep.index - 2) * 4;
+       var startColIdx = 12 + (stepToProcess.index - 2) * 4;
        
        var userName = auth.username || 'Noma\'lum';
        if (auth.group) userName += " (" + auth.group + ")";
@@ -121,6 +140,12 @@ function processWorkflowStep(rowId, auth, actorTgId) {
          sh.getRange(row, startColIdx + 2).setValue(String(actorTgId)); // Hodim ID
          sh.getRange(row, startColIdx + 3).setValue(totalM2);      // m2
          sh.getRange(row, startColIdx + 4).setValue(new Date());   // Sana
+         
+         // Format the newly filled columns
+         sh.getRange(row, startColIdx + 1).setNumberFormat('@'); // Text
+         sh.getRange(row, startColIdx + 2).setNumberFormat('@'); // Text ID
+         sh.getRange(row, startColIdx + 3).setNumberFormat('0.00'); // m2
+         sh.getRange(row, startColIdx + 4).setNumberFormat('dd.mm.yyyy HH:mm'); // Date
        }
     }
 

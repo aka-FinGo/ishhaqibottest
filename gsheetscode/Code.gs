@@ -182,7 +182,7 @@ function doPost(e) {
 
       case "kvadrat_claim":
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
-        result = processWorkflowStep(data.rowId, auth, tgId);
+        result = processWorkflowStep(data.rowId, auth, tgId, data.stepIndex);
         break;
 
       case "workflow_get_config":
@@ -192,6 +192,15 @@ function doPost(e) {
       case "workflow_save_config":
         if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin oqimni o'zgartira oladi" });
         result = saveWorkflowConfig(data.steps);
+        break;
+
+      case "workflow_get_settings":
+        result = { success:true, isWorkflowStrict: getWorkflowStrictMode() };
+        break;
+
+      case "workflow_save_settings":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin sozlamalarni o'zgartira oladi" });
+        result = setWorkflowStrictMode(data.isWorkflowStrict);
         break;
 
       case "positions_get_all":

@@ -31,23 +31,34 @@ function renderWorkflowSteps() {
     const container = document.getElementById('workflowList');
     if (!container) return;
 
-    // Add button for start/end stage configuration
-    const configButton = `
-        <div style="margin-bottom: 15px;">
-            <button id="stageConfigBtn" class="btn-primary" style="width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: 600;">
+    const isStrict = !!myPermissions.isWorkflowStrict;
+
+    // Add toggle for strict mode and button for stage configuration
+    const topControls = `
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:15px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div>
+                    <div style="font-size:14px; font-weight:700; color:var(--navy);">Qat'iy ketma-ketlik</div>
+                    <div style="font-size:11px; color:var(--text-muted);">Xodimlar faqat navbati kelgan bosqichni tasdiqlay oladi</div>
+                </div>
+                <label class="switch-row" style="margin:0;">
+                    <input type="checkbox" id="strictWorkflowToggle" ${isStrict ? 'checked' : ''} onchange="toggleWorkflowStrict(this.checked)">
+                </label>
+            </div>
+            <button id="stageConfigBtn" class="btn-secondary" style="width: 100%; border-color:#3b82f6; color:#3b82f6; margin-top:5px;">
                 Boshlanish / Yakunlash bosqichi
             </button>
         </div>
     `;
 
     if (!currentWorkflowSteps.length) {
-        container.innerHTML = configButton + `<div class="empty-state" style="padding:20px;"><p>Oqim bo'sh. Qadamlar qo'shing.</p></div>`;
+        container.innerHTML = topControls + `<div class="empty-state" style="padding:20px;"><p>Oqim bo'sh. Qadamlar qo'shing.</p></div>`;
         attachStageConfigHandler();
         attachWorkflowListeners();
         return;
     }
 
-    let html = configButton;
+    let html = topControls;
     currentWorkflowSteps.forEach((step, idx) => {
         const phaseColors = getWorkflowStepColors(idx, currentWorkflowSteps.length);
         html += `
@@ -323,4 +334,23 @@ async function saveStageConfig() {
     }
 
     renderWorkflowSteps();
+}
+
+async function toggleWorkflowStrict(isStrict) {
+    try {
+        const data = await apiRequest({
+            action: 'workflow_save_settings',
+            isWorkflowStrict: isStrict
+        });
+        if (data.success) {
+            myPermissions.isWorkflowStrict = isStrict;
+            showToastMsg('✅ Oqim tartibi yangilandi');
+        } else {
+            showToastMsg('❌ ' + (data.error || 'Xato'), true);
+            const chk = document.getElementById('strictWorkflowToggle');
+            if (chk) chk.checked = !isStrict;
+        }
+    } catch (e) {
+        showToastMsg('❌ Tarmoq xatosi', true);
+    }
 }

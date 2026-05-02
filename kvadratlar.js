@@ -279,22 +279,35 @@ function showKvDetailModal(idx) {
     const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', {
         maximumFractionDigits: 2
     });
-    let claimBtnHtml = '';
-    const status = rec.status || 'yangi';
+    const logs = rec.logs || [];
     const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
     const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
-    const currentStepIdx = Number(rec.currentStep) || 1;
-    const nextStep = config.find(s => s.index === currentStepIdx + 1);
+    let claimBtnHtml = '';
     
-    // Permission Check: Show claim button only for SuperAdmin or Group Leaders with correct position
-    const canClaim = myRole === 'SuperAdmin' || (myIsSardor && myPoss.indexOf(nextStep?.position) !== -1);
-
-    if (nextStep && canClaim) {
-        const totalSteps = config.length >= 2 ? config.length : 3;
-        const nextStepIdx = Number(nextStep.index || currentStepIdx + 1) - 1;
-        const nextColors = getWorkflowStepColors(nextStepIdx, totalSteps);
-        claimBtnHtml = `<button class="btn-main" style="background:${nextColors.bg};color:${nextColors.color};margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
-    }
+    const isStrict = !!myPermissions.isWorkflowStrict;
+    
+    // Independent Step Buttons: Show buttons based on strict mode
+    config.forEach(step => {
+        // Skip Step 1 (Designer) as it's the start
+        if (step.index <= 1) return;
+        
+        // Check if this specific step is already completed in logs
+        const isDone = logs.some(l => l.step === step.index);
+        if (isDone) return;
+        
+        // Permission Check
+        const hasPosition = myPoss.indexOf(step.position) !== -1;
+        const canClaim = myRole === 'SuperAdmin' || (myIsSardor && hasPosition);
+        
+        if (canClaim) {
+            // STRICT MODE: Only show if this is exactly the next step
+            if (isStrict && step.index !== currentStepIdx + 1) return;
+            
+            const totalSteps = config.length >= 2 ? config.length : 3;
+            const stepColors = getWorkflowStepColors(step.index - 1, totalSteps);
+            claimBtnHtml += `<button class="btn-main" style="background:${stepColors.bg};color:${stepColors.color};margin-bottom:10px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${step.index})">✅ ${escapeHtml(step.action)}</button>`;
+        }
+    });
     let historyHtml = '';
     const logs = rec.logs || [];
     logs.forEach(log => {

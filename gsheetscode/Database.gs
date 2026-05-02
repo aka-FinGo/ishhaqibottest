@@ -269,7 +269,22 @@ function initUser(tgId, auth, data) {
     positions: auth.positions,
     allPositions: allPositions,
     workflowConfig: workflowConfig,
+    isWorkflowStrict: getWorkflowStrictMode(),
     data: userRecords,
     employeeList: empList
   };
+}
+
+/**
+ * Global Workflow Settings
+ */
+function getWorkflowStrictMode() {
+  var p = PropertiesService.getScriptProperties();
+  return p.getProperty('WORKFLOW_STRICT_MODE') === '1';
+}
+
+function setWorkflowStrictMode(isStrict) {
+  var p = PropertiesService.getScriptProperties();
+  p.setProperty('WORKFLOW_STRICT_MODE', isStrict ? '1' : '0');
+  return { success: true };
 }

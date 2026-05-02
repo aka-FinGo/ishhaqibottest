@@ -157,12 +157,17 @@ async function initializeApp() {
             if (myRole === 'SuperAdmin') {
                 myPermissions = {
                     canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true,
-                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || []
+                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
+                    isWorkflowStrict: !!data.isWorkflowStrict
                 };
             } else {
                 const p = data.permissions || {};
                 myPermissions = {
                     canViewAll: asBool(p.canViewAll), canEdit: asBool(p.canEdit), canDelete: asBool(p.canDelete),
+                    canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash),
+                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
+                    isWorkflowStrict: !!data.isWorkflowStrict
+                };
                     canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash), positions: data.positions || [],
                     workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || []
                 };
