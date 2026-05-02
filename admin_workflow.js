@@ -36,16 +36,23 @@ function renderWorkflowSteps() {
     // Add toggle for strict mode and button for stage configuration
     const topControls = `
         <div style="background:#fff; border:1px solid var(--border); border-radius:18px; padding:18px; margin-bottom:20px; box-shadow:var(--shadow-sm);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <div style="flex:1;">
-                    <div style="font-size:15px; font-weight:800; color:var(--navy);">Qat'iy ketma-ketlik</div>
-                    <div style="font-size:11px; color:var(--text-muted); line-height:1.3; margin-top:2px;">Xodimlar faqat navbati kelgan bosqichni tasdiqlay oladi</div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:15px; font-weight:800; color:var(--navy); display:block; margin-bottom:8px;">Qat'iy ketma-ketlik tartibi</label>
+                <div style="display:flex; gap:10px;">
+                    <select id="strictWorkflowSelect" style="flex:2; border-radius:12px; font-weight:600; height:46px;">
+                        <option value="true" ${isStrict ? 'selected' : ''}>✅ Ha (Qat'iy tartib)</option>
+                        <option value="false" ${!isStrict ? 'selected' : ''}>🔓 Yo'q (Erkin tartib)</option>
+                    </select>
+                    <button onclick="saveStrictSettingUI()" class="btn-main" style="flex:1; margin-top:0; height:46px; font-size:13px; background:var(--blue);">
+                        Saqlash
+                    </button>
                 </div>
-                <label class="premium-switch">
-                    <input type="checkbox" id="strictWorkflowToggle" ${isStrict ? 'checked' : ''} onchange="toggleWorkflowStrict(this.checked)">
-                    <span class="premium-slider"></span>
-                </label>
+                <div style="font-size:11px; color:var(--text-muted); line-height:1.3; margin-top:8px;">
+                    <b>Qat'iy:</b> Xodimlar faqat navbati kelgan bosqichni tasdiqlay oladi.<br>
+                    <b>Erkin:</b> Xodimlar istalgan bosqichni tasdiqlashi mumkin.
+                </div>
             </div>
+            <div style="height:1px; background:#F1F5F9; margin:15px 0;"></div>
             <button id="stageConfigBtn" class="btn-secondary" style="width: 100%; height:44px; border-color:var(--blue); color:var(--blue); border-radius:12px; font-weight:700; background:rgba(59,130,246,0.05);">
                 ⚙️ Boshlanish / Yakunlash bosqichi
             </button>
@@ -347,5 +354,26 @@ async function toggleWorkflowStrict(isStrict) {
         }
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);
+    }
+}
+
+async function saveStrictSettingUI() {
+    const sel = document.getElementById(strictWorkflowSelect);
+    if (!sel) return;
+    const isStrict = sel.value === true;
+    const btn = event.currentTarget;
+    setButtonLoading(btn, true, Saqlanmoqda...);
+    try {
+        const data = await apiRequest({ action: workflow_save_settings, isWorkflowStrict: isStrict });
+        if (data.success) {
+            myPermissions.isWorkflowStrict = isStrict;
+            showToastMsg(? Oqim tartibi yangilandi);
+        } else {
+            showToastMsg(?  + (data.error || Xato), true);
+        }
+    } catch (e) {
+        showToastMsg(? Tarmoq xatosi, true);
+    } finally {
+        setButtonLoading(btn, false);
     }
 }
