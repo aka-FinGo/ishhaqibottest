@@ -228,6 +228,14 @@ function renderKvList() {
             if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
                 currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
             }
+            
+            // SUPER FALLBACK: Agar CurrentStep ishlamasa, tarix (logs) dagi eng oxirgisini olamiz
+            if (currentConfigIndex === -1 && rec.logs && rec.logs.length > 0) {
+                const lastLog = rec.logs[rec.logs.length - 1];
+                if (lastLog.stepId) currentConfigIndex = config.findIndex(s => s.stepId === lastLog.stepId);
+                if (currentConfigIndex === -1 && lastLog.step) currentConfigIndex = config.findIndex(s => s.index === lastLog.step);
+            }
+            
             if (currentConfigIndex === -1) currentConfigIndex = 0;
             
             const totalSteps = config.length >= 2 ? config.length : 3;
@@ -307,6 +315,14 @@ function showKvDetailModal(idx) {
     if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
         currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
     }
+    
+    // SUPER FALLBACK: Agar CurrentStep ishlamasa, tarix (logs) dagi eng oxirgisini olamiz
+    if (currentConfigIndex === -1 && rec.logs && rec.logs.length > 0) {
+        const lastLog = rec.logs[rec.logs.length - 1];
+        if (lastLog.stepId) currentConfigIndex = config.findIndex(s => s.stepId === lastLog.stepId);
+        if (currentConfigIndex === -1 && lastLog.step) currentConfigIndex = config.findIndex(s => s.index === lastLog.step);
+    }
+    
     if (currentConfigIndex === -1) currentConfigIndex = 0;
     
     let claimBtnHtml = '';
@@ -592,6 +608,14 @@ async function claimKvWork(rowId) {
                 if (currentConfigIndex === -1 && !isNaN(parseInt(currentStepVal, 10))) {
                     currentConfigIndex = config.findIndex(s => s.index === Number(currentStepVal));
                 }
+                
+                // SUPER FALLBACK
+                if (currentConfigIndex === -1 && rec.logs && rec.logs.length > 0) {
+                    const lastLog = rec.logs[rec.logs.length - 1];
+                    if (lastLog.stepId) currentConfigIndex = config.findIndex(s => s.stepId === lastLog.stepId);
+                    if (currentConfigIndex === -1 && lastLog.step) currentConfigIndex = config.findIndex(s => s.index === lastLog.step);
+                }
+                
                 if (currentConfigIndex === -1) currentConfigIndex = 0;
                 
                 const nextStep = config[currentConfigIndex + 1];
