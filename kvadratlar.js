@@ -141,42 +141,45 @@ async function initKvadratTab() {
         </div>`;
 
     try {
+        // FAVQULODDA SINXRONIZATSIYA: Agar Dashboard-da ma'lumot bo'lsa-yu, bu yerda yo'q bo'lsa
+        if ((!kvFullRecords || kvFullRecords.length === 0) && (typeof kvDashboardRecords !== 'undefined' && kvDashboardRecords.length > 0)) {
+            console.log('🔄 Emergency sync from dashboard records...');
+            kvFullRecords = kvDashboardRecords;
+            applyKvFilters();
+            return;
+        }
+
         const data = await apiRequest({
             action: 'kvadrat_get_all'
         });
+        
         if (data.success) {
             kvFullRecords = data.data || [];
             console.log('✅ Kvadrat records loaded:', kvFullRecords.length);
             
-            if (kvFullRecords.length === 0) {
-                showToastMsg('ℹ️ Serverdan 0 ta ma\'lumot keldi (Jadval bo\'sh bo\'lishi mumkin)');
-            } else {
-                showToastMsg(`✅ ${kvFullRecords.length} ta ma'lumot yuklandi`);
-            }
-
             if (typeof kvDashboardRecords !== 'undefined') {
                 kvDashboardRecords = kvFullRecords;
             }
+            
+            if (kvFullRecords.length === 0) {
+                showToastMsg('ℹ️ Jadvalda ma\'lumotlar mavjud emas');
+            }
+            
             applyKvFilters();
         } else {
-            const errorMsg = data.error || 'Server xatosi';
-            console.error('❌ Kvadrat load error:', errorMsg);
-            listContainer.innerHTML = `
-                <div class="empty-state" style="background:#fff; border:1px solid var(--border); border-radius:24px; padding:40px 20px; text-align:center;">
-                    <div style="font-size:48px; margin-bottom:16px;">⚠️</div>
-                    <p style="color:var(--red); font-weight:700;">❌ Yuklashda xato yuz berdi</p>
-                    <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(errorMsg)}</p>
-                    <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 24px; margin-top:16px;">🔄 Qayta urinish</button>
-                </div>`;
+            throw new Error(data.error || 'Server xatosi');
         }
     } catch (e) {
-        console.error('❌ Kvadrat network/js error:', e);
+        console.error('❌ Kvadrat load error:', e);
         listContainer.innerHTML = `
-            <div class="empty-state" style="background:#fff; border:1px solid var(--border); border-radius:24px; padding:40px 20px; text-align:center;">
-                <div style="font-size:48px; margin-bottom:16px;">🌐</div>
-                <p style="color:var(--red); font-weight:700;">❌ Tizimda xato yuz berdi</p>
-                <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">${escapeHtml(e.message)}</p>
-                <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 24px; margin-top:16px;">🔄 Qayta urinish</button>
+            <div class="empty-state" style="background:#fff; border:1px solid #FDA4AF; border-radius:24px; padding:40px 20px; text-align:center; box-shadow:var(--shadow-sm);">
+                <div style="font-size:48px; margin-bottom:16px;">⚠️</div>
+                <p style="color:#E11D48; font-weight:800; font-size:18px;">Yuklashda xatolik</p>
+                <p style="font-size:14px; color:#64748B; margin-top:8px; max-width:280px; margin-left:auto; margin-right:auto;">${escapeHtml(e.message)}</p>
+                <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                    <button class="btn-main" onclick="initKvadratTab()" style="width:auto; padding:10px 20px;">🔄 Qayta urinish</button>
+                    <button class="btn-secondary" onclick="location.reload()" style="width:auto; padding:10px 20px;">🌐 Sahifani yangilash</button>
+                </div>
             </div>`;
     }
     updateKvFabVisibility();
