@@ -144,10 +144,11 @@ function showHodimSettingsModal(h) {
             <label>Lavozimlar (Workflow)</label>
             <div class="positions-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;">
                 ${TECHNICAL_POSITIONS.map(pos => {
-                    const pid = `hpos_${safeTgId}_${pos.name.replace(/\s+/g, '_')}`;
-                    const isChecked = (h.positions || []).indexOf(pos.name) !== -1;
+                    const posId = pos.id || pos.name;
+                    const pid = `hpos_${safeTgId}_${posId.replace(/\s+/g, '_')}`;
+                    const isChecked = (h.positions || []).indexOf(posId) !== -1 || (h.positions || []).indexOf(pos.name) !== -1;
                     return `<label class="perm-label ${isChecked ? 'checked' : ''}" style="margin:0;padding:8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;">
-                        <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${pos.name}" onchange="syncPermLabel(this)">
+                        <input type="checkbox" id="${pid}" ${isChecked ? 'checked' : ''} value="${posId}" onchange="syncPermLabel(this)">
                         <span style="font-size:12px;">${pos.icon}${pos.name}</span>
                     </label>`;
                 }).join('')}
