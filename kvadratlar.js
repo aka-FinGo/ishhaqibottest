@@ -314,7 +314,7 @@ function showKvDetailModal(idx) {
             const totalSteps = config.length >= 2 ? config.length : 3;
             btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
         }
-        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; margin-bottom:12px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
+        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
     let historyHtml = '';
@@ -363,9 +363,9 @@ function showKvDetailModal(idx) {
             ${historyHtml || '<p style="font-size:12px; color:var(--text-muted); text-align:center;">Hali harakatlar yo\'q</p>'}
         </div>
 
-        <div style="margin-top:20px;">
+        <div style="margin-top:24px;">
             ${claimBtnHtml}
-            <button class="btn-secondary" style="width:100%;" onclick="closeKvDetailModal()">✕ Yopish</button>
+            <button class="btn-secondary" style="width:100%; height:48px; background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; font-weight:700;" onclick="closeKvDetailModal()">✕ Yopish</button>
         </div>`;
         
     document.getElementById('kvDetailModal').classList.remove('hidden');
