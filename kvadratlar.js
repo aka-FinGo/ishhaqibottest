@@ -596,7 +596,7 @@ async function claimKvWork(rowId) {
                 
                 const nextStep = config[currentConfigIndex + 1];
                 if (nextStep) {
-                    rec.currentStep = nextStep.stepId;
+                    rec.currentStep = nextStep.stepId || ("step_" + nextStep.index);
                     rec.status = nextStep.status;
                 }
             }

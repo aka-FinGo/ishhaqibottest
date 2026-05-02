@@ -15,14 +15,18 @@ function getWorkflowConfig() {
   
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
+    var sIndex = Number(row[0]);
+    var sId = String(row[6] || '').trim();
+    if (!sId) sId = "step_" + sIndex; // Migratsiya qilinmagan bo'lsa, qutqaruvchi ID
+    
     steps.push({
-      index:    Number(row[0]),
+      index:    sIndex,
       position: String(row[1] || '').trim(),
       action:   String(row[2] || '').trim(),
       status:   String(row[3] || '').trim(),
       isStart:  Number(row[4]) === 1,
       isEnd:    Number(row[5]) === 1,
-      stepId:   String(row[6] || '').trim(),
+      stepId:   sId,
       colStart: Number(row[7]) || 0
     });
   }
