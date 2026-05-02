@@ -335,8 +335,14 @@ function showKvDetailModal(idx) {
             </div>`;
     });
 
-    const canEdit = myPermissions.canEdit || myRole === 'SuperAdmin';
-    const canDelete = myPermissions.canDelete || myRole === 'SuperAdmin';
+    const isAdmin = myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor';
+    const canEditGlobal = isAdmin && myPermissions.canEdit;
+    const canDeleteGlobal = isAdmin && myPermissions.canDelete;
+    const isOwner = String(rec.ownerTgId) === String(telegramId);
+
+    const canEdit = canEditGlobal || isOwner || myRole === 'SuperAdmin';
+    const canDelete = canDeleteGlobal || isOwner || myRole === 'SuperAdmin';
+
     const buttonsRow = (canEdit || canDelete) ? `
         <div style="display:flex; gap:8px; margin-bottom:16px;">
             ${canEdit ? `<button onclick="closeKvDetailModal();openKvModal(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; font-weight:700; font-size:13px;">✏️ Tahrirlash</button>` : ''}
@@ -465,6 +471,22 @@ async function saveKv() {
         return;
     }
 
+    if (rowId) {
+        const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
+        const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+        const canEditAll = isAdmin && myPermissions.canEdit;
+        const isOwner = rec && String(rec.ownerTgId) === String(telegramId);
+        
+        if (!canEditAll && !isOwner && myRole !== 'SuperAdmin') {
+            showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni tahrirlay olasiz', true);
+            return;
+        }
+
+        const reason = await askActionReason("Tahrirlash sababini kiriting");
+        if (!reason) return;
+        window._kvEditReason = reason;
+    }
+
     const saveBtn = document.querySelector('#kvForm .btn-main[type="submit"]');
     setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
 
@@ -485,8 +507,10 @@ async function saveKv() {
             staffName,
             ownerTgId,
             month: `_${month}`,
-            year: year
+            year: year,
+            reason: window._kvEditReason || ''
         });
+        window._kvEditReason = '';
 
         if (data.success) {
             showToastMsg('✅ Saqlandi');
@@ -503,10 +527,27 @@ async function saveKv() {
 }
 
 async function deleteKv(rowId) {
-    if (!confirm("O'chirishga ishonchingiz komilmi?")) return;
+    const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
+    if (!rec) return;
+
+    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+    const canDeleteAll = isAdmin && myPermissions.canDelete;
+    const isOwner = String(rec.ownerTgId) === String(telegramId);
+
+    if (!canDeleteAll && !isOwner && myRole !== 'SuperAdmin') {
+        showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni o\'chira olasiz', true);
+        return;
+    }
+
+    const isOk = await askConfirmDialog("Buyurtmani o'chirish", "Ushbu buyurtmani butunlay o'chirishga ishonchingiz komilmi?");
+    if (!isOk) return;
+
+    const reason = await askActionReason("O'chirish sababini kiriting");
+    if (!reason) return;
+
     kvShowProc('O\'chirilmoqda...');
     try {
-        const data = await apiRequest({ action: 'kvadrat_delete', rowId });
+        const data = await apiRequest({ action: 'kvadrat_delete', rowId, reason });
         if (data.success) {
             kvHideProc(true, 'O\'chirildi');
             initKvadratTab();

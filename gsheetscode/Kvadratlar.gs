@@ -231,6 +231,9 @@ function kvadratGetAll(options) {
 }
 
 function kvadratEdit(data, auth, actorTgId) {
+  var reason = String(data.reason || '').trim();
+  if (!reason) return { success: false, error: "Tahrirlash sababini ko'rsatishingiz shart!" };
+
   return withWriteLock_(function() {
     var sh = getKvadratSheet();
     var row = parseInt(data.rowId, 10);
@@ -241,8 +244,13 @@ function kvadratEdit(data, auth, actorTgId) {
     var existing = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
-    if (!auth.isAdmin && !auth.isSuperAdmin && ownerTgId !== String(actorTgId)) {
-      return { success: false, error: "Tahrirlashga ruxsat yo'q" };
+    // Ruxsatni tekshirish
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isOwner = ownerTgId === String(actorTgId);
+    var canEditAll = isAdmin && auth.permissions.canEdit;
+
+    if (!auth.isSuperAdmin && !canEditAll && !isOwner) {
+      return { success: false, error: "Siz faqat o'zingiz kiritgan buyurtmani tahrirlashingiz mumkin!" };
     }
 
     var targetOwnerId = (data.ownerTgId && String(data.ownerTgId).trim()) ? String(data.ownerTgId).trim() : ownerTgId;
@@ -263,7 +271,8 @@ function kvadratEdit(data, auth, actorTgId) {
     if (data.year) {
       sh.getRange(row, KV_COL.YEAR + 1).setValue("'" + String(data.year));
     }
-
+    
+    addAuditLog_(actorTgId, 'kvadrat_edit', row, null, null, reason);
     return { success: true };
   });
 }
@@ -295,6 +304,9 @@ function migrateKvadratYears() {
  * Deletes a measurement record (soft delete).
  */
 function kvadratDelete(data, auth, actorTgId) {
+  var reason = String(data.reason || '').trim();
+  if (!reason) return { success: false, error: "O'chirish sababini ko'rsatishingiz shart!" };
+
   return withWriteLock_(function() {
     var sh = getKvadratSheet();
     var row = parseInt(data.rowId, 10);
@@ -302,15 +314,20 @@ function kvadratDelete(data, auth, actorTgId) {
       return { success: false, error: 'Qator topilmadi' };
     }
 
-    var existing = sh.getRange(row, 1, 1, KV_HEADERS.length).getValues()[0];
+    var existing = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
-    // Only owner or admin can delete
-    if (!auth.isAdmin && !auth.isSuperAdmin && ownerTgId !== String(actorTgId)) {
-      return { success: false, error: "O'chirishga ruxsat yo'q" };
+    // Ruxsatni tekshirish
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isOwner = ownerTgId === String(actorTgId);
+    var canDeleteAll = isAdmin && auth.permissions.canDelete;
+
+    if (!auth.isSuperAdmin && !canDeleteAll && !isOwner) {
+      return { success: false, error: "Siz faqat o'zingiz kiritgan buyurtmani o'chira olasiz!" };
     }
 
     sh.getRange(row, KV_COL.IS_DELETED + 1).setValue(1);
+    addAuditLog_(actorTgId, 'kvadrat_delete', row, null, 'deleted', reason);
     return { success: true };
   });
 }

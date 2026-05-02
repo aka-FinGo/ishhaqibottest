@@ -85,21 +85,32 @@ function adminGetAll(options) {
 
 function selfEditRecord(data, actorTgId) {
   var auth = checkUserRoles(actorTgId);
-  if (!auth.permissions.canEdit) return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
   var rowId = Number(data.rowId);
+  var reason = String(data.reason || '').trim();
+  if (!reason) return { success: false, error: "Tahrirlash sababini ko'rsatishingiz shart!" };
+
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
     var rowData = dataSheet.getRange(rowId, 1, 1, 9).getValues()[0];
     if (isDeletedRow_(rowData)) return { success: false, error: "Ushbu amal o'chirib yuborilgan." };
-    if (String(rowData[DATA_COL.TG_ID]) !== String(actorTgId)) return { success: false, error: "Siz faqat o'zingizning amallaringizni tahrirlashingiz mumkin!" };
+    
+    // Ruxsatni tekshirish
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isOwner = String(rowData[DATA_COL.TG_ID]) === String(actorTgId);
+    var canEditAll = isAdmin && auth.permissions.canEdit;
+
+    if (!canEditAll && !isOwner) {
+       return { success: false, error: "Siz faqat o'zingiz kiritgan amallarni tahrirlashingiz mumkin!" };
+    }
+
     var parsedDate = parseDateInput_(data.date, data.dateISO);
     if (!parsedDate) parsedDate = parseDateInput_(rowData[DATA_COL.DATE], null);
     var updateValues = [ Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, data.actionPeriod ? "'" + data.actionPeriod : "" ];
-    // OPTIMIZED: Batch update with formats
+    
     dataSheet.getRange(rowId, 3, 1, 7).setValues([updateValues]);
     dataSheet.getRange(rowId, 7, 1, 3).setNumberFormats([['dd/MM/yyyy', '0', '@']]);
-    addAuditLog_(actorTgId, 'self_edit', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), data.reason);
-    // OPTIMIZED: Reset cache after write
+    addAuditLog_(actorTgId, 'edit_record', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), reason);
+    
     resetDataCache_();
     return { success: true };
   });
@@ -108,16 +119,25 @@ function selfEditRecord(data, actorTgId) {
 
 function selfDeleteRecord(rowId, actorTgId, reason) {
   var auth = checkUserRoles(actorTgId);
-  if (!auth.permissions.canDelete) return { success: false, error: "Sizda o'chirish ruxsati yo'q!" };
   var rowIdNum = Number(rowId);
+  var reasonText = String(reason || '').trim();
+  if (!reasonText) return { success: false, error: "O'chirish sababini ko'rsatishingiz shart!" };
+
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
     var rowData = dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0];
     if (isDeletedRow_(rowData)) return { success: false, error: "Ushbu amal allaqachon o'chirilgan." };
-    if (String(rowData[DATA_COL.TG_ID]) !== String(actorTgId)) return { success: false, error: "Siz faqat o'zingizning amallaringizni o'chirishingiz mumkin!" };
+    
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isOwner = String(rowData[DATA_COL.TG_ID]) === String(actorTgId);
+    var canDeleteAll = isAdmin && auth.permissions.canDelete;
+
+    if (!canDeleteAll && !isOwner) {
+       return { success: false, error: "Siz faqat o'zingiz kiritgan amallarni o'chirishingiz mumkin!" };
+    }
+
     dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
-    addAuditLog_(actorTgId, 'self_delete', rowIdNum, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0]), reason);
-    // OPTIMIZED: Reset cache after write
+    addAuditLog_(actorTgId, 'delete_record', rowIdNum, rowToRecordForAudit_(rowData), 'deleted', reasonText);
     resetDataCache_();
     return { success: true };
   });
@@ -125,36 +145,11 @@ function selfDeleteRecord(rowId, actorTgId, reason) {
 }
 
 function adminEditRecord(data, actorTgId) {
-  var rowId = Number(data.rowId);
-  var writeResult = withWriteLock_(function () {
-    var dataSheet = getSheets().dataSheet;
-    var rowData = dataSheet.getRange(rowId, 1, 1, 9).getValues()[0];
-    var parsedDate = parseDateInput_(data.date, data.dateISO);
-    if (!parsedDate) parsedDate = parseDateInput_(rowData[DATA_COL.DATE], null);
-    var updateValues = [ Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, data.actionPeriod ? "'" + data.actionPeriod : "" ];
-    // OPTIMIZED: Batch update with formats
-    dataSheet.getRange(rowId, 3, 1, 7).setValues([updateValues]);
-    dataSheet.getRange(rowId, 7, 1, 3).setNumberFormats([['dd/MM/yyyy', '0', '@']]);
-    addAuditLog_(actorTgId, 'admin_edit', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), data.reason);
-    // OPTIMIZED: Reset cache after write
-    resetDataCache_();
-    return { success: true };
-  });
-  return writeResult;
+  return selfEditRecord(data, actorTgId);
 }
 
 function adminDeleteRecord(rowId, actorTgId, reason) {
-  var rowIdNum = Number(rowId);
-  var writeResult = withWriteLock_(function () {
-    var dataSheet = getSheets().dataSheet;
-    var rowData = dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0];
-    dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
-    addAuditLog_(actorTgId, 'admin_delete', rowIdNum, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0]), reason);
-    // OPTIMIZED: Reset cache after write
-    resetDataCache_();
-    return { success: true };
-  });
-  return writeResult;
+  return selfDeleteRecord(rowId, actorTgId, reason);
 }
 
 function matchesAdminFilters_(name, comment, dateMeta, actionPeriod, filters) {
