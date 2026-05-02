@@ -33,7 +33,6 @@ function renderWorkflowSteps() {
 
     const isStrict = !!myPermissions.isWorkflowStrict;
 
-    // Add toggle for strict mode and button for stage configuration
     const topControls = `
         <div style="background:#fff; border:1px solid var(--border); border-radius:18px; padding:18px; margin-bottom:20px; box-shadow:var(--shadow-sm);">
             <div style="margin-bottom:15px;">
@@ -115,12 +114,10 @@ function renderWorkflowSteps() {
     attachWorkflowListeners();
 }
 
-// Attach event listeners for workflow controls
 function attachWorkflowListeners() {
     const container = document.getElementById('workflowList');
     if (!container) return;
 
-    // Move up buttons
     container.querySelectorAll('.move-up-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const idx = parseInt(e.target.dataset.idx);
@@ -128,7 +125,6 @@ function attachWorkflowListeners() {
         });
     });
 
-    // Move down buttons
     container.querySelectorAll('.move-down-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const idx = parseInt(e.target.dataset.idx);
@@ -136,7 +132,6 @@ function attachWorkflowListeners() {
         });
     });
 
-    // Delete buttons
     container.querySelectorAll('.delete-step-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const idx = parseInt(e.target.dataset.idx);
@@ -144,7 +139,6 @@ function attachWorkflowListeners() {
         });
     });
 
-    // Position select
     container.querySelectorAll('.position-select').forEach(select => {
         select.addEventListener('change', (e) => {
             const idx = parseInt(e.target.dataset.idx);
@@ -152,7 +146,6 @@ function attachWorkflowListeners() {
         });
     });
 
-    // Action input
     container.querySelectorAll('.action-input').forEach(input => {
         input.addEventListener('change', (e) => {
             const idx = parseInt(e.target.dataset.idx);
@@ -160,19 +153,10 @@ function attachWorkflowListeners() {
         });
     });
 
-    // Status input
     container.querySelectorAll('.status-input').forEach(input => {
         input.addEventListener('change', (e) => {
             const idx = parseInt(e.target.dataset.idx);
             updateStepData(idx, 'status', e.target.value);
-        });
-    });
-
-    // Is start checkbox
-    container.querySelectorAll('.is-start-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const idx = parseInt(e.target.dataset.idx);
-            updateStepData(idx, 'isStart', e.target.checked);
         });
     });
 }
@@ -213,19 +197,15 @@ async function saveWorkflowConfigUI() {
         showToastMsg('❌ Kamida bitta bosqich bo\'lishi shart', true);
         return;
     }
-
-    const saveBtn = document.querySelector('button[onclick*="saveWorkflowConfigUI"]');
+    const saveBtn = event.currentTarget;
     setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
-
     try {
         const data = await apiRequest({
             action: 'workflow_save_config',
             steps: currentWorkflowSteps
         });
-
         if (data.success) {
             showToastMsg('✅ Oqim saqlandi! Ilovani yangilang.');
-            // Update local config so roles.js picks it up
             myPermissions.workflowConfig = currentWorkflowSteps;
         } else {
             showToastMsg('❌ ' + (data.error || 'Xato'), true);
@@ -239,13 +219,10 @@ async function saveWorkflowConfigUI() {
 
 function attachStageConfigHandler() {
     const btn = document.getElementById('stageConfigBtn');
-    if (btn) {
-        btn.addEventListener('click', showStageConfigDialog);
-    }
+    if (btn) btn.onclick = showStageConfigDialog;
 }
 
 function showStageConfigDialog() {
-    // Create and show dialog for stage configuration
     const dialog = document.createElement('div');
     dialog.id = 'stageConfigDialog';
     dialog.className = 'modal';
@@ -277,102 +254,59 @@ function showStageConfigDialog() {
             </div>
             
             <div style="display: flex; gap: 10px;">
-                <button id="saveStageConfig" class="btn-primary" style="flex: 1; padding: 12px; background: #10B981; color: white; border: none; border-radius: 10px; font-weight: 600;">Saqlash</button>
+                <button id="saveStageConfig" class="btn-main" style="flex: 1; padding: 12px; background: #10B981; color: white; border: none; border-radius: 10px; font-weight: 600;">Saqlash</button>
                 <button id="cancelStageConfig" class="btn-secondary" style="flex: 1; padding: 12px; background: #EF4444; color: white; border: none; border-radius: 10px; font-weight: 600;">Bekor qilish</button>
             </div>
         </div>
     `;
     
     document.body.appendChild(dialog);
-    
-    // Add event listeners
-    document.getElementById('saveStageConfig').addEventListener('click', saveStageConfig);
-    document.getElementById('cancelStageConfig').addEventListener('click', () => {
-        document.body.removeChild(dialog);
-    });
+    document.getElementById('saveStageConfig').onclick = saveStageConfig;
+    document.getElementById('cancelStageConfig').onclick = () => document.body.removeChild(dialog);
 }
 
 async function saveStageConfig() {
     const startStage = parseInt(document.getElementById('startStageSelect').value, 10);
     const endStage = parseInt(document.getElementById('endStageSelect').value, 10);
-
-    // Update workflow steps with start/end flags
     currentWorkflowSteps.forEach((step, idx) => {
         step.isStart = !Number.isNaN(startStage) && idx === startStage;
         step.isEnd = !Number.isNaN(endStage) && idx === endStage;
     });
-
-    if (typeof myPermissions !== 'undefined') {
-        myPermissions.workflowConfig = currentWorkflowSteps;
-        localStorage.setItem('myPermissions', JSON.stringify(myPermissions));
-    }
-
-    const saveStageBtn = document.getElementById('saveStageConfig');
-    if (saveStageBtn) {
-        setButtonLoading(saveStageBtn, true, 'Saqlanmoqda...');
-    }
-
+    const btn = event.currentTarget;
+    setButtonLoading(btn, true, 'Saqlanmoqda...');
     try {
-        const data = await apiRequest({
-            action: 'workflow_save_config',
-            steps: currentWorkflowSteps
-        });
-        if (!data.success) {
-            showToastMsg && showToastMsg('❌ ' + (data.error || 'Sozlamalarni saqlashda xato'), true);
-            return;
-        }
-        showToastMsg && showToastMsg('✅ Sozlamalar saqlandi!');
-    } catch (e) {
-        showToastMsg && showToastMsg('❌ Tarmoq xatosi', true);
-    } finally {
-        if (saveStageBtn) {
-            setButtonLoading(saveStageBtn, false);
-        }
-    }
-
-    const dialog = document.getElementById('stageConfigDialog');
-    if (dialog) {
-        document.body.removeChild(dialog);
-    }
-
-    renderWorkflowSteps();
-}
-
-async function toggleWorkflowStrict(isStrict) {
-    try {
-        const data = await apiRequest({
-            action: 'workflow_save_settings',
-            isWorkflowStrict: isStrict
-        });
+        const data = await apiRequest({ action: 'workflow_save_config', steps: currentWorkflowSteps });
         if (data.success) {
-            myPermissions.isWorkflowStrict = isStrict;
-            showToastMsg('✅ Oqim tartibi yangilandi');
+            showToastMsg('✅ Sozlamalar saqlandi!');
+            myPermissions.workflowConfig = currentWorkflowSteps;
+            document.body.removeChild(document.getElementById('stageConfigDialog'));
+            renderWorkflowSteps();
         } else {
             showToastMsg('❌ ' + (data.error || 'Xato'), true);
-            const chk = document.getElementById('strictWorkflowToggle');
-            if (chk) chk.checked = !isStrict;
         }
     } catch (e) {
         showToastMsg('❌ Tarmoq xatosi', true);
+    } finally {
+        setButtonLoading(btn, false);
     }
 }
 
 async function saveStrictSettingUI() {
-    const sel = document.getElementById(strictWorkflowSelect);
+    const sel = document.getElementById("strictWorkflowSelect");
     if (!sel) return;
-    const isStrict = sel.value === true;
+    const isStrict = sel.value === "true";
     const btn = event.currentTarget;
-    setButtonLoading(btn, true, Saqlanmoqda...);
+    setButtonLoading(btn, true, "Saqlanmoqda...");
     try {
-        const data = await apiRequest({ action: workflow_save_settings, isWorkflowStrict: isStrict });
+        const data = await apiRequest({ action: "workflow_save_settings", isWorkflowStrict: isStrict });
         if (data.success) {
             myPermissions.isWorkflowStrict = isStrict;
-            showToastMsg(? Oqim tartibi yangilandi);
+            showToastMsg("✅ Oqim tartibi yangilandi");
         } else {
-            showToastMsg(?  + (data.error || Xato), true);
+            showToastMsg("❌ " + (data.error || "Xato"), true);
         }
     } catch (e) {
-        showToastMsg(? Tarmoq xatosi, true);
+        showToastMsg("❌ Tarmoq xatosi", true);
     } finally {
         setButtonLoading(btn, false);
     }
