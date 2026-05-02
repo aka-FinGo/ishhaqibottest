@@ -327,7 +327,21 @@ function showKvDetailModal(idx) {
     
     let claimBtnHtml = '';
     const nextStep = config[currentConfigIndex + 1];
-    if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
+    
+    // Lavozimlardagi turli xil tutuq belgilarini bir xil qilib solishtirish
+    let hasPoss = false;
+    if (nextStep) {
+        const normalizePos = (p) => String(p || '').trim().toLowerCase().replace(/['`‘]/g, "'");
+        const targetPos = normalizePos(nextStep.position);
+        for (let i = 0; i < myPoss.length; i++) {
+            if (normalizePos(myPoss[i]) === targetPos) {
+                hasPoss = true;
+                break;
+            }
+        }
+    }
+
+    if (nextStep && (myRole === 'SuperAdmin' || hasPoss)) {
         let btnColor = '#10B981';
         if (typeof getWorkflowStepColors === 'function') {
             const totalSteps = config.length >= 2 ? config.length : 3;
