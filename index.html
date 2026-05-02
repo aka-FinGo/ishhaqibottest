@@ -390,60 +390,77 @@
 
         <!-- TAB 5: KVADRATLAR — MUSTAQIL TAB (dashboardTab TASHQARISIDA) -->
         <div id="kvadratTab" class="tab-content">
-            <div class="page-header">
+            <div class="page-header" style="margin-bottom: 20px;">
                 <div>
-                    <h2>🧾 Buyurtmalar</h2>
-                    <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">Buyurtma №, Oy va m²
-                    </div>
+                    <h2 style="display:flex; align-items:center; gap:8px;">
+                        <span style="background: linear-gradient(135deg, var(--green), var(--green-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🧾 Buyurtmalar</span>
+                    </h2>
+                    <p style="font-size:12px; color:var(--text-muted); font-weight:600; margin-top:2px; opacity:0.8;">Buyurtmalar ro'yxati va holati</p>
                 </div>
-                <div style="display:flex; gap:12px; align-items:center;">
-                    <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)">
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)" style="background: var(--surface); border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);">
                         🔄
                     </button>
-                    <div class="header-avatar">🧾</div>
-                </div>
-            </div>
-            <div class="page-switcher">
-                <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')">📈 Dashboard
-                    kv</button>
-                <button class="page-switcher-btn active">🧾 Buyurtmalar</button>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card" style="background:var(--navy);color:#fff;grid-column:1/-1;">
-                    <div class="stat-label" style="opacity:0.8;">Jami m² (Tanlangan davr)</div>
-                    <div class="stat-value" id="kvTotalM2" style="color:#fff;">0</div>
+                    <div class="header-avatar" style="background: linear-gradient(135deg, #6366f1, #a855f7); width:38px; height:38px; font-size:16px;">🧾</div>
                 </div>
             </div>
 
-            <div class="filter-box">
-                <div class="filter-row">
-                    <select id="kvFilterMonth" onchange="applyKvFilters()">
-                        <option value="all">Barcha oylar</option>
-                        <option value="01">Yanvar</option>
-                        <option value="02">Fevral</option>
-                        <option value="03">Mart</option>
-                        <option value="04">Aprel</option>
-                        <option value="05">May</option>
-                        <option value="06">Iyun</option>
-                        <option value="07">Iyul</option>
-                        <option value="08">Avgust</option>
-                        <option value="09">Sentyabr</option>
-                        <option value="10">Oktyabr</option>
-                        <option value="11">Noyabr</option>
-                        <option value="12">Dekabr</option>
-                    </select>
-                    <select id="kvFilterYear" onchange="applyKvFilters()">
-                        <option value="all">Yillar</option>
-                    </select>
+            <div class="page-switcher" style="background: rgba(241, 245, 249, 0.8); padding: 5px; border-radius: 14px; margin-bottom: 24px;">
+                <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')" style="border:none; border-radius:10px;">📈 Dashboard</button>
+                <button class="page-switcher-btn active" style="border:none; border-radius:10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">🧾 Buyurtmalar</button>
+            </div>
+
+            <!-- Modern Hero Stat Card -->
+            <div class="premium-hero-card" style="margin-bottom: 24px;">
+                <div class="premium-hero-content">
+                    <div class="premium-hero-label">JAMI O'LCHAM (TANLANGAN DAVR)</div>
+                    <div class="premium-hero-value" id="kvTotalM2">0</div>
+                    <div class="premium-hero-unit">m² (metr kvadrat)</div>
+                </div>
+                <div class="premium-hero-bg-icon">📏</div>
+            </div>
+
+            <div class="premium-filter-card" style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-left: 4px;">Saralash va Filtrlar</div>
+                <div class="filter-row" style="margin-bottom: 10px;">
+                    <div class="filter-col">
+                        <label>Oy</label>
+                        <select id="kvFilterMonth" onchange="applyKvFilters()">
+                            <option value="all">Barcha oylar</option>
+                            <option value="01">Yanvar</option>
+                            <option value="02">Fevral</option>
+                            <option value="03">Mart</option>
+                            <option value="04">Aprel</option>
+                            <option value="05">May</option>
+                            <option value="06">Iyun</option>
+                            <option value="07">Iyul</option>
+                            <option value="08">Avgust</option>
+                            <option value="09">Sentyabr</option>
+                            <option value="10">Oktyabr</option>
+                            <option value="11">Noyabr</option>
+                            <option value="12">Dekabr</option>
+                        </select>
+                    </div>
+                    <div class="filter-col">
+                        <label>Yil</label>
+                        <select id="kvFilterYear" onchange="applyKvFilters()">
+                            <option value="all">Yillar</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="filter-row">
-                    <select id="kvFilterStaff" onchange="applyKvFilters()">
-                        <option value="all">Barcha hodimlar</option>
-                    </select>
-                    <select id="kvFilterProcess" onchange="applyKvFilters()">
-                        <option value="all">Barcha jarayonlar</option>
-                    </select>
+                    <div class="filter-col">
+                        <label>Mas'ul xodim</label>
+                        <select id="kvFilterStaff" onchange="applyKvFilters()">
+                            <option value="all">Barcha hodimlar</option>
+                        </select>
+                    </div>
+                    <div class="filter-col">
+                        <label>Ish bosqichi</label>
+                        <select id="kvFilterProcess" onchange="applyKvFilters()">
+                            <option value="all">Barcha jarayonlar</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 

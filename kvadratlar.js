@@ -167,7 +167,12 @@ function renderKvList() {
     const totalDisplay = document.getElementById('kvTotalM2');
     if (!container) return;
     if (!kvFilteredRecords.length) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📏</div><p>Ma'lumot topilmadi</p></div>`;
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📐</div>
+                <p>Ushbu filtrlar bo'yicha ma'lumotlar topilmadi</p>
+                <span style="font-size:12px; color:var(--text-light); margin-top:8px; display:block;">Boshqa filtrlarni sinab ko'ring yoki ma'lumotni yangilang</span>
+            </div>`;
         if (totalDisplay) totalDisplay.innerText = '0';
         return;
     }
