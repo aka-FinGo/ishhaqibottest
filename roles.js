@@ -236,12 +236,21 @@ function applyRoleConstraintsToCard(tgId, usePreset) {
         const preset = getRolePreset(role);
         ROLE_PERM_FIELDS.forEach(field => setPermChecked(tgId, field, Number(preset[field]) === 1));
     }
+    
+    // Default: barchasini yoqish
     ROLE_PERM_FIELDS.forEach(field => setPermDisabled(tgId, field, false));
+
     if (role === 'SUPER_ADMIN') {
         ROLE_PERM_FIELDS.forEach(field => {
             setPermChecked(tgId, field, true);
             setPermDisabled(tgId, field, true);
         });
+    } else if (role === 'EMPLOYEE') {
+        // Hodim uchun 'Tahrirlash' va 'O'chirish' (global) ruxsatlarini yopamiz
+        setPermChecked(tgId, 'canEdit', false);
+        setPermDisabled(tgId, 'canEdit', true);
+        setPermChecked(tgId, 'canDelete', false);
+        setPermDisabled(tgId, 'canDelete', true);
     }
 }
 

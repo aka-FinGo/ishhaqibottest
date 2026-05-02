@@ -212,6 +212,10 @@ function doPost(e) {
         result = savePositions(data.positions);
         break;
 
+      case "check_updates":
+        result = { success: true, dataVersion: getDataVersion() };
+        break;
+
       default:
         result = { success: false, error: "Noma'lum: " + action };
     }

@@ -246,8 +246,16 @@ function initUser(tgId, auth, data) {
   var allPositions   = (typeof getAllPositions === 'function') ? getAllPositions() : [];
   var empList        = (typeof buildUsernameMap === 'function') ? buildUsernameMap() : {};
 
+  // Fetch Kvadratlar (Measurements) data
+  var kvData = [];
+  try {
+    var kvRes = kvadratGetAll();
+    if (kvRes && kvRes.success) kvData = kvRes.data;
+  } catch(e) {}
+
   return {
     success: true,
+    dataVersion: getDataVersion(), // Smart Versioning
     inList: auth.inList,
     username: auth.username,
     canAdd: auth.canAdd,
@@ -261,7 +269,8 @@ function initUser(tgId, auth, data) {
     workflowConfig: workflowConfig,
     isWorkflowStrict: getWorkflowStrictMode(),
     data: userRecords,
-    employeeList: empList
+    employeeList: empList,
+    kvData: kvData
   };
 }
 
@@ -276,5 +285,26 @@ function getWorkflowStrictMode() {
 function setWorkflowStrictMode(isStrict) {
   var p = PropertiesService.getScriptProperties();
   p.setProperty('WORKFLOW_STRICT_MODE', isStrict ? '1' : '0');
+  incrementDataVersion(); // Sozlama o'zgarsa ham versiya o'zgaradi
   return { success: true };
+}
+
+/**
+ * Smart Versioning System
+ */
+function getDataVersion() {
+  var p = PropertiesService.getScriptProperties();
+  var v = p.getProperty('DATA_VERSION');
+  if (!v) {
+    v = '1';
+    p.setProperty('DATA_VERSION', v);
+  }
+  return v;
+}
+
+function incrementDataVersion() {
+  var p = PropertiesService.getScriptProperties();
+  var current = parseInt(p.getProperty('DATA_VERSION') || '1', 10);
+  p.setProperty('DATA_VERSION', String(current + 1));
+  resetDataCache_();
 }

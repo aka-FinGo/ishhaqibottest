@@ -54,6 +54,7 @@ function saveWorkflowConfig(steps) {
       ]);
     });
   }
+  incrementDataVersion();
   return { success: true };
 }
 
@@ -149,6 +150,7 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
        }
     }
 
+    incrementDataVersion();
     return { success: true };
   });
 }

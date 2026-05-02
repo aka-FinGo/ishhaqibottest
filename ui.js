@@ -90,113 +90,143 @@ let _appInitialized = false;
 let _appInitRetries = 0;
 const MAX_INIT_RETRIES = 3;
 
-function loadCachedData() {
-    try {
-        const cachedData = localStorage.getItem('myFullRecords');
-        if (cachedData) {
-            const parsed = JSON.parse(cachedData);
-            if (Array.isArray(parsed)) {
-                myFullRecords = parsed;
-                myFilteredRecords = [...myFullRecords];
-                console.log('✅ Cache dan yuklandi:', myFullRecords.length, 'ta amal');
-                return true;
-            }
-        }
-    } catch (e) {
-        console.error('❌ Cache parsing xatosi:', e);
-        try { localStorage.removeItem('myFullRecords'); } catch (e2) { }
-    }
-    return false;
-}
-
-function saveCacheData(data) {
-    try {
-        localStorage.setItem('myFullRecords', JSON.stringify(data));
-        console.log('✅ Cache saqlandi');
-    } catch (e) {
-        if (e.name === 'QuotaExceededError') console.warn('⚠️ localStorage quota to\'lgan');
-        else console.error('❌ Cache save xatosi:', e);
-    }
-}
+// Eski kesh funksiyalari o'rniga AppCache ishlatiladi (cache.js da)
 
 async function initializeApp() {
     try {
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
-        const cacheLoaded = loadCachedData();
-        if (cacheLoaded && myFullRecords.length > 0) {
-            if (typeof initMyFilters === 'function') initMyFilters();
+
+        // 1. Keshdan o'qish (Tezkor UI)
+        const cached = AppCache.get();
+        if (cached && cached.payload) {
+            console.log('🚀 Keshdan ma\'lumotlar yuklanmoqda...');
+            applyDataFromServer(cached.payload, true);
         }
-        console.log('🔄 Server dan ma\'lumot yuklanyapti...');
-        const data = await apiRequest({
+
+        // 2. Serverdan yangiliklarni tekshirish
+        console.log('🔄 Serverdan yangilanishlar tekshirilmoqda...');
+        const localVersion = AppCache.getVersion();
+        
+        const res = await apiRequest({
             action: 'init',
+            clientVersion: localVersion,
             firstName: user ? (user.first_name || '') : '',
             lastName: user ? (user.last_name || '') : '',
             tgUsername: user ? (user.username || '') : ''
         }, { timeoutMs: 30000 });
 
-        if (data && data.success) {
-            myFullRecords = data.data || [];
-            saveCacheData(myFullRecords);
-            myFilteredRecords = [...myFullRecords];
-            myInList = data.inList || false;
-            myCanAdd = data.canAdd !== false;
-            myUsername = data.username || '';
-            adminContactId = String(data.adminContactId || '').trim();
-            const _empRaw = data.employeeList || {};
-            window._kvEmpMap = _empRaw;
-            globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
-            const displayName = myUsername || firstName;
-            document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
-            if (data.isSuperAdmin) myRole = 'SuperAdmin';
-            else if (data.isAdmin) myRole = 'Admin';
-            else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
-            else myRole = 'User';
-            myIsSardor = !!data.isSardor;
-            const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
-            if (myRole === 'SuperAdmin') {
-                myPermissions = {
-                    canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true,
-                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
-                    isWorkflowStrict: !!data.isWorkflowStrict
-                };
+        if (res && res.success) {
+            // Agar versiya o'zgargan bo'lsa yoki kesh bo'sh bo'lsa yangilaymiz
+            if (String(res.dataVersion) !== String(localVersion) || !cached) {
+                console.log('🆕 Yangi ma\'lumotlar olindi (v' + res.dataVersion + ')');
+                applyDataFromServer(res, false);
+                AppCache.save(res);
             } else {
-                const p = data.permissions || {};
-                myPermissions = {
-                    canViewAll: asBool(p.canViewAll), canEdit: asBool(p.canEdit), canDelete: asBool(p.canDelete),
-                    canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash),
-                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
-                    isWorkflowStrict: !!data.isWorkflowStrict
-                };
+                console.log('✅ Ma\'lumotlar joriy holatda (v' + localVersion + ')');
             }
-            if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
-            canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
-            canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
-            if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
-            if (myRole === 'SuperAdmin' || myRole === 'Admin') {
-                const navAdmin = document.getElementById('nav-admin');
-                if (navAdmin) navAdmin.classList.remove('hidden');
-            }
-            setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
-            setCompanyExportVisibility(canExportCompanyData);
-            updateContactAdminButton();
-            if (data.autoAdded) showToastMsg("✅ Siz ro'yxatga qo'shildingiz. Ruxsat uchun admin bilan bog'laning.");
-            if (typeof initMyFilters === 'function') initMyFilters();
-            _appInitialized = true; _appInitRetries = 0;
-        } else { throw new Error(data?.error || 'Init xatosi'); }
+            _appInitialized = true;
+            startBackgroundCheck(); // Fondagi tekshiruvni yoqish
+        } else {
+            throw new Error(res?.error || 'Init xatosi');
+        }
     } catch (error) {
         console.error('❌ Init xatosi:', error);
-        if (_appInitRetries < MAX_INIT_RETRIES) {
+        if (!_appInitialized && _appInitRetries < MAX_INIT_RETRIES) {
             _appInitRetries++;
-            const delay = 2000 * _appInitRetries;
-            setTimeout(initializeApp, delay);
-            showToastMsg(`⚠️ Qayta urinish... (${_appInitRetries}/${MAX_INIT_RETRIES})`);
-        } else {
-            _appInitialized = false;
-            showToastMsg('❌ ' + (error.message || "Server bilan bog'lanib bo'mladi"), true);
-            if (myFullRecords.length > 0) showToastMsg('📱 Offline rejimda ishlayapti (cache ma\'lumotlar)', false);
+            setTimeout(initializeApp, 2000 * _appInitRetries);
         }
     }
+}
+
+function applyDataFromServer(data, isFromCache = false) {
+    if (!data) return;
+
+    myFullRecords = data.data || [];
+    myFilteredRecords = [...myFullRecords];
+    myInList = data.inList || false;
+    myCanAdd = data.canAdd !== false;
+    myUsername = data.username || '';
+    adminContactId = String(data.adminContactId || '').trim();
+    
+    const _empRaw = data.employeeList || {};
+    window._kvEmpMap = _empRaw;
+    globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
+
+    // Kvadratlar (Measurements) ma'lumotlarini yangilash
+    kvFullRecords = data.kvData || [];
+    if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
+    
+    const displayName = myUsername || (user ? user.first_name : 'Xodim');
+    document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
+
+    if (data.isSuperAdmin) myRole = 'SuperAdmin';
+    else if (data.isAdmin) myRole = 'Admin';
+    else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
+    else myRole = 'User';
+
+    myIsSardor = !!data.isSardor;
+    const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
+    
+    const p = data.permissions || {};
+    myPermissions = {
+        canViewAll: asBool(p.canViewAll) || myRole === 'SuperAdmin',
+        canEdit: asBool(p.canEdit) || myRole === 'SuperAdmin',
+        canDelete: asBool(p.canDelete) || myRole === 'SuperAdmin',
+        canExport: asBool(p.canExport) || myRole === 'SuperAdmin',
+        canViewDash: asBool(p.canViewDash) || myRole === 'SuperAdmin',
+        positions: data.positions || [],
+        workflowConfig: data.workflowConfig || [],
+        allPositions: data.allPositions || [],
+        isWorkflowStrict: !!data.isWorkflowStrict
+    };
+
+    if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
+    
+    canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
+    canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
+
+    if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+    
+    const navAdmin = document.getElementById('nav-admin');
+    if (navAdmin) navAdmin.classList.toggle('hidden', myRole !== 'SuperAdmin' && myRole !== 'Admin');
+
+    setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
+    setCompanyExportVisibility(canExportCompanyData);
+    updateContactAdminButton();
+
+    if (typeof initMyFilters === 'function') initMyFilters();
+    
+    // Agar keshdan bo'lsa, xarajatlar ro'yxatini darhol chizamiz
+    if (isFromCache) applyMyFilters();
+}
+
+let _bgCheckTimer = null;
+function startBackgroundCheck() {
+    if (_bgCheckTimer) clearInterval(_bgCheckTimer);
+    _bgCheckTimer = setInterval(async () => {
+        try {
+            const localVersion = AppCache.getVersion();
+            const res = await apiRequest({ action: 'check_updates' });
+            if (res && res.success && String(res.dataVersion) !== String(localVersion)) {
+                console.log('🔄 Fondagi yangilanish aniqlandi. Versiya:', res.dataVersion);
+                // Ma'lumotlarni to'liq yangilash
+                const freshData = await apiRequest({
+                    action: 'init',
+                    firstName: user ? (user.first_name || '') : '',
+                    lastName: user ? (user.last_name || '') : '',
+                    tgUsername: user ? (user.username || '') : ''
+                });
+                if (freshData && freshData.success) {
+                    applyDataFromServer(freshData, false);
+                    AppCache.save(freshData);
+                    showToastMsg("🔄 Ma'lumotlar fonda yangilandi");
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ Fondagi tekshiruvda xato:', e);
+        }
+    }, 60000); // Har 60 soniyada tekshirish
 }
 
 window.addEventListener('load', initializeApp);

@@ -38,21 +38,6 @@ function kvHideProc(isSuccess = null, finalMsg = null) {
     }
 }
 
-async function kvRefreshAll(btn) {
-    if (btn) btn.classList.add('spinning');
-    kvShowProc('Ma\'lumotlar yangilanmoqda...');
-    try {
-        await initKvadratTab();
-        kvHideProc(true, 'Yangilandi');
-    } catch (e) {
-        kvHideProc(false, 'Yangilashda xato');
-    } finally {
-        const refreshButtons = document.querySelectorAll('.btn-secondary[title="Yangilash"]');
-        refreshButtons.forEach(button => {
-            button.classList.remove('spinning');
-        });
-    }
-}
 
 function populateKvadratMeta(staffList) {
     const staffFilter = document.getElementById('kvFilterStaff');
@@ -124,31 +109,37 @@ async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
     
-    listContainer.innerHTML = `
-        <div class="skeleton-container" style="padding:0;">
-            ${Array(5).fill('<div class="skeleton-card" style="margin-bottom:12px;"><div class="skeleton" style="height:20px;width:40%;margin-bottom:10px;"></div><div class="skeleton" style="height:15px;width:70%;"></div></div>').join('')}
-        </div>`;
-
-    try {
-        const data = await apiRequest({ action: 'kvadrat_get_all' });
-        if (data.success) {
-            kvFullRecords = data.data || [];
-            if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
-            applyKvFilters();
-        } else {
-            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Xato: ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
-        }
-    } catch (e) {
-        console.error('initKvadratTab error:', e);
-        // Agar network error bo'lsa va dashboardda ma'lumot bo'lsa - favqulodda sinxronlash
-        if (typeof kvDashboardRecords !== 'undefined' && kvDashboardRecords.length > 0) {
-            kvFullRecords = kvDashboardRecords;
-            applyKvFilters();
-        } else {
-            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
-        }
+    // Agar keshda ma'lumot bo'lsa, darhol chizamiz
+    if (kvFullRecords && kvFullRecords.length > 0) {
+        applyKvFilters();
+    } else {
+        listContainer.innerHTML = `
+            <div class="skeleton-container" style="padding:0;">
+                ${Array(5).fill('<div class="skeleton-card" style="margin-bottom:12px;"><div class="skeleton" style="height:20px;width:40%;margin-bottom:10px;"></div><div class="skeleton" style="height:15px;width:70%;"></div></div>').join('')}
+            </div>`;
     }
     updateKvFabVisibility();
+}
+
+async function kvRefreshAll(btn) {
+    if (btn) btn.classList.add('spinning');
+    kvShowProc('Ma\'lumotlar yangilanmoqda...');
+    try {
+        // Force refresh by clearing cache and calling init
+        AppCache.clear();
+        await initializeApp();
+        if (document.getElementById('kvadratTab').classList.contains('active')) {
+             applyKvFilters();
+        }
+        kvHideProc(true, 'Yangilandi');
+    } catch (e) {
+        kvHideProc(false, 'Yangilashda xato');
+    } finally {
+        const refreshButtons = document.querySelectorAll('.btn-secondary[title="Yangilash"], .kv-refresh-btn');
+        refreshButtons.forEach(button => {
+            button.classList.remove('spinning');
+        });
+    }
 }
 
 function updateKvFabVisibility() {

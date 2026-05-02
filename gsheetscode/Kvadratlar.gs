@@ -178,6 +178,7 @@ function kvadratAdd(data, auth, actorTgId) {
     sh.getRange(row, 4).setNumberFormat('@'); // Year format
     sh.getRange(row, 5).setNumberFormat('0.00');
 
+    incrementDataVersion();
     return { success: true, rowId: row };
   });
 }
@@ -273,6 +274,7 @@ function kvadratEdit(data, auth, actorTgId) {
     }
     
     addAuditLog_(actorTgId, 'kvadrat_edit', row, null, null, reason);
+    incrementDataVersion();
     return { success: true };
   });
 }
@@ -328,6 +330,7 @@ function kvadratDelete(data, auth, actorTgId) {
 
     sh.getRange(row, KV_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'kvadrat_delete', row, null, 'deleted', reason);
+    incrementDataVersion();
     return { success: true };
   });
 }
