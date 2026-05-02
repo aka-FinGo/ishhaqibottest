@@ -168,9 +168,6 @@ async function initializeApp() {
                     positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
                     isWorkflowStrict: !!data.isWorkflowStrict
                 };
-                    canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash), positions: data.positions || [],
-                    workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || []
-                };
             }
             if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
             canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;

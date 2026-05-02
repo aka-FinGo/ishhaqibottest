@@ -282,6 +282,7 @@ function showKvDetailModal(idx) {
     const logs = rec.logs || [];
     const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
     const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
+    const currentStepIdx = Number(rec.currentStep) || 1;
     let claimBtnHtml = '';
     
     const isStrict = !!myPermissions.isWorkflowStrict;
