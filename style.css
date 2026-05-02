@@ -6,3 +6,10 @@ animation:kvSpin 0.8s linear infinite;
 .kv-refresh-btn:active{transform:rotate(360deg);}.kv-refresh-btn.spinning{
 animation:kvSpin 0.8s linear infinite;
 }
+/* FINAL STYLE MATCH FOR SCREENSHOT */
+.premium-hero-card { background: #0F172A !important; border-radius: 20px !important; padding: 22px !important; }
+.premium-hero-label { color: rgba(255,255,255,0.4) !important; font-size: 10px !important; }
+.premium-hero-value { font-size: 36px !important; font-weight: 800 !important; }
+.kv-table thead th { background: #0F172A !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; font-size: 10px !important; }
+.kv-date-row td { background: #F1F5F9 !important; color: #64748B !important; font-weight: 700 !important; border: 1px solid #E2E8F0 !important; }
+.kv-table tbody td { border: 1px solid #E2E8F0 !important; }

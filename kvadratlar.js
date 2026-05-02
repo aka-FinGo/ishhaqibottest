@@ -222,7 +222,7 @@ function renderKvList() {
             if (relDavr !== lastDavr) {
                 const trDate = document.createElement('tr');
                 trDate.className = 'kv-date-row';
-                trDate.innerHTML = `<td colspan="5">${relDavr}</td>`;
+                trDate.innerHTML = `<td colspan="5" style="border:1px solid #E2E8F0;">🗓 Davr: ${relDavr}</td>`;
                 tbody.appendChild(trDate);
                 lastDavr = relDavr;
             }
