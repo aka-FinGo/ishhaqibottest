@@ -25,3 +25,6 @@ animation:kvSpin 0.8s linear infinite;
 .switch-row::after { content: ; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 .switch-row:has(input:checked)::before { background-color: #10B981; }
 .switch-row:has(input:checked)::after { transform: translateX(22px); }
+
+/* ADMIN WORKFLOW CHECKBOX FIX */
+.is-start-checkbox { -webkit-appearance: checkbox !important; appearance: checkbox !important; width: 22px !important; height: 22px !important; border: 2px solid var(--green) !important; cursor: pointer !important; accent-color: var(--green) !important; }

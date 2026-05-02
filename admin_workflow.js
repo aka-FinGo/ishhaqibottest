@@ -62,24 +62,25 @@ function renderWorkflowSteps() {
     currentWorkflowSteps.forEach((step, idx) => {
         const phaseColors = getWorkflowStepColors(idx, currentWorkflowSteps.length);
         html += `
-        <div class="card" style="margin-bottom:10px; border:1px solid ${phaseColors.bg}; background:#fff; padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="background:${phaseColors.bg}; color:${phaseColors.color}; padding:2px 10px; border-radius:15px; font-size:12px; font-weight:700;">
-                    Bosqich ${idx + 1} ${step.isStart ? '(Boshlang\'ich)' : step.isEnd ? '(Yakun)' : ''}
-                </span>
-                <span style="font-size:11px; font-weight:700; color:${phaseColors.color};">${phaseColors.label}</span>
-            </div>
-                <div style="display:flex; gap:5px;">
-                    <button class="del-icon-btn move-up-btn" data-idx="${idx}" style="background:#F1F5F9; color:#64748B;" ${idx === 0 ? 'disabled' : ''}>▲</button>
-                    <button class="del-icon-btn move-down-btn" data-idx="${idx}" style="background:#F1F5F9; color:#64748B;" ${idx === currentWorkflowSteps.length - 1 ? 'disabled' : ''}>▼</button>
-                    <button class="del-icon-btn delete-step-btn" data-idx="${idx}" style="background:#FEE2E2; color:#EF4444;">🗑</button>
+        <div class="card" style="margin-bottom:20px; border:2px solid ${phaseColors.bg}; background:#fff; padding:16px; border-radius:18px; box-shadow:var(--shadow-md);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #F1F5F9;">
+                <div>
+                    <span style="background:${phaseColors.bg}; color:${phaseColors.color}; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:800;">
+                        BOSQICH ${idx + 1}
+                    </span>
+                    <span style="margin-left:8px; font-size:12px; font-weight:700; color:${phaseColors.color}; opacity:0.8;">${phaseColors.label}</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="del-icon-btn move-up-btn" data-idx="${idx}" style="background:#F1F5F9; color:#64748B; width:30px; height:30px; font-size:12px;" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                    <button class="del-icon-btn move-down-btn" data-idx="${idx}" style="background:#F1F5F9; color:#64748B; width:30px; height:30px; font-size:12px;" ${idx === currentWorkflowSteps.length - 1 ? 'disabled' : ''}>▼</button>
+                    <button class="del-icon-btn delete-step-btn" data-idx="${idx}" style="background:#FEE2E2; color:#EF4444; width:30px; height:30px; font-size:12px;">🗑</button>
                 </div>
             </div>
 
-            <div class="filter-row" style="margin-bottom:8px;">
+            <div class="filter-row" style="margin-bottom:12px; display:flex; gap:10px;">
                 <div style="flex:1;">
-                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🏷 Lavozim</label>
-                    <select class="position-select" data-idx="${idx}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:10px;">
+                    <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">👤 Lavozim</label>
+                    <select class="position-select" data-idx="${idx}" style="width:100%; border-radius:12px; font-weight:600;">
                         <option value="">-- Tanlang --</option>
                         ${TECHNICAL_POSITIONS.map(p => `
                             <option value="${escapeHtml(p.name)}" ${step.position === p.name ? 'selected' : ''}>
@@ -89,19 +90,19 @@ function renderWorkflowSteps() {
                     </select>
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔘 Tugma matni</label>
-                    <input type="text" class="action-input" data-idx="${idx}" value="${escapeHtml(step.action)}" placeholder="Masalan: Men kesdim">
+                    <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">🔘 Tugma matni</label>
+                    <input type="text" class="action-input" data-idx="${idx}" value="${escapeHtml(step.action)}" placeholder="Masalan: Men kesdim" style="border-radius:12px; font-weight:600;">
                 </div>
             </div>
 
-            <div>
-                <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">📊 Status (Amaldan keyin)</label>
-                <input type="text" class="status-input" data-idx="${idx}" value="${escapeHtml(step.status)}" placeholder="Masalan: Kesildi">
+            <div style="margin-bottom:12px;">
+                <label style="font-size:11px; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase;">📊 Status (Amaldan keyin)</label>
+                <input type="text" class="status-input" data-idx="${idx}" value="${escapeHtml(step.status)}" placeholder="Masalan: Kesildi" style="border-radius:12px; font-weight:600;">
             </div>
 
-            <div style="margin-top:8px;">
-                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
-                    <input type="checkbox" class="is-start-checkbox" data-idx="${idx}" ${step.isStart ? 'checked' : ''}>
+            <div style="padding:10px; background:#F8FAFC; border-radius:12px; border:1px dashed #E2E8F0;">
+                <label style="display:flex; align-items:center; gap:10px; font-size:12px; cursor:pointer; font-weight:700; color:var(--navy);">
+                    <input type="checkbox" class="is-start-checkbox" data-idx="${idx}" ${step.isStart ? 'checked' : ''} style="width:20px; height:20px; cursor:pointer; accent-color:var(--green);">
                     <span>Bu buyurtmani yaratadigan qadam (Start)</span>
                 </label>
             </div>
