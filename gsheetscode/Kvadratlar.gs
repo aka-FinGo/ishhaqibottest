@@ -147,6 +147,9 @@ function kvadratAdd(data, auth, actorTgId) {
       orderNo = String(nextNo);
     }
 
+    var config = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
+    var firstStep = config[0] || { stepId: "step_1", status: "yangi", index: 1 };
+
     sh.appendRow([
       today,
       orderNo,
@@ -157,9 +160,9 @@ function kvadratAdd(data, auth, actorTgId) {
       resolvedStaffName,       // Hodimlar ro'yxatidan olingan ism
       String(actorTgId),
       0,
-      1, // Step 1: Kiritildi
-      "yangi",
-      JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString() }])
+      firstStep.stepId, // O'zgarmas ID yozamiz
+      firstStep.status,
+      JSON.stringify([{ stepId: firstStep.stepId, step: firstStep.index, uid: String(actorTgId), d: today.toISOString() }])
     ]);
 
     var row = sh.getLastRow();
