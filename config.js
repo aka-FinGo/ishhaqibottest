@@ -26,6 +26,7 @@ let myRole = 'User';
 let myUsername = '';   // Sheetdan kelgan Ism
 let myCanAdd = true; // + tugmasi doim ko'rinadi, ruxsat yo'q bo'lsa ogohlantirish
 let myInList = false;// Hodimlar sheetida bormi
+let myIsSardor = false;
 let canViewCompanyActions = false;
 let canExportCompanyData = false;
 let adminContactId = '';

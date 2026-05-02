@@ -152,6 +152,7 @@ async function initializeApp() {
             else if (data.isAdmin) myRole = 'Admin';
             else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
             else myRole = 'User';
+            myIsSardor = !!data.isSardor;
             const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
             if (myRole === 'SuperAdmin') {
                 myPermissions = {

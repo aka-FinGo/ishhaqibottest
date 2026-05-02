@@ -264,6 +264,7 @@ function initUser(tgId, auth, data) {
     isAdmin: auth.isAdmin,
     isSuperAdmin: auth.isSuperAdmin,
     isDirector: auth.isDirector,
+    isSardor: !!auth.isSardor,
     permissions: auth.permissions,
     positions: auth.positions,
     allPositions: allPositions,

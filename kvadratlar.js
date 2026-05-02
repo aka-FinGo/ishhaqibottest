@@ -285,7 +285,11 @@ function showKvDetailModal(idx) {
     const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
     const currentStepIdx = Number(rec.currentStep) || 1;
     const nextStep = config.find(s => s.index === currentStepIdx + 1);
-    if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
+    
+    // Permission Check: Show claim button only for SuperAdmin or Group Leaders with correct position
+    const canClaim = myRole === 'SuperAdmin' || (myIsSardor && myPoss.indexOf(nextStep?.position) !== -1);
+
+    if (nextStep && canClaim) {
         const totalSteps = config.length >= 2 ? config.length : 3;
         const nextStepIdx = Number(nextStep.index || currentStepIdx + 1) - 1;
         const nextColors = getWorkflowStepColors(nextStepIdx, totalSteps);
@@ -562,6 +566,25 @@ async function deleteKv(rowId) {
         }
     } catch (e) {
         kvHideProc(false, 'Tarmoq xatosi');
+    }
+}
+
+function updateKvFabVisibility() {
+    const fab = document.getElementById('nav-add');
+    if (!fab) return;
+    
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab && activeTab.id === 'kvadratTab') {
+        const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
+        const isLoyihachi = myRole === 'SuperAdmin' || myPoss.indexOf('Loyihachi') !== -1;
+        
+        if (!isLoyihachi) {
+            fab.style.display = 'none';
+        } else {
+            fab.style.display = 'flex';
+        }
+    } else {
+        fab.style.display = 'flex';
     }
 }
 
