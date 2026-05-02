@@ -506,7 +506,17 @@ async function saveKv() {
         if (data.success) {
             showToastMsg('✅ Saqlandi');
             closeKvModal();
-            initKvadratTab();
+            // Optimistic Update: Yangi yoki tahrirlangan ma'lumotni keshga yalandan qo'shib qo'yish
+            if (rowId) {
+                const idx = kvFullRecords.findIndex(r => String(r.rowId) === String(rowId));
+                if (idx !== -1) {
+                    kvFullRecords[idx] = { ...kvFullRecords[idx], no: orderNumber, orderName, totalM2, staffName, month: `_${month}`, year };
+                }
+            } else {
+                kvFullRecords.unshift({ rowId: data.rowId || Date.now(), no: orderNumber, orderName, totalM2, staffName, month: `_${month}`, year, currentStep: 1, logs: [] });
+            }
+            applyKvFilters();
+            forceSyncBackground(); // Haqiqiy saqlanganini fonda tekshirish
         } else {
             showToastMsg('❌ ' + (data.error || 'Xato'), true);
         }
@@ -541,7 +551,10 @@ async function deleteKv(rowId) {
         const data = await apiRequest({ action: 'kvadrat_delete', rowId, reason });
         if (data.success) {
             kvHideProc(true, 'O\'chirildi');
-            initKvadratTab();
+            // Optimistic
+            kvFullRecords = kvFullRecords.filter(r => String(r.rowId) !== String(rowId));
+            applyKvFilters();
+            forceSyncBackground();
         } else {
             kvHideProc(false, data.error || 'Xato');
         }
@@ -556,7 +569,13 @@ async function claimKvWork(rowId) {
         const data = await apiRequest({ action: 'kvadrat_claim', rowId });
         if (data.success) {
             kvHideProc(true, 'Bajarildi!');
-            initKvadratTab();
+            // Optimistic Update
+            const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
+            if (rec) {
+                rec.currentStep = (Number(rec.currentStep) || 1) + 1;
+            }
+            applyKvFilters();
+            forceSyncBackground(); // Asl holatni serverdan tasdiqlash
         } else {
             kvHideProc(false, data.error || 'Xato');
         }

@@ -92,6 +92,45 @@ const MAX_INIT_RETRIES = 3;
 
 // Eski kesh funksiyalari o'rniga AppCache ishlatiladi (cache.js da)
 
+let _syncToastEl = null;
+function showSyncToast() {
+    if (!_syncToastEl) {
+        _syncToastEl = document.createElement('div');
+        _syncToastEl.style.cssText = "position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.9); color:#fff; padding:10px 18px; border-radius:30px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; z-index:9999; backdrop-filter:blur(8px); box-shadow:0 10px 25px rgba(0,0,0,0.3); transition: opacity 0.3s; pointer-events:none;";
+        _syncToastEl.innerHTML = `<div class="kv-spinner" style="width:16px;height:16px;border-width:2px;border-top-color:#10B981;"></div><span>Sinxronizatsiya...</span>`;
+        document.body.appendChild(_syncToastEl);
+    }
+    _syncToastEl.style.display = 'flex';
+    _syncToastEl.style.opacity = '1';
+}
+function hideSyncToast() {
+    if (_syncToastEl) {
+        _syncToastEl.style.opacity = '0';
+        setTimeout(() => { if (_syncToastEl.style.opacity === '0') _syncToastEl.style.display = 'none'; }, 300);
+    }
+}
+
+async function forceSyncBackground() {
+    showSyncToast();
+    try {
+        const res = await apiRequest({
+            action: 'init',
+            clientVersion: AppCache.getVersion(),
+            firstName: user ? (user.first_name || '') : '',
+            lastName: user ? (user.last_name || '') : '',
+            tgUsername: user ? (user.username || '') : ''
+        });
+        if (res && res.success) {
+            applyDataFromServer(res, false);
+            AppCache.save(res);
+        }
+    } catch(e) {
+        console.warn('Sync error:', e);
+    } finally {
+        hideSyncToast();
+    }
+}
+
 async function initializeApp() {
     try {
         const firstName = user ? user.first_name : 'Xodim';
@@ -104,6 +143,8 @@ async function initializeApp() {
             applyDataFromServer(cached.payload, true);
         }
 
+        showSyncToast(); // Ma'lumotlarni tekshirish boshlandi
+
         // 2. Serverdan yangiliklarni tekshirish
         console.log('🔄 Serverdan yangilanishlar tekshirilmoqda...');
         const localVersion = AppCache.getVersion();
@@ -115,6 +156,8 @@ async function initializeApp() {
             lastName: user ? (user.last_name || '') : '',
             tgUsername: user ? (user.username || '') : ''
         }, { timeoutMs: 30000 });
+
+        hideSyncToast(); // Tekshiruv tugadi
 
         if (res && res.success) {
             // Agar versiya o'zgargan bo'lsa yoki kesh bo'sh bo'lsa yangilaymiz
@@ -131,6 +174,7 @@ async function initializeApp() {
             throw new Error(res?.error || 'Init xatosi');
         }
     } catch (error) {
+        hideSyncToast();
         console.error('❌ Init xatosi:', error);
         if (!_appInitialized && _appInitRetries < MAX_INIT_RETRIES) {
             _appInitRetries++;
@@ -225,18 +269,7 @@ function startBackgroundCheck() {
             const res = await apiRequest({ action: 'check_updates' });
             if (res && res.success && String(res.dataVersion) !== String(localVersion)) {
                 console.log('🔄 Fondagi yangilanish aniqlandi. Versiya:', res.dataVersion);
-                // Ma'lumotlarni to'liq yangilash
-                const freshData = await apiRequest({
-                    action: 'init',
-                    firstName: user ? (user.first_name || '') : '',
-                    lastName: user ? (user.last_name || '') : '',
-                    tgUsername: user ? (user.username || '') : ''
-                });
-                if (freshData && freshData.success) {
-                    applyDataFromServer(freshData, false);
-                    AppCache.save(freshData);
-                    showToastMsg("🔄 Ma'lumotlar fonda yangilandi");
-                }
+                forceSyncBackground();
             }
         } catch (e) {
             console.warn('⚠️ Fondagi tekshiruvda xato:', e);
