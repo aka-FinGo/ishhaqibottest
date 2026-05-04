@@ -1,4 +1,4 @@
-let kvFullRecords = [];
+5let kvFullRecords = [];
 let kvFilteredRecords = [];
 const KV_ITEMS_PER_PAGE = 15;
 let kvCurrentPage = 1;
@@ -351,7 +351,7 @@ function showKvDetailModal(idx) {
     }
 
     let historyHtml = '';
-    const logs = rec.logs || [];
+    
     logs.forEach(log => {
         const stepCfg = config.find(s => s.index === log.step);
         let sColor = '#6366f1';
