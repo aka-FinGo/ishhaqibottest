@@ -182,7 +182,7 @@ function doPost(e) {
 
       case "kvadrat_claim":
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
-        result = processWorkflowStep(data.rowId, auth, tgId, data.stepIndex);
+        result = processWorkflowStep(data.rowId, auth, tgId, data.targetStepIndex);
         break;
 
       case "workflow_get_config":
