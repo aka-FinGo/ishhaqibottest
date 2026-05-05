@@ -169,7 +169,7 @@ function kvadratAdd(data, auth, actorTgId) {
       0,
       1, // Step 1: Kiritildi
       "yangi",
-      JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString() }])
+      JSON.stringify([{ step: 1, uid: String(actorTgId), u: auth.username || resolvedStaffName || '—', d: today.toISOString() }])
     ]);
 
     var row = sh.getLastRow();

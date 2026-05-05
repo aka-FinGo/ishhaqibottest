@@ -361,7 +361,7 @@ function showKvDetailModal(idx) {
                 const totalSteps = config.length >= 2 ? config.length : 3;
                 sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
             }
-            const name = (String(log.uid) === String(rec.ownerTgId)) ? rec.staffName : (typeof globalEmployeeList !== 'undefined' && globalEmployeeList && globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid);
+            const name = log.u || (String(log.uid) === String(rec.ownerTgId) ? rec.staffName : (typeof globalEmployeeList !== 'undefined' && globalEmployeeList && globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid));
             
             // Tarix elementini yanada kontrastli qilish
             const isLast = lIdx === logs.length - 1;
