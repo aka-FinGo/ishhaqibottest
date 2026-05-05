@@ -356,7 +356,7 @@ function showKvDetailModal(idx) {
             const totalSteps = config.length >= 2 ? config.length : 3;
             sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
         }
-        const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId) === String(log.uid))?.username || log.uid);
+        const name = (String(log.uid) === String(rec.ownerTgId)) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid);
         historyHtml += `
             <div style="border-left:2px solid ${sColor}; padding-left:12px; margin-bottom:12px; position:relative;">
                 <div style="width:10px; height:10px; border-radius:50%; background:${sColor}; position:absolute; left:-6px; top:4px;"></div>
@@ -365,13 +365,14 @@ function showKvDetailModal(idx) {
             </div>`;
     });
 
-    const isAdmin = myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor';
-    const canEditGlobal = isAdmin && myPermissions.canEdit;
-    const canDeleteGlobal = isAdmin && myPermissions.canDelete;
-    const isOwner = String(rec.ownerTgId) === String(telegramId);
+    const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+    const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
+    const canEditGlobal = isAdmin && hasPerms && myPermissions.canEdit;
+    const canDeleteGlobal = isAdmin && hasPerms && myPermissions.canDelete;
+    const isOwner = String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0');
 
-    const canEdit = canEditGlobal || isOwner || myRole === 'SuperAdmin';
-    const canDelete = canDeleteGlobal || isOwner || myRole === 'SuperAdmin';
+    const canEdit = canEditGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
+    const canDelete = canDeleteGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
 
     const buttonsRow = (canEdit || canDelete) ? `
         <div style="display:flex; gap:8px; margin-bottom:16px;">
