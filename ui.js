@@ -91,18 +91,62 @@ let _appInitRetries = 0;
 const MAX_INIT_RETRIES = 3;
 
 function loadCachedData() {
-    const cached = AppCache.get(AppCache.KEYS.MY_RECORDS, 120); // 120 daqiqa kesh
+    const cached = AppCache.get(AppCache.KEYS.MY_RECORDS, 120);
     if (cached && Array.isArray(cached)) {
         myFullRecords = cached;
         myFilteredRecords = [...myFullRecords];
-        console.log('✅ Cache dan yuklandi:', myFullRecords.length, 'ta amal');
+        console.log('✅ Records cached:', myFullRecords.length);
+    }
+    const cachedUser = AppCache.get(AppCache.KEYS.USER_DATA, 120);
+    if (cachedUser) {
+        processUserData(cachedUser);
+        console.log('✅ User meta cached');
         return true;
     }
-    return false;
+    return !!cached;
 }
 
-function saveCacheData(data) {
-    AppCache.set(AppCache.KEYS.MY_RECORDS, data);
+function saveCacheData(records, userData) {
+    if (records) AppCache.set(AppCache.KEYS.MY_RECORDS, records);
+    if (userData) AppCache.set(AppCache.KEYS.USER_DATA, userData);
+}
+
+function processUserData(data) {
+    if (!data) return;
+    myInList = data.inList || false;
+    myCanAdd = data.canAdd !== false;
+    myUsername = data.username || '';
+    adminContactId = String(data.adminContactId || '').trim();
+    const displayName = data.username || (user ? user.first_name : 'Xodim');
+    document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
+    
+    if (data.isSuperAdmin) myRole = 'SuperAdmin';
+    else if (data.isAdmin) myRole = 'Admin';
+    else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
+    else myRole = 'User';
+    
+    myIsSardor = !!data.isSardor;
+    const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
+    
+    if (myRole === 'SuperAdmin') {
+        myPermissions = {
+            canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true,
+            positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
+            isWorkflowStrict: !!data.isWorkflowStrict
+        };
+    } else {
+        const p = data.permissions || {};
+        myPermissions = {
+            canViewAll: asBool(p.canViewAll), canEdit: asBool(p.canEdit), canDelete: asBool(p.canDelete),
+            canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash),
+            positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
+            isWorkflowStrict: !!data.isWorkflowStrict
+        };
+    }
+    if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
+    canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
+    canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
+    if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
 }
 
 async function initializeApp() {
@@ -110,9 +154,8 @@ async function initializeApp() {
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
         
-        // 1. Avval keshdan yuklaymiz (tezroq ko'rinishi uchun)
-        const cacheLoaded = loadCachedData();
-        if (cacheLoaded && myFullRecords.length > 0) {
+        loadCachedData();
+        if (myFullRecords.length > 0) {
             if (typeof initMyFilters === 'function') initMyFilters();
             if (typeof renderMyRecords === 'function') renderMyRecords();
         }
@@ -127,42 +170,14 @@ async function initializeApp() {
 
         if (data && data.success) {
             myFullRecords = data.data || [];
-            saveCacheData(myFullRecords);
             myFilteredRecords = [...myFullRecords];
-            myInList = data.inList || false;
-            myCanAdd = data.canAdd !== false;
-            myUsername = data.username || '';
-            adminContactId = String(data.adminContactId || '').trim();
+            processUserData(data);
+            saveCacheData(myFullRecords, data);
+            
             const _empRaw = data.employeeList || {};
             window._kvEmpMap = _empRaw;
             globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
-            const displayName = myUsername || firstName;
-            document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
-            if (data.isSuperAdmin) myRole = 'SuperAdmin';
-            else if (data.isAdmin) myRole = 'Admin';
-            else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
-            else myRole = 'User';
-            myIsSardor = !!data.isSardor;
-            const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
-            if (myRole === 'SuperAdmin') {
-                myPermissions = {
-                    canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true,
-                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
-                    isWorkflowStrict: !!data.isWorkflowStrict
-                };
-            } else {
-                const p = data.permissions || {};
-                myPermissions = {
-                    canViewAll: asBool(p.canViewAll), canEdit: asBool(p.canEdit), canDelete: asBool(p.canDelete),
-                    canExport: asBool(p.canExport), canViewDash: asBool(p.canViewDash),
-                    positions: data.positions || [], workflowConfig: data.workflowConfig || [], allPositions: data.allPositions || [],
-                    isWorkflowStrict: !!data.isWorkflowStrict
-                };
-            }
-            if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
-            canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
-            canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
-            if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+            
             if (myRole === 'SuperAdmin' || myRole === 'Admin') {
                 const navAdmin = document.getElementById('nav-admin');
                 if (navAdmin) navAdmin.classList.remove('hidden');

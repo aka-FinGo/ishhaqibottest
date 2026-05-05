@@ -307,7 +307,7 @@ function showKvDetailModal(idx) {
     const currentStepIdx = Number(rec.currentStep) || 1;
     
     let claimBtnHtml = '';
-    const isStrict = !!myPermissions.isWorkflowStrict;
+    const isStrict = (typeof myPermissions !== 'undefined' && myPermissions.isWorkflowStrict);
     const logs = rec.logs || [];
     const doneSteps = logs.map(l => Number(l.step));
     const normalizedMyPoss = myPoss.map(p => normalizePos(p));
