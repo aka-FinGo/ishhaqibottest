@@ -171,12 +171,13 @@ async function initializeApp() {
         if (data && data.success) {
             myFullRecords = data.data || [];
             myFilteredRecords = [...myFullRecords];
-            processUserData(data);
-            saveCacheData(myFullRecords, data);
             
             const _empRaw = data.employeeList || {};
             window._kvEmpMap = _empRaw;
             globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
+
+            processUserData(data);
+            saveCacheData(myFullRecords, data);
             
             if (myRole === 'SuperAdmin' || myRole === 'Admin') {
                 const navAdmin = document.getElementById('nav-admin');

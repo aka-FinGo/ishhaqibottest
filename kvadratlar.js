@@ -59,7 +59,8 @@ function populateKvadratMeta(staffList) {
     const kvStaffModal = document.getElementById('kvStaffSelect');
     if (staffFilter) {
         staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
-        staffList.forEach(name => {
+        staffList.forEach(emp => {
+            const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
             const opt = document.createElement('option');
             opt.value = name;
             opt.textContent = name;
@@ -68,7 +69,8 @@ function populateKvadratMeta(staffList) {
     }
     if (kvStaffModal) {
         kvStaffModal.innerHTML = '<option value="">Hodimni tanlang...</option>';
-        staffList.forEach(name => {
+        staffList.forEach(emp => {
+            const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
             const opt = document.createElement('option');
             opt.value = name;
             opt.textContent = name;
