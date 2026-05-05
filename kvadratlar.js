@@ -351,7 +351,6 @@ function showKvDetailModal(idx) {
     }
 
     let historyHtml = '';
-    
     logs.forEach(log => {
         const stepCfg = config.find(s => s.index === log.step);
         let sColor = '#6366f1';
@@ -420,6 +419,7 @@ function applyKvFilters() {
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
 
+    console.log('Filtrlash boshlandi. Jami:', kvFullRecords.length);
     kvFilteredRecords = kvFullRecords.filter(rec => {
         if (!rec || (!rec.rowId && !rec.no)) return false;
 

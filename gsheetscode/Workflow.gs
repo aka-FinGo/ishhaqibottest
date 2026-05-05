@@ -100,12 +100,7 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
       return { success: false, error: 'Sizda "' + stepToProcess.position + '" lavozimi yo\'q' };
     }
 
-    // Group Leader Check (for steps > 1)
-    if (stepToProcess.index > 1 && !auth.isSuperAdmin) {
-       if (!auth.isSardor) {
-         return { success: false, error: 'Faqat "Guruh Sardori" ushbu bosqichni tasdiqlay oladi' };
-       }
-    }
+
 
     // Update logistics
     logs.push({

@@ -1,39 +1,83 @@
 /**
- * Smart Cache Manager
+ * AppCache — Markazlashgan kesh tizimi.
+ * Ma'lumotlarni localStorage'da versiya va muddati bilan saqlaydi.
  */
-const APP_CACHE_KEY = 'aristokrat_app_data';
-
 const AppCache = {
-    save: function(data) {
+    VERSION: '1.0.25', // Ilova versiyasi (o'zgarsa kesh tozalanadi)
+    KEYS: {
+        MY_RECORDS:   'ari_my_recs',
+        ADMIN_DATA:   'ari_admin_data',
+        USER_DATA:    'ari_user_meta'
+    },
+
+    /**
+     * Ma'lumotni keshga saqlash
+     */
+    set(key, data) {
         try {
-            const cacheObj = {
-                version: data.dataVersion || '0',
-                timestamp: Date.now(),
-                payload: data
+            const payload = {
+                v: this.VERSION,
+                t: Date.now(),
+                d: data
             };
-            localStorage.setItem(APP_CACHE_KEY, JSON.stringify(cacheObj));
-            console.log('📦 Kesh yangilandi. Versiya:', cacheObj.version);
-        } catch (e) {
-            console.warn('⚠️ Keshni saqlashda xato:', e);
+            localStorage.setItem(key, JSON.stringify(payload));
+            return true;
+        } catch(e) {
+            console.error('Cache set error:', e);
+            if (e.name === 'QuotaExceededError') {
+                this.clearAll(); // To'lib qolsa hammasini tozalash
+            }
+            return false;
         }
     },
 
-    get: function() {
+    /**
+     * Keshdan ma'lumotni o'qish
+     * @param {string} key - Kalit
+     * @param {number} maxAgeMin - Maksimal amal qilish muddati (daqiqa)
+     */
+    get(key, maxAgeMin = 60) {
         try {
-            const raw = localStorage.getItem(APP_CACHE_KEY);
+            const raw = localStorage.getItem(key);
             if (!raw) return null;
-            return JSON.parse(raw);
-        } catch (e) {
+
+            const payload = JSON.parse(raw);
+            
+            // Versiya mos kelmasa - eski kesh
+            if (payload.v !== this.VERSION) {
+                this.remove(key);
+                return null;
+            }
+
+            // Muddati o'tgan bo'lsa
+            const ageMin = (Date.now() - payload.t) / 60000;
+            if (ageMin > maxAgeMin) {
+                this.remove(key);
+                return null;
+            }
+
+            return payload.d;
+        } catch(e) {
+            console.error('Cache get error:', e);
+            this.remove(key);
             return null;
         }
     },
 
-    getVersion: function() {
-        const cache = this.get();
-        return cache ? cache.version : '0';
+    /**
+     * Keshdan o'chirish
+     */
+    remove(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch(e) {}
     },
 
-    clear: function() {
-        localStorage.removeItem(APP_CACHE_KEY);
+    /**
+     * Barcha keshni tozalash
+     */
+    clearAll() {
+        Object.values(this.KEYS).forEach(k => this.remove(k));
+        console.log('🗑 Barcha kesh tozalandi');
     }
 };
