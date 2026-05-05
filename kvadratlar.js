@@ -354,7 +354,7 @@ function showKvDetailModal(idx) {
         }
 
         let historyHtml = '';
-        logs.forEach(log => {
+        logs.forEach((log, lIdx) => {
             const stepCfg = config.find(s => s.index === log.step);
             let sColor = '#6366f1';
             if (typeof getWorkflowStepColors === 'function') {
@@ -362,11 +362,20 @@ function showKvDetailModal(idx) {
                 sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
             }
             const name = (String(log.uid) === String(rec.ownerTgId)) ? rec.staffName : (typeof globalEmployeeList !== 'undefined' && globalEmployeeList && globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid);
+            
+            // Tarix elementini yanada kontrastli qilish
+            const isLast = lIdx === logs.length - 1;
             historyHtml += `
-                <div style="border-left:2px solid ${sColor}; padding-left:12px; margin-bottom:12px; position:relative;">
-                    <div style="width:10px; height:10px; border-radius:50%; background:${sColor}; position:absolute; left:-6px; top:4px;"></div>
-                    <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
-                    <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
+                <div style="border-left: 2.5px solid ${isLast ? 'transparent' : '#E2E8F0'}; padding-left: 20px; margin-bottom: 0; position: relative; padding-bottom: ${isLast ? '0' : '16px'};">
+                    <div style="width: 14px; height: 14px; border-radius: 50%; background: white; border: 3px solid ${sColor}; position: absolute; left: -8.5px; top: 2px; box-shadow: 0 0 0 3px white;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <div style="font-size: 13px; font-weight: 800; color: #1E293B; letter-spacing: -0.2px;">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
+                        <div style="font-size: 11px; color: #64748B; font-weight: 500;">
+                            <span style="color: #334155; font-weight: 700;">${escapeHtml(name)}</span> 
+                            <span style="margin: 0 4px; opacity: 0.5;">•</span> 
+                            ${new Date(log.d).toLocaleString('uz-UZ', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'})}
+                        </div>
+                    </div>
                 </div>`;
         });
 
@@ -396,18 +405,21 @@ function showKvDetailModal(idx) {
             
             <div class="detail-card" style="margin-top:15px;">
                 <div class="detail-row"><span class="detail-key">Mas'ul xodim</span><span class="detail-val">${escapeHtml(rec.staffName || '—')}</span></div>
-                <div class="detail-row"><span class="detail-key">Hozirgi Holat</span><span class="detail-val"><b style="color:var(--green-dark);">${escapeHtml(status.toUpperCase())}</b></span></div>
-                <div class="detail-row"><span class="detail-key">O'lcham</span><span class="detail-val" style="font-size:18px; font-weight:800; color:var(--navy);">${m2Val} m²</span></div>
+                <div class="detail-row"><span class="detail-key">Hozirgi Holat</span><span class="detail-val"><b style="color:var(--green-dark); text-transform: uppercase;">${escapeHtml(status)}</b></span></div>
+                <div class="detail-row" style="border-bottom:none;"><span class="detail-key">O'lcham</span><span class="detail-val" style="font-size:18px; font-weight:800; color:var(--navy);">${m2Val} m²</span></div>
             </div>
 
-            <div style="margin-top:20px; background:#F8FAFC; border-radius:16px; padding:15px; border:1px solid #F1F5F9;">
-                <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">📉 Jarayon Tarixi</div>
-                ${historyHtml || '<p style="font-size:12px; color:var(--text-muted); text-align:center;">Hali harakatlar yo\'q</p>'}
+            <div style="margin-top:20px; background:#F1F5F9; border-radius:20px; padding:20px; border:1px solid #E2E8F0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="font-size:11px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:16px; letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+                    <span style="background:#475569; width:12px; height:2px; border-radius:2px;"></span>
+                    Jarayon Tarixi
+                </div>
+                ${historyHtml || '<p style="font-size:12px; color:var(--text-muted); text-align:center; padding:10px;">Hali harakatlar yo\'q</p>'}
             </div>
 
             <div style="margin-top:24px;">
                 ${claimBtnHtml}
-                <button class="btn-secondary" style="width:100%; height:48px; background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; font-weight:700;" onclick="closeKvDetailModal()">✕ Yopish</button>
+                <button class="btn-secondary" style="width:100%; height:52px; background:white; color:#475569; border:1.5px solid #E2E8F0; font-weight:700; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onclick="closeKvDetailModal()">✕ Yopish</button>
             </div>`;
             
         document.getElementById('kvDetailModal').classList.remove('hidden');
