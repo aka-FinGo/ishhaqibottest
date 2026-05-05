@@ -368,7 +368,8 @@ function closeEditModal() {
     }
 }
 
-// Enhanced loadAdminData async function loadAdminData() {
+// Enhanced loadAdminData function with permission checks
+async function loadAdminData() {
     // Check permissions first
     if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor') {
         const adminListEl = document.getElementById('adminList');
@@ -399,19 +400,20 @@ function closeEditModal() {
         return;
     }
     
-    // 1. Avval keshdan yuklaymiz
-    const cachedAdminData = AppCache.get(AppCache.KEYS.ADMIN_DATA, 5); // 5 daqiqa kesh
-    if (cachedAdminData && Array.isArray(cachedAdminData)) {
-        globalAdminData = cachedAdminData;
-        populateEmployeeFilter();
-        populateYearFilter();
-        populateMonthFilter();
-        applyFilters();
-    }
+    try {
+        const cachedAdminData = localStorage.getItem('globalAdminData');
+        if (cachedAdminData) {
+            globalAdminData = JSON.parse(cachedAdminData);
+            populateEmployeeFilter();
+            populateYearFilter();
+            populateMonthFilter();
+            applyFilters();
+        }
+    } catch (e) {}
 
     try {
         const adminListEl = document.getElementById('adminList');
-        // Kesh yo'q bo'lsa skeleton ko'rsatamiz
+        // Only show skeletons if we don't have cached data yet to avoid flashing
         if (adminListEl && (!globalAdminData || globalAdminData.length === 0)) {
             adminListEl.innerHTML = `
                 <div class="skeleton-container" style="padding: 16px;">
@@ -444,7 +446,7 @@ function closeEditModal() {
         const response = await apiRequest({ action: 'admin_get_all' });
         if (response.success) {
             globalAdminData = response.data || [];
-            AppCache.set(AppCache.KEYS.ADMIN_DATA, globalAdminData);
+            localStorage.setItem('globalAdminData', JSON.stringify(globalAdminData));
             
             // Populate filters
             populateEmployeeFilter();

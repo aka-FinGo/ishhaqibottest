@@ -93,14 +93,17 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
     }
 
     // Permission Check: Does user have the required technical position?
-    var userPositions = (auth.positions || []).map(function(p) { return normalizePos_(p); });
-    var stepPos = normalizePos_(stepToProcess.position);
-
-    if (!auth.isSuperAdmin && userPositions.indexOf(stepPos) === -1) {
+    var userPositions = auth.positions || [];
+    if (!auth.isSuperAdmin && (!userPositions.indexOf || userPositions.indexOf(stepToProcess.position) === -1)) {
       return { success: false, error: 'Sizda "' + stepToProcess.position + '" lavozimi yo\'q' };
     }
 
-
+    // Group Leader Check (for steps > 1)
+    if (stepToProcess.index > 1 && !auth.isSuperAdmin) {
+       if (!auth.isSardor) {
+         return { success: false, error: 'Faqat "Guruh Sardori" ushbu bosqichni tasdiqlay oladi' };
+       }
+    }
 
     // Update logistics
     logs.push({

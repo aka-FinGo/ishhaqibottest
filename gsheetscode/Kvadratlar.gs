@@ -167,9 +167,9 @@ function kvadratAdd(data, auth, actorTgId) {
       resolvedStaffName,       // Hodimlar ro'yxatidan olingan ism
       String(actorTgId),
       0,
-      1, // Step 1: Kiritildi (Loyihachi bosqichi yakunlangan deb hisoblanadi)
+      1, // Step 1: Kiritildi
       "yangi",
-      JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString(), action: 'Kiritildi' }])
+      JSON.stringify([{ step: 1, uid: String(actorTgId), d: today.toISOString() }])
     ]);
 
     var row = sh.getLastRow();

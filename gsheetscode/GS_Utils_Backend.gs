@@ -2,10 +2,6 @@
 // GS_Utils_Backend.gs — Common Backend Helpers
 // ============================================================
 
-function normalizePos_(s) {
-  return String(s || '').toLowerCase().replace(/['`‘’]/g, "'").trim();
-}
-
 function withWriteLock_(handler) {
   var lock = LockService.getScriptLock();
   try {

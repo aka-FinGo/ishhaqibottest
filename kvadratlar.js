@@ -1,4 +1,4 @@
-5let kvFullRecords = [];
+let kvFullRecords = [];
 let kvFilteredRecords = [];
 const KV_ITEMS_PER_PAGE = 15;
 let kvCurrentPage = 1;
@@ -9,10 +9,6 @@ function kvMonthLabel(monthStr) {
     const clean = String(monthStr || '').replace(/^_+/, '').replace(/^'/, '');
     const num = parseInt(clean, 10);
     return (num >= 1 && num <= 12) ? KV_MONTHS_UZ[num] : (clean || '—');
-}
-
-function normalizePos(s) {
-    return String(s || '').toLowerCase().replace(/['`‘’]/g, "'").trim();
 }
 
 let activeKvProc = null;
@@ -311,46 +307,18 @@ function showKvDetailModal(idx) {
     const currentStepIdx = Number(rec.currentStep) || 1;
     
     let claimBtnHtml = '';
-    const isStrict = !!myPermissions.isWorkflowStrict;
-    const logs = rec.logs || [];
-    const doneSteps = logs.map(l => Number(l.step));
-    const normalizedMyPoss = myPoss.map(p => normalizePos(p));
-
-    if (isStrict) {
-        // STRICT MODE: Only show the very next step
-        const nextStep = config.find(s => s.index === currentStepIdx + 1);
-        if (nextStep) {
-            const nextStepPos = normalizePos(nextStep.position);
-            if (myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(nextStepPos) !== -1) {
-                let btnColor = '#10B981';
-                if (typeof getWorkflowStepColors === 'function') {
-                    const totalSteps = config.length >= 2 ? config.length : 3;
-                    btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
-                }
-                claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${nextStep.index})">✅ ${escapeHtml(nextStep.action)}</button>`;
-            }
+    const nextStep = config.find(s => s.index === currentStepIdx + 1);
+    if (nextStep && (myRole === 'SuperAdmin' || myPoss.indexOf(nextStep.position) !== -1)) {
+        let btnColor = '#10B981';
+        if (typeof getWorkflowStepColors === 'function') {
+            const totalSteps = config.length >= 2 ? config.length : 3;
+            btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
         }
-    } else {
-        // FREE MODE: Show all steps user has position for AND not yet done
-        const availableSteps = config.filter(s => {
-            // Skip "Creation" step if it's already done (which it is, since index starts at 1)
-            if (s.index === 1) return false; 
-            if (doneSteps.indexOf(s.index) !== -1) return false;
-            const sPos = normalizePos(s.position);
-            return myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(sPos) !== -1;
-        });
-
-        availableSteps.forEach(s => {
-            let btnColor = '#6366f1';
-            if (typeof getWorkflowStepColors === 'function') {
-                const totalSteps = config.length >= 2 ? config.length : 3;
-                btnColor = getWorkflowStepColors(s.index - 1, totalSteps).bg || btnColor;
-            }
-            claimBtnHtml += `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${s.index})">✅ ${escapeHtml(s.action)}</button>`;
-        });
+        claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId})">✅ ${escapeHtml(nextStep.action)}</button>`;
     }
 
     let historyHtml = '';
+    const logs = rec.logs || [];
     logs.forEach(log => {
         const stepCfg = config.find(s => s.index === log.step);
         let sColor = '#6366f1';
@@ -419,7 +387,6 @@ function applyKvFilters() {
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
 
-    console.log('Filtrlash boshlandi. Jami:', kvFullRecords.length);
     kvFilteredRecords = kvFullRecords.filter(rec => {
         if (!rec || (!rec.rowId && !rec.no)) return false;
 
@@ -592,14 +559,10 @@ async function deleteKv(rowId) {
     }
 }
 
-async function claimKvWork(rowId, targetStepIndex = null) {
+async function claimKvWork(rowId) {
     kvShowProc('Bajarilmoqda...');
     try {
-        const data = await apiRequest({ 
-            action: 'kvadrat_claim', 
-            rowId,
-            targetStepIndex: targetStepIndex 
-        });
+        const data = await apiRequest({ action: 'kvadrat_claim', rowId });
         if (data.success) {
             kvHideProc(true, 'Bajarildi!');
             initKvadratTab();

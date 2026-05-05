@@ -91,32 +91,42 @@ let _appInitRetries = 0;
 const MAX_INIT_RETRIES = 3;
 
 function loadCachedData() {
-    const cached = AppCache.get(AppCache.KEYS.MY_RECORDS, 120); // 120 daqiqa kesh
-    if (cached && Array.isArray(cached)) {
-        myFullRecords = cached;
-        myFilteredRecords = [...myFullRecords];
-        console.log('✅ Cache dan yuklandi:', myFullRecords.length, 'ta amal');
-        return true;
+    try {
+        const cachedData = localStorage.getItem('myFullRecords');
+        if (cachedData) {
+            const parsed = JSON.parse(cachedData);
+            if (Array.isArray(parsed)) {
+                myFullRecords = parsed;
+                myFilteredRecords = [...myFullRecords];
+                console.log('✅ Cache dan yuklandi:', myFullRecords.length, 'ta amal');
+                return true;
+            }
+        }
+    } catch (e) {
+        console.error('❌ Cache parsing xatosi:', e);
+        try { localStorage.removeItem('myFullRecords'); } catch (e2) { }
     }
     return false;
 }
 
 function saveCacheData(data) {
-    AppCache.set(AppCache.KEYS.MY_RECORDS, data);
+    try {
+        localStorage.setItem('myFullRecords', JSON.stringify(data));
+        console.log('✅ Cache saqlandi');
+    } catch (e) {
+        if (e.name === 'QuotaExceededError') console.warn('⚠️ localStorage quota to\'lgan');
+        else console.error('❌ Cache save xatosi:', e);
+    }
 }
 
 async function initializeApp() {
     try {
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
-        
-        // 1. Avval keshdan yuklaymiz (tezroq ko'rinishi uchun)
         const cacheLoaded = loadCachedData();
         if (cacheLoaded && myFullRecords.length > 0) {
             if (typeof initMyFilters === 'function') initMyFilters();
-            if (typeof renderMyRecords === 'function') renderMyRecords();
         }
-
         console.log('🔄 Server dan ma\'lumot yuklanyapti...');
         const data = await apiRequest({
             action: 'init',
