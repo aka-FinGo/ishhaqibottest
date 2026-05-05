@@ -437,25 +437,40 @@ function applyKvFilters() {
     const month = document.getElementById('kvFilterMonth')?.value || 'all';
     const year = document.getElementById('kvFilterYear')?.value || 'all';
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
-    const process = document.getElementById('kvFilterProcess')?.value || 'all';
+    const process = document.getElementById('kvFilterProcess')?. '').toLowerCase().trim();
+
+    const staffNorm = staff === 'all' ? 'all' : normalizeName(staff);
 
     kvFilteredRecords = kvFullRecords.filter(rec => {
         if (!rec || (!rec.rowId && !rec.no)) return false;
 
         if (month !== 'all') {
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
-            if (cleanMonth !== month) return false;
+            // normalize month strings (allow '1' vs '01')
+            if (String(Number(cleanMonth)).padStart(2, '0') !== String(Number(month)).padStart(2, '0')) return false;
         }
         if (year !== 'all') {
             const recYear = rec.year || (rec.date ? rec.date.split('/').pop() : '');
             if (String(recYear) !== String(year)) return false;
         }
-        if (staff !== 'all') {
-            let staffMatch = (rec.staffName === staff);
+        if (staffNorm !== 'all') {
+            const recStaffNorm = normalizeName(rec.staffName);
+            let staffMatch = recStaffNorm === staffNorm;
+
             if (!staffMatch && Array.isArray(rec.logs)) {
                 staffMatch = rec.logs.some(log => {
-                    const name = (log.uid === rec.ownerTgId) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId) === String(log.uid))?.username || log.uid);
-                    return name === staff;
+                    const logUid = String(log.uid || '');
+                    // compare uid strings
+                    if (logUid === String(rec.ownerTgId || '')) {
+                        return normalizeName(rec.staffName) === staffNorm;
+                    }
+                    // try find in globalEmployeeList by tgId
+                    if (globalEmployeeList && Array.isArray(globalEmployeeList)) {
+                        const emp = globalEmployeeList.find(e => String(e.tgId) === logUid);
+                        if (emp) return normalizeName(emp.username || emp.firstName) === staffNorm;
+                    }
+                    // fallback to log.u (user display in log) or uid
+                    return normalizeName(log.u || logUid) === staffNorm;
                 });
             }
             if (!staffMatch) return false;
