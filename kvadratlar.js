@@ -324,7 +324,8 @@ function showKvDetailModal(idx) {
             const nextStep = config.find(s => s.index === currentStepIdx + 1);
             if (nextStep) {
                 const nextStepPos = normalizePos(nextStep.position);
-                if (typeof myRole !== 'undefined' && (myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(nextStepPos) !== -1)) {
+                // Faqat lavozimi bor bo'lsa ko'rinadi (SuperAdmin bo'lsa ham)
+                if (normalizedMyPoss.indexOf(nextStepPos) !== -1 || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin' && normalizedMyPoss.length === 0)) {
                     let btnColor = '#10B981';
                     if (typeof getWorkflowStepColors === 'function') {
                         const totalSteps = config.length >= 2 ? config.length : 3;
@@ -335,10 +336,11 @@ function showKvDetailModal(idx) {
             }
         } else {
             const availableSteps = config.filter(s => {
-                if (s.index === 1) return false; 
+                if (s.index <= 1) return false; 
                 if (doneSteps.indexOf(s.index) !== -1) return false;
                 const sPos = normalizePos(s.position);
-                return (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || normalizedMyPoss.indexOf(sPos) !== -1;
+                // Faqat lavozimi bor bo'lsa (SuperAdmin ham lavozimi bo'lishi kerak yoki barcha lavozimlarga ega bo'lishi kerak)
+                return normalizedMyPoss.indexOf(sPos) !== -1;
             });
 
             availableSteps.forEach(s => {

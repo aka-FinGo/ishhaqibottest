@@ -96,7 +96,7 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
     var userPositions = (auth.positions || []).map(function(p) { return normalizePos_(p); });
     var stepPos = normalizePos_(stepToProcess.position);
 
-    if (!auth.isSuperAdmin && userPositions.indexOf(stepPos) === -1) {
+    if (userPositions.indexOf(stepPos) === -1) {
       return { success: false, error: 'Sizda "' + stepToProcess.position + '" lavozimi yo\'q' };
     }
 
