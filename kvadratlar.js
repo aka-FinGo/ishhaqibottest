@@ -299,113 +299,115 @@ function goToKvPage(page) {
 }
 
 function showKvDetailModal(idx) {
-    const rec = kvFilteredRecords[idx];
-    if (!rec) return;
-    
-    const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
-    const status = rec.status || 'yangi';
-    const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
-    const myPoss = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
-    const currentStepIdx = Number(rec.currentStep) || 1;
-    
-    let claimBtnHtml = '';
-    const isStrict = (typeof myPermissions !== 'undefined' && myPermissions.isWorkflowStrict);
-    const logs = rec.logs || [];
-    const doneSteps = logs.map(l => Number(l.step));
-    const normalizedMyPoss = myPoss.map(p => normalizePos(p));
+    try {
+        const rec = kvFilteredRecords[idx];
+        if (!rec) return;
+        
+        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+        const status = rec.status || 'yangi';
+        const config = (typeof myPermissions !== 'undefined' && myPermissions && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+        const myPoss = (typeof myPermissions !== 'undefined' && myPermissions && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
+        const currentStepIdx = Number(rec.currentStep) || 1;
+        
+        let claimBtnHtml = '';
+        const isStrict = (typeof myPermissions !== 'undefined' && myPermissions && myPermissions.isWorkflowStrict);
+        const logs = rec.logs || [];
+        const doneSteps = logs.map(l => Number(l.step));
+        const normalizedMyPoss = myPoss.map(p => normalizePos(p));
 
-    if (isStrict) {
-        // STRICT MODE: Only show the very next step
-        const nextStep = config.find(s => s.index === currentStepIdx + 1);
-        if (nextStep) {
-            const nextStepPos = normalizePos(nextStep.position);
-            if (myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(nextStepPos) !== -1) {
-                let btnColor = '#10B981';
+        if (isStrict) {
+            const nextStep = config.find(s => s.index === currentStepIdx + 1);
+            if (nextStep) {
+                const nextStepPos = normalizePos(nextStep.position);
+                if (typeof myRole !== 'undefined' && (myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(nextStepPos) !== -1)) {
+                    let btnColor = '#10B981';
+                    if (typeof getWorkflowStepColors === 'function') {
+                        const totalSteps = config.length >= 2 ? config.length : 3;
+                        btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
+                    }
+                    claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${nextStep.index})">✅ ${escapeHtml(nextStep.action)}</button>`;
+                }
+            }
+        } else {
+            const availableSteps = config.filter(s => {
+                if (s.index === 1) return false; 
+                if (doneSteps.indexOf(s.index) !== -1) return false;
+                const sPos = normalizePos(s.position);
+                return (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || normalizedMyPoss.indexOf(sPos) !== -1;
+            });
+
+            availableSteps.forEach(s => {
+                let btnColor = '#6366f1';
                 if (typeof getWorkflowStepColors === 'function') {
                     const totalSteps = config.length >= 2 ? config.length : 3;
-                    btnColor = getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || btnColor;
+                    btnColor = getWorkflowStepColors(s.index - 1, totalSteps).bg || btnColor;
                 }
-                claimBtnHtml = `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${nextStep.index})">✅ ${escapeHtml(nextStep.action)}</button>`;
-            }
+                claimBtnHtml += `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${s.index})">✅ ${escapeHtml(s.action)}</button>`;
+            });
         }
-    } else {
-        // FREE MODE: Show all steps user has position for AND not yet done
-        const availableSteps = config.filter(s => {
-            // Skip "Creation" step if it's already done (which it is, since index starts at 1)
-            if (s.index === 1) return false; 
-            if (doneSteps.indexOf(s.index) !== -1) return false;
-            const sPos = normalizePos(s.position);
-            return myRole === 'SuperAdmin' || normalizedMyPoss.indexOf(sPos) !== -1;
-        });
 
-        availableSteps.forEach(s => {
-            let btnColor = '#6366f1';
+        let historyHtml = '';
+        logs.forEach(log => {
+            const stepCfg = config.find(s => s.index === log.step);
+            let sColor = '#6366f1';
             if (typeof getWorkflowStepColors === 'function') {
                 const totalSteps = config.length >= 2 ? config.length : 3;
-                btnColor = getWorkflowStepColors(s.index - 1, totalSteps).bg || btnColor;
+                sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
             }
-            claimBtnHtml += `<button class="btn-main" style="background:${btnColor}; color:white; font-weight:800; border:none; box-shadow:0 4px 12px ${btnColor}66; margin-bottom:12px; height:50px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${s.index})">✅ ${escapeHtml(s.action)}</button>`;
+            const name = (String(log.uid) === String(rec.ownerTgId)) ? rec.staffName : (typeof globalEmployeeList !== 'undefined' && globalEmployeeList && globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid);
+            historyHtml += `
+                <div style="border-left:2px solid ${sColor}; padding-left:12px; margin-bottom:12px; position:relative;">
+                    <div style="width:10px; height:10px; border-radius:50%; background:${sColor}; position:absolute; left:-6px; top:4px;"></div>
+                    <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
+                    <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
+                </div>`;
         });
-    }
 
-    let historyHtml = '';
-    logs.forEach(log => {
-        const stepCfg = config.find(s => s.index === log.step);
-        let sColor = '#6366f1';
-        if (typeof getWorkflowStepColors === 'function') {
-            const totalSteps = config.length >= 2 ? config.length : 3;
-            sColor = getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || sColor;
-        }
-        const name = (String(log.uid) === String(rec.ownerTgId)) ? rec.staffName : (globalEmployeeList && globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid);
-        historyHtml += `
-            <div style="border-left:2px solid ${sColor}; padding-left:12px; margin-bottom:12px; position:relative;">
-                <div style="width:10px; height:10px; border-radius:50%; background:${sColor}; position:absolute; left:-6px; top:4px;"></div>
-                <div style="font-size:12px; font-weight:700; color:${sColor};">${escapeHtml(stepCfg ? stepCfg.status : 'Bajarildi')}</div>
-                <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(name)} • ${new Date(log.d).toLocaleString('uz-UZ')}</div>
+        const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+        const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
+        const canEditGlobal = isAdmin && hasPerms && myPermissions.canEdit;
+        const canDeleteGlobal = isAdmin && hasPerms && myPermissions.canDelete;
+        const isOwner = String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0');
+
+        const canEdit = canEditGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
+        const canDelete = canDeleteGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
+
+        const buttonsRow = (canEdit || canDelete) ? `
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+                ${canEdit ? `<button onclick="closeKvDetailModal();openKvModal(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; font-weight:700; font-size:13px;">✏️ Tahrirlash</button>` : ''}
+                ${canDelete ? `<button onclick="closeKvDetailModal();deleteKv(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEE2E2; color:#991B1B; border:1px solid #FECACA; font-weight:700; font-size:13px;">🗑 O'chirish</button>` : ''}
+            </div>` : '';
+
+        document.getElementById('kvDetailModalBody').innerHTML = `
+            <div class="modal-drag"></div>
+            ${buttonsRow}
+            <div class="detail-header">
+                <span class="detail-badge" style="background:#EFF6FF; color:#1D4ED8;">📐 Buyurtma Tafsiloti</span>
+                <h3 style="margin:10px 0 5px 0; color:var(--navy); font-weight:800;">📌 ${escapeHtml(rec.orderName || '—')}</h3>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">№${escapeHtml(String(rec.no || '—'))} | Sana: ${escapeHtml(rec.date || '—')}</div>
+            </div>
+            
+            <div class="detail-card" style="margin-top:15px;">
+                <div class="detail-row"><span class="detail-key">Mas'ul xodim</span><span class="detail-val">${escapeHtml(rec.staffName || '—')}</span></div>
+                <div class="detail-row"><span class="detail-key">Hozirgi Holat</span><span class="detail-val"><b style="color:var(--green-dark);">${escapeHtml(status.toUpperCase())}</b></span></div>
+                <div class="detail-row"><span class="detail-key">O'lcham</span><span class="detail-val" style="font-size:18px; font-weight:800; color:var(--navy);">${m2Val} m²</span></div>
+            </div>
+
+            <div style="margin-top:20px; background:#F8FAFC; border-radius:16px; padding:15px; border:1px solid #F1F5F9;">
+                <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">📉 Jarayon Tarixi</div>
+                ${historyHtml || '<p style="font-size:12px; color:var(--text-muted); text-align:center;">Hali harakatlar yo\'q</p>'}
+            </div>
+
+            <div style="margin-top:24px;">
+                ${claimBtnHtml}
+                <button class="btn-secondary" style="width:100%; height:48px; background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; font-weight:700;" onclick="closeKvDetailModal()">✕ Yopish</button>
             </div>`;
-    });
-
-    const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
-    const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
-    const canEditGlobal = isAdmin && hasPerms && myPermissions.canEdit;
-    const canDeleteGlobal = isAdmin && hasPerms && myPermissions.canDelete;
-    const isOwner = String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0');
-
-    const canEdit = canEditGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
-    const canDelete = canDeleteGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
-
-    const buttonsRow = (canEdit || canDelete) ? `
-        <div style="display:flex; gap:8px; margin-bottom:16px;">
-            ${canEdit ? `<button onclick="closeKvDetailModal();openKvModal(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; font-weight:700; font-size:13px;">✏️ Tahrirlash</button>` : ''}
-            ${canDelete ? `<button onclick="closeKvDetailModal();deleteKv(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEE2E2; color:#991B1B; border:1px solid #FECACA; font-weight:700; font-size:13px;">🗑 O'chirish</button>` : ''}
-        </div>` : '';
-
-    document.getElementById('kvDetailModalBody').innerHTML = `
-        <div class="modal-drag"></div>
-        ${buttonsRow}
-        <div class="detail-header">
-            <span class="detail-badge" style="background:#EFF6FF; color:#1D4ED8;">📐 Buyurtma Tafsiloti</span>
-            <h3 style="margin:10px 0 5px 0; color:var(--navy); font-weight:800;">📌 ${escapeHtml(rec.orderName || '—')}</h3>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">№${escapeHtml(String(rec.no || '—'))} | Sana: ${escapeHtml(rec.date || '—')}</div>
-        </div>
-        
-        <div class="detail-card" style="margin-top:15px;">
-            <div class="detail-row"><span class="detail-key">Mas'ul xodim</span><span class="detail-val">${escapeHtml(rec.staffName || '—')}</span></div>
-            <div class="detail-row"><span class="detail-key">Hozirgi Holat</span><span class="detail-val"><b style="color:var(--green-dark);">${escapeHtml(status.toUpperCase())}</b></span></div>
-            <div class="detail-row"><span class="detail-key">O'lcham</span><span class="detail-val" style="font-size:18px; font-weight:800; color:var(--navy);">${m2Val} m²</span></div>
-        </div>
-
-        <div style="margin-top:20px; background:#F8FAFC; border-radius:16px; padding:15px; border:1px solid #F1F5F9;">
-            <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">📉 Jarayon Tarixi</div>
-            ${historyHtml || '<p style="font-size:12px; color:var(--text-muted); text-align:center;">Hali harakatlar yo\'q</p>'}
-        </div>
-
-        <div style="margin-top:24px;">
-            ${claimBtnHtml}
-            <button class="btn-secondary" style="width:100%; height:48px; background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; font-weight:700;" onclick="closeKvDetailModal()">✕ Yopish</button>
-        </div>`;
-        
-    document.getElementById('kvDetailModal').classList.remove('hidden');
+            
+        document.getElementById('kvDetailModal').classList.remove('hidden');
+    } catch (err) {
+        alert('showKvDetailModal error: ' + err.message + '\n' + err.stack);
+        console.error(err);
+    }
 }
 
 function closeKvDetailModal() {
