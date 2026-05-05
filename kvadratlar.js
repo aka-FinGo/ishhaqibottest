@@ -1,5 +1,10 @@
 let kvFullRecords = [];
 let kvFilteredRecords = [];
+
+function normalizePos(pos) {
+    if (!pos) return '';
+    return String(pos).toLowerCase().trim();
+}
 const KV_ITEMS_PER_PAGE = 15;
 let kvCurrentPage = 1;
 

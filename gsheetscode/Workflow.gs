@@ -147,3 +147,8 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
     return { success: true };
   });
 }
+
+function normalizePos_(pos) {
+  if (!pos) return '';
+  return String(pos).toLowerCase().trim();
+}
