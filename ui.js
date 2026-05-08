@@ -321,12 +321,11 @@ function setTheme(themeFile) {
     link.href = themeFile ? themeFile : '';
     localStorage.setItem('user_theme', themeFile || '');
     
-    // Update active state in UI
-    document.querySelectorAll('.perm-label').forEach(el => el.classList.remove('checked'));
-    if (!themeFile) document.getElementById('theme-default')?.classList.add('checked');
-    else if (themeFile.includes('light')) document.getElementById('theme-light')?.classList.add('checked');
-    else if (themeFile.includes('dark')) document.getElementById('theme-dark')?.classList.add('checked');
-    else if (themeFile.includes('gloss')) document.getElementById('theme-gloss')?.classList.add('checked');
+    // Update active state in UI (faqat Standart va Qorong'u)
+    const defEl = document.getElementById('theme-default');
+    const darkEl = document.getElementById('theme-dark');
+    if (defEl) defEl.classList.toggle('checked', !themeFile);
+    if (darkEl) darkEl.classList.toggle('checked', themeFile === 'dark.css');
     
     showToast(themeFile ? "Mavzu o'zgardi" : "Standart mavzu");
 }
