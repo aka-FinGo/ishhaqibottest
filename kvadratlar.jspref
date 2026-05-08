@@ -64,13 +64,16 @@ function populateKvadratMeta(staffList) {
     const kvStaffModal = document.getElementById('kvStaffSelect');
     if (staffFilter) {
         staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
-        staffList.forEach(emp => {
-            const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
-            const opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = name;
-            staffFilter.appendChild(opt);
-        });
+
+staffList.forEach(emp => {
+    const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
+
+    const opt = document.createElement('option');
+    opt.value = (typeof emp === 'object') ? emp.tgId : name;
+    opt.textContent = name;
+
+    staffFilter.appendChild(opt);
+});
     }
     if (kvStaffModal) {
         kvStaffModal.innerHTML = '<option value="">Hodimni tanlang...</option>';
@@ -434,48 +437,67 @@ function closeKvDetailModal() {
 }
 
 function applyKvFilters() {
-    const month = document.getElementById('kvFilterMonth')?.value || 'all';
-    const year = document.getElementById('kvFilterYear')?.value || 'all';
-    const staff = document.getElementById('kvFilterStaff')?.value || 'all';
-    const process = document.getElementById('kvFilterProcess')?.value || 'all';
+  const month = document.getElementById('kvFilterMonth')?.value || 'all';
+  const year = document.getElementById('kvFilterYear')?.value || 'all';
+  const staff = document.getElementById('kvFilterStaff')?.value || 'all';
+  const process = document.getElementById('kvFilterProcess')?.value || 'all';
 
-    kvFilteredRecords = kvFullRecords.filter(rec => {
-        if (!rec || (!rec.rowId && !rec.no)) return false;
+  kvFilteredRecords = kvFullRecords.filter(rec => {
+    if (!rec) return false;
 
-        if (month !== 'all') {
-            const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
-            if (cleanMonth !== month) return false;
-        }
-        if (year !== 'all') {
-            if (!String(rec.date || '').endsWith(String(year))) return false;
-        }
-        if (staff !== 'all') {
-            let staffMatch = (rec.staffName === staff);
+    // 🎯 1. MAS'UL XODIM FILTRI (Dinamik ustunlarni qo'llab-quvvatlaydi)
+    if (staff !== 'all') {
+      const targetId = String(staff).trim();
+      let isMatch = false;
 
-            if (!staffMatch && Array.isArray(rec.logs)) {
-                const logNames = rec.logs.map(function(log) {
-                    if (!log || !log.uid) return '';
-                    if (String(log.uid) === String(rec.ownerTgId)) return rec.staffName;
-                    // window._kvEmpMap orqali tgId -> name
-                    let mapped = (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)]) || '';
-                    if (!mapped && typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
-                        if (emp) mapped = emp.username || emp.firstName || '';
-                    }
-                    return mapped || String(log.uid);
-                });
-                staffMatch = logNames.some(name => name === staff);
+      // A) Kirituvchi (Owner)
+      if (String(rec.ownerTgId || '').trim() === targetId) isMatch = true;
+
+      // B) WorkflowLogs (L ustun)
+      if (!isMatch && rec.WorkflowLogs) {
+        try {
+          const logs = typeof rec.WorkflowLogs === 'string' 
+                       ? JSON.parse(rec.WorkflowLogs) 
+                       : rec.WorkflowLogs;
+          if (Array.isArray(logs)) {
+            isMatch = logs.some(l => 
+              String(l.uid || l.id || l.tgId || '').trim() === targetId
+            );
+          }
+        } catch(e) { /* JSON xatosi bo'lsa o'tkazib yuboramiz */ }
+      }
+
+      // C) 🚀 DINAMIK LAVOZIM USTUNLARI (M, N, Q, R, va kelajakdagi barchasi)
+      // Faqat "(Hodim ID)" bilan tugaydigan ustunlarni tekshiradi
+      if (!isMatch) {
+        for (const key in rec) {
+          if (key.includes('Hodim ID')) {
+            if (String(rec[key] || '').trim() === targetId) {
+              isMatch = true;
+              break; // Topildi, tsiklni to'xtatamiz (tezkor!)
             }
-            if (!staffMatch) return false;
+          }
         }
-        if (process !== 'all') {
-            if (!rec.currentStep || String(rec.currentStep) !== String(process)) return false;
-        }
-        return true;
-    });
+      }
 
-    kvCurrentPage = 1;
-    renderKvList();
+      if (!isMatch) return false;
+    }
+
+    // 🔄 2. ISH BOSQICHI FILTRI
+    if (process !== 'all') {
+      const step = String(rec.currentStep || rec.StepIndex || rec.Step || '0').trim();
+      if (step !== String(process).trim()) return false;
+    }
+
+    // 📅 3. OY/YIL FILTRI (agar kerak bo'lsa)
+    if (month !== 'all' && rec.MONTH && String(rec.MONTH) !== String(month)) return false;
+    if (year !== 'all' && rec.YEAR && String(rec.YEAR) !== String(year)) return false;
+
+    return true;
+  });
+
+  kvCurrentPage = 1;
+  renderKvList();
 }
 
 function openKvModal(rowId = null) {
