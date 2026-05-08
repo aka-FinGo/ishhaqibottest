@@ -142,7 +142,7 @@ function roleLabelFromKey_(roleKey) {
   if (roleKey === 'DIRECTOR') return 'Direktor';
   if (roleKey === 'ADMIN') return 'Admin';
   if (roleKey === 'PENDING') return 'Kutilmoqda';
-  return 'User';
+  return 'Xodim:';
 }
 
 function roleDefaults_(roleKey) {

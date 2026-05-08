@@ -1,4 +1,4 @@
-// ================= DASHBOARD =================
+﻿// ================= DASHBOARD =================
 // Optimizatsiya: Chart instance caching va memory management
 const _charts = {};
 function destroyChart(id) { 
@@ -387,7 +387,7 @@ function renderAdminDashboard(el) {
     ${secTitle('🏢 Kompaniya (Sizga ruxsat berilgan)')}
     <div class="dash-stats-grid">
         ${sCard('💰', 'Jami Budjet', fmt(sumUZS(all)) + ' UZS', '', '#10B981')}
-        ${sCard('👥', 'Xodimlar', new Set(all.map(r => r.name)).size + ' nafar', '', '#3B82F6')}
+        ${sCard('👥', 'Xodimlar::', new Set(all.map(r => r.name)).size + ' nafar', '', '#3B82F6')}
     </div>
     ${cCard('📈 Kompaniya Trendi', 'chartA_allTrend', 200)}
     ` : ''}`;
@@ -423,14 +423,14 @@ function renderDirektorDashboard(el) {
         <div class="dash-stats-grid">
             ${sCard('💰', 'Jami Budjet', fmt(sumUZS(all)) + ' UZS', '', '#10B981')}
             ${sCard('💵', 'Dollar', '$' + sumUSD(all).toLocaleString(), '', '#F59E0B')}
-            ${sCard('👥', 'Xodimlar', new Set(all.map(r => r.name)).size + ' nafar', '', '#3B82F6')}
+            ${sCard('👥', 'Xodimlar::', new Set(all.map(r => r.name)).size + ' nafar', '', '#3B82F6')}
             ${sCard('📋', 'Amallar', all.length + ' ta', '', '#8B5CF6')}
             ${sCard('📅', 'Oylik O\'rtacha', fmt(avgMonthly(all)) + ' UZS', '', '#EC4899')}
             ${sCard('🏆', 'Eng Faol Oy', peakMonth(all) || '—', '', '#14B8A6')}
         </div>
         ${cCard('📈 12 Oylik Trend', 'chartD_trend', 220)}
         ${cCard('🥧 Valyuta Taqsimoti', 'chartD_donut', 250)}
-        ${cCard('🏅 Top Xodimlar', 'chartD_emp', Math.max(200, byEmp.length * 50))}
+        ${cCard('🏅 Top Xodimlar:::', 'chartD_emp', Math.max(200, byEmp.length * 50))}
         ${cCard('📊 6 Oy (So\'m / Dollar)', 'chartD_bar6', 220)}
 
         ${secTitle('👤 Mening Statistikam')}
@@ -477,14 +477,14 @@ function renderSuperAdminDashboard(el) {
         <div class="dash-stats-grid">
             ${sCard('💰', 'Jami Budjet', fmt(sumUZS(all)) + ' UZS', '', '#10B981')}
             ${sCard('💵', 'Dollar', '$' + sumUSD(all).toLocaleString(), '', '#F59E0B')}
-            ${sCard('👥', 'Xodimlar', new Set(all.map(r => r.name)).size + ' nafar', '', '#3B82F6')}
+            ${sCard('👥', 'Xodimlar:', new Set(all.map(r => r.name)).size + ' nafar', '', '#3B82F6')}
             ${sCard('📋', 'Amallar', all.length + ' ta', '', '#8B5CF6')}
             ${sCard('📅', 'Oylik O\'rtacha', fmt(avgMonthly(all)) + ' UZS', '', '#EC4899')}
             ${sCard('🏆', 'Eng Faol Oy', peakMonth(all) || '—', '', '#14B8A6')}
         </div>
         ${cCard('📈 12 Oylik Trend', 'chartS_trend', 220)}
         ${cCard('🥧 Valyuta Taqsimoti', 'chartS_donut', 240)}
-        ${cCard('🏅 Top Xodimlar', 'chartS_emp', Math.max(200, byEmp.length * 50))}
+        ${cCard('🏅 Top Xodimlar:::', 'chartS_emp', Math.max(200, byEmp.length * 50))}
         ${cCard('📊 6 Oy (So\'m / Dollar)', 'chartS_bar6', 220)}
 
         ${secTitle('👤 Mening Statistikam')}

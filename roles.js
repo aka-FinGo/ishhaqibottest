@@ -1,6 +1,6 @@
 const ROLE_OPTIONS = [
     { key: 'PENDING', label: '⏳ Kutilmoqda' },
-    { key: 'EMPLOYEE', label: '👤 Hodim' },
+    { key: 'EMPLOYEE', label: '👤 Xodim:' },
     { key: 'ADMIN', label: '🛡 Admin' },
     { key: 'DIRECTOR', label: '🎯 Direktor' },
     { key: 'SUPER_ADMIN', label: '👑 SuperAdmin' }
@@ -36,7 +36,7 @@ function roleBadgeHtml(roleKey) {
     if (role === 'DIRECTOR') return '<span class="role-badge direktor">🎯 Direktor</span>';
     if (role === 'ADMIN') return '<span class="role-badge admin">🛡 Admin</span>';
     if (role === 'PENDING') return '<span class="role-badge" style="background:#FEF3C7;color:#92400E;">⏳ Kutilmoqda</span>';
-    return '<span class="role-badge" style="background:#F1F5F9;color:#64748B;">👤 Hodim</span>';
+    return '<span class="role-badge" style="background:#F1F5F9;color:#64748B;">👤 Xodim:</span>';
 }
 
 function boolToChecked(v) {
@@ -49,7 +49,7 @@ function showAddHodimModal() {
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1000;';
     modal.innerHTML = `
         <div class="card" style="width:90%;max-width:400px;background:#fff;border-radius:15px;padding:20px;">
-            <h3 style="margin:0 0 20px 0;color:var(--navy);">➕ Yangi Hodim Qo'shish</h3>
+            <h3 style="margin:0 0 20px 0;color:var(--navy);">➕ Yangi Xodim Qo'shish:</h3>
             <div style="margin-bottom:15px;">
                 <label style="font-weight:600;display:block;margin-bottom:5px;">Telegram ID</label>
                 <input type="text" id="newHodimTgId" placeholder="Masalan:123456789" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:16px;">
@@ -80,7 +80,7 @@ async function addNewHodim() {
     try {
         const data = await apiRequest({ action: 'add_hodim', tgId: tgId, username: username || null });
         if (data.success) {
-            showToastMsg('✅ Hodim muvaffaqiyatli qo\'shildi!');
+            showToastMsg('✅ Xodim muvaffaqiyatli qo\'shildi!');
             document.querySelector('.modal').remove();
             loadHodimlar();
         } else {
@@ -96,7 +96,7 @@ async function addNewHodim() {
 function openHodimSettings(tgId) {
     const hodim = globalEmployeeList.find(h => String(h.tgId) === tgId);
     if (!hodim) {
-        showToastMsg('❌ Hodim topilmadi', true);
+        showToastMsg('❌ Xodim topilmadi', true);
         return;
     }
     showHodimSettingsModal(hodim);
@@ -114,7 +114,7 @@ function showHodimSettingsModal(h) {
     modal.innerHTML = `
     <div class="card" style="width:95%;max-width:500px;max-height:90vh;overflow-y:auto;background:#fff;border-radius:15px;padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <h3 style="margin:0;color:var(--navy);">⚙️ Hodim Sozlamalari</h3>
+            <h3 style="margin:0;color:var(--navy);">⚙️ Xodim Sozlamalari:</h3>
             <button onclick="this.closest('.modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">×</button>
         </div>
         <div style="margin-bottom:20px;text-align:center;">
@@ -126,7 +126,7 @@ function showHodimSettingsModal(h) {
         </div>
         
         <div class="input-group" style="margin-bottom:15px;">
-            <label>👤 Hodim Ismi (UserName)</label>
+            <label>👤 Xodim Ismi (UserName):</label>
             <input type="text" id="uname_${safeTgId}" value="${safeUsername}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:#FAFBFD;">
         </div>
         
@@ -257,12 +257,12 @@ function renderHodimlarList(data) {
     
     let html = `
         <div class="hodim-add-section" style="margin-bottom:20px;">
-            <button class="btn-main" onclick="showAddHodimModal()" style="width:100%;padding:14px;font-size:16px;border-radius:12px;">➕ Yangi Hodim Qo'shish</button>
+            <button class="btn-main" onclick="showAddHodimModal()" style="width:100%;padding:14px;font-size:16px;border-radius:12px;">➕ Yangi Xodim Qo'shish:</button>
         </div>
         <div class="hodimlar-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:15px;">
     `;
     if (!data || !data.length) {
-        html += `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">👥</div><p>Hali hodim qo'shilmagan</p></div>`;
+        html += `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">👥</div><p>Hali xodim qo'shilmagan</p></div>`;
     } else {
         data.forEach(h => {
             const roleBadge = roleBadgeHtml(h.role);
@@ -323,11 +323,11 @@ async function saveHodim(tgId) {
 }
 
 async function deleteHodim(tgId) {
-    if (!confirm('Ushbu hodimni o\'chirishga ishonchingiz komilmi?')) return;
+    if (!confirm('Ushbu xodimni o\'chirishga ishonchingiz komilmi?')) return;
     try {
         const data = await apiRequest({ action: 'delete_hodim', tgId });
         if (data.success) {
-            showToastMsg('✅ Hodim o\'chirildi');
+            showToastMsg('✅ Xodim o\'chirildi');
             document.querySelectorAll('.modal').forEach(m => m.remove());
             loadHodimlar();
         } else {

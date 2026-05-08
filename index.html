@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uz">
 
 <head>
@@ -178,7 +178,7 @@
 
             <div class="sub-tabs" id="adminNav">
                 <button class="sub-btn admin-sub-btn active" id="adminNavHodimlar"
-                    onclick="switchAdminSub('adminHodimlarArea',this)">👥 Hodimlar</button>
+                    onclick="switchAdminSub('adminHodimlarArea',this)">👥 Xodimlar:</button>
                 <button class="sub-btn admin-sub-btn" id="adminNavWorkflow"
                     onclick="switchAdminSub('adminWorkflowArea',this)">⚙️ Ish Oqimi</button>
                 <button class="sub-btn admin-sub-btn" id="adminNavPositions"
@@ -191,10 +191,10 @@
 
             <div id="adminHodimlarArea">
                 <div class="card">
-                    <div class="card-title">➕ Yangi Hodim Qo'shish</div>
+                    <div class="card-title">➕ Yangi Xodim Qo'shish:</div>
                     <div class="input-group">
-                        <label>Telegram ID</label>
-                        <input type="text" id="newHodimId" placeholder="Hodimning Telegram ID raqami"
+                        <label>Telegram ID:</label>
+                        <input type="text" id="newHodimId" placeholder="Xodimning Telegram ID raqami"
                             inputmode="numeric">
                     </div>
                     <div class="input-group">
@@ -210,7 +210,7 @@
                     <div style="font-size:13px;font-weight:700;margin-bottom:10px;opacity:0.8;">📋 RUXSAT MODELI (V2)
                     </div>
                     <div style="font-size:12px;line-height:2;opacity:0.85;">
-                        <div>🧩 Avval <b>Rol</b> tanlanadi: Hodim / Admin / Direktor / SuperAdmin</div>
+                        <div>🧩 Avval <b>Rol</b> tanlanadi: Xodim / Admin / Direktor / SuperAdmin</div>
                         <div>🔧 Keyin har bir userga <b>individual override</b> berish mumkin</div>
                         <div>👑 <b>SuperAdmin</b> — to'liq huquq (hammasi yoqilgan)</div>
                         <div>🎯 <b>Direktor</b> — default: ko'rish + dashboard + export</div>
@@ -219,7 +219,7 @@
                     </div>
                 </div>
 
-                <div class="section-title">Hodimlar ro'yxati</div>
+                <div class="section-title">Xodimlar ro'yxati:</div>
                 <div id="hodimlarList"></div>
             </div>
 
@@ -351,7 +351,7 @@
                     </div>
                     <div class="filter-row">
                         <select id="filterEmployee" onchange="applyFilters()">
-                            <option value="all">Barcha xodimlar</option>
+                            <option value="all">Barcha xodimlar:</option>
                         </select>
                         <select id="filterMonth" onchange="applyFilters()">
                             <option value="all">Oylar</option>
@@ -449,9 +449,9 @@
                 </div>
                 <div class="filter-row">
                     <div class="filter-col">
-                        <label>Mas'ul xodim</label>
+                        <label>Mas'ul xodim:</label>
                         <select id="kvFilterStaff" onchange="applyKvFilters()">
-                            <option value="all">Barcha hodimlar</option>
+                            <option value="all">Barcha xodimlar:</option>
                         </select>
                     </div>
                     <div class="filter-col">
@@ -588,7 +588,7 @@
                     </div>
 
                     <div class="input-group">
-                        <label>� Buyurtma raqami</label>
+                        <label>🔢 Buyurtma raqami:</label>
                         <input type="text" id="kvOrderNumber" placeholder="Masalan: 176" required>
                     </div>
 
@@ -604,9 +604,9 @@
                     </div>
 
                     <div class="input-group">
-                        <label>👤 Mas'ul hodim</label>
+                        <label>👤 Mas'ul xodim:</label>
                         <select id="kvStaffSelect" required>
-                            <option value="">Hodimni tanlang...</option>
+                            <option value="">Xodimni tanlang...</option>
                         </select>
                     </div>
 

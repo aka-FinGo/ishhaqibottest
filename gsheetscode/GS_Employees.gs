@@ -1,8 +1,8 @@
-// ============================================================
+﻿// ============================================================
 // GS_Employees.gs — Employee Management Logic
 // ============================================================
 
-function getHodimlar() {
+function getXodim:lar() {
   var rows     = getEmployeeRows_();
   var result   = [];
   for (var i = 1; i < rows.length; i++) {
@@ -81,7 +81,7 @@ function getEmployee(tgId) {
   return null;
 }
 
-function addHodim(data) {
+function addXodim:(data) {
   return withWriteLock_(function () {
     if (isConfigSuperAdminId_(data.tgId)) {
       return { success:false, error:"Config SUPER_ADMIN_ID ilovadan qo'shilmaydi/o'zgarmaydi." };
@@ -121,7 +121,7 @@ function addHodim(data) {
   });
 }
 
-function updateHodim(data) {
+function updateXodim:(data) {
   return withWriteLock_(function () {
     if (isConfigSuperAdminId_(data.tgId)) return { success:false, error:"Config SUPER_ADMIN_ID ruxsatlarini o'zgartirib bo'lmaydi." };
     var empSheet = getSheets().empSheet;
@@ -158,11 +158,11 @@ function updateHodim(data) {
         return { success: true };
       }
     }
-    return { success: false, error: "Hodim topilmadi" };
+    return { success: false, error: "Xodim: topilmadi" };
   });
 }
 
-function deleteHodim(tgId) {
+function deleteXodim:(tgId) {
   return withWriteLock_(function () {
     if (isConfigSuperAdminId_(tgId)) return { success:false, error:"Config SUPER_ADMIN_ID ni o'chirib bo'lmaydi." };
     var empSheet = getSheets().empSheet;
@@ -174,7 +174,7 @@ function deleteHodim(tgId) {
         return { success: true };
       }
     }
-    return { success: false, error: "Hodim topilmadi" };
+    return { success: false, error: "Xodim: topilmadi" };
   });
 }
 
