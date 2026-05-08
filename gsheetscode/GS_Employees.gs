@@ -1,8 +1,8 @@
-﻿// ============================================================
+// ============================================================
 // GS_Employees.gs — Employee Management Logic
 // ============================================================
 
-function getXodim:lar() {
+function getHodimlar() {
   var rows     = getEmployeeRows_();
   var result   = [];
   for (var i = 1; i < rows.length; i++) {
@@ -81,7 +81,7 @@ function getEmployee(tgId) {
   return null;
 }
 
-function addXodim:(data) {
+function addHodim(data) {
   return withWriteLock_(function () {
     if (isConfigSuperAdminId_(data.tgId)) {
       return { success:false, error:"Config SUPER_ADMIN_ID ilovadan qo'shilmaydi/o'zgarmaydi." };
@@ -121,7 +121,7 @@ function addXodim:(data) {
   });
 }
 
-function updateXodim:(data) {
+function updateHodim(data) {
   return withWriteLock_(function () {
     if (isConfigSuperAdminId_(data.tgId)) return { success:false, error:"Config SUPER_ADMIN_ID ruxsatlarini o'zgartirib bo'lmaydi." };
     var empSheet = getSheets().empSheet;
@@ -162,7 +162,7 @@ function updateXodim:(data) {
   });
 }
 
-function deleteXodim:(tgId) {
+function deleteHodim(tgId) {
   return withWriteLock_(function () {
     if (isConfigSuperAdminId_(tgId)) return { success:false, error:"Config SUPER_ADMIN_ID ni o'chirib bo'lmaydi." };
     var empSheet = getSheets().empSheet;
