@@ -1,4 +1,5 @@
 const ROLE_OPTIONS = [
+    { key: 'PENDING', label: '⏳ Kutilmoqda' },
     { key: 'EMPLOYEE', label: '👤 Hodim' },
     { key: 'ADMIN', label: '🛡 Admin' },
     { key: 'DIRECTOR', label: '🎯 Direktor' },
@@ -25,6 +26,7 @@ function normalizeRoleKey(role) {
     if (raw === 'SUPER_ADMIN' || raw === 'SUPERADMIN') return 'SUPER_ADMIN';
     if (raw === 'DIRECTOR' || raw === 'DIREKTOR') return 'DIRECTOR';
     if (raw === 'ADMIN') return 'ADMIN';
+    if (raw === 'PENDING') return 'PENDING';
     return 'EMPLOYEE';
 }
 
@@ -33,6 +35,7 @@ function roleBadgeHtml(roleKey) {
     if (role === 'SUPER_ADMIN') return '<span class="role-badge boss">👑 SuperAdmin</span>';
     if (role === 'DIRECTOR') return '<span class="role-badge direktor">🎯 Direktor</span>';
     if (role === 'ADMIN') return '<span class="role-badge admin">🛡 Admin</span>';
+    if (role === 'PENDING') return '<span class="role-badge" style="background:#FEF3C7;color:#92400E;">⏳ Kutilmoqda</span>';
     return '<span class="role-badge" style="background:#F1F5F9;color:#64748B;">👤 Hodim</span>';
 }
 

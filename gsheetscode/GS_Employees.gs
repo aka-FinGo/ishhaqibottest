@@ -202,7 +202,7 @@ function autoRegisterPendingUserIfMissing_(tgId, data, source) {
     var existing = getEmployee(targetId);
     if (existing) return { success:true, created:false };
     var empSheet = getSheets().empSheet;
-    empSheet.appendRow([targetId, displayName, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'EMPLOYEE', 0, '', '', '', '', '', '']);
+    empSheet.appendRow([targetId, displayName, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'PENDING', 0, '', '', '', '', '', '']);
     created = true;
     return { success:true, created:true };
   });
