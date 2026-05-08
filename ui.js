@@ -206,16 +206,86 @@ async function initializeApp() {
             _appInitRetries++;
             const delay = 2000 * _appInitRetries;
             setTimeout(initializeApp, delay);
-            showToastMsg(`⚠️ Qayta urinish... (${_appInitRetries}/${MAX_INIT_RETRIES})`);
+            // Faqat kesh yo'q bo'lsa retry xabarini ko'rsatamiz
+            if (myFullRecords.length === 0) {
+                showToastMsg(`⏳ Ulanmoqda... (${_appInitRetries}/${MAX_INIT_RETRIES})`);
+            } else {
+                console.log(`🔄 Fon yangilanishi: urinish ${_appInitRetries}/${MAX_INIT_RETRIES}`);
+            }
         } else {
             _appInitialized = false;
-            showToastMsg('❌ ' + (error.message || "Server bilan bog'lanib bo'mladi"), true);
-            if (myFullRecords.length > 0) showToastMsg('📱 Offline rejimda ishlayapti (cache ma\'lumotlar)', false);
+            if (myFullRecords.length > 0) {
+                // Kesh bor — foydalanuvchiga xalaqit bermasdan ishlashda davom etadi
+                console.warn('⚠️ Server ulanmadi, kesh ma\'lumotlari ishlatilmoqda');
+            } else {
+                // Kesh yo'q — xatolikni ko'rsatish kerak
+                showToastMsg('❌ Server bilan bog\'lanib bo\'lmadi. Tarmoqni tekshiring.', true);
+            }
         }
     }
 }
 
 window.addEventListener('load', initializeApp);
+
+// ============================================================
+// BACKGROUND/FOREGROUND HANDLER
+// Telegram WebApp fonga ketib, qayta kelganda avtomatik yangilash
+// ============================================================
+let _lastActiveTime = Date.now();
+const REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 daqiqa
+
+function _handleAppResume() {
+    const now = Date.now();
+    const elapsed = now - _lastActiveTime;
+    
+    // Select elementlar "qotib" qolishi mumkin — resetlab ketamiz (Telegram WebView bug fix)
+    document.querySelectorAll('select').forEach(sel => {
+        sel.blur();
+        sel.style.pointerEvents = 'none';
+        requestAnimationFrame(() => { sel.style.pointerEvents = ''; });
+    });
+
+    if (elapsed > REFRESH_THRESHOLD_MS && _appInitialized) {
+        // Faqat muvaffaqiyatli initialized bo'lgan bo'lsa va 5 daqiqa o'tgan bo'lsa — fon yangilash
+        console.log(`⏰ App ${Math.round(elapsed / 60000)} daqiqadan keyin faollashdi. Fon yangilanishi...`);
+        _appInitialized = false;
+        _appInitRetries = 0;
+        // Toast ko'rsatmasdan jim yangilaymiz
+        initializeApp().catch(e => console.warn('Resume refresh xatosi:', e));
+    } else {
+        // Kesh ma'lumotlarini qayta render qilamiz (server so'rovsiz)
+        if (myFullRecords.length > 0 && typeof initMyFilters === 'function') {
+            initMyFilters();
+        }
+        applyTheme();
+    }
+    _lastActiveTime = now;
+}
+
+// 1. Brauzer visibility API (sahifa yashirin/ko'rinarli holatga o'tganda)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        _handleAppResume();
+    } else {
+        _lastActiveTime = Date.now();
+    }
+});
+
+// 2. Telegram WebApp o'z lifecycle eventini yuboradi (yangi versiyalarda)
+if (tg && typeof tg.onEvent === 'function') {
+    tg.onEvent('activated', () => {
+        console.log('📱 Telegram activated event');
+        _handleAppResume();
+    });
+}
+
+// 3. Window focus event (desktop Telegram da)
+window.addEventListener('focus', () => {
+    const elapsed = Date.now() - _lastActiveTime;
+    if (elapsed > 30000) { // 30 soniyadan ko'p bo'lsa
+        _handleAppResume();
+    }
+});
 
 function switchTab(tabId, navId) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
