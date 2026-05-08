@@ -279,8 +279,11 @@ function kvadratEdit(data, auth, actorTgId) {
 
 function migrateKvadratYears() {
   var sh = getKvadratSheet();
-  var values = sh.getDataRange().getValues();
+  var range = sh.getDataRange();
+  var values = range.getValues();
   var updated = 0;
+  var hasChanges = false;
+
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
     var currentYear = String(row[KV_COL.YEAR] || '').trim();
@@ -293,9 +296,14 @@ function migrateKvadratYears() {
         var parts = String(date).split('.');
         if (parts.length === 3) year = parts[2];
       }
-      sh.getRange(i + 1, KV_COL.YEAR + 1).setValue("'" + year);
+      values[i][KV_COL.YEAR] = "'" + year;
       updated++;
+      hasChanges = true;
     }
+  }
+  
+  if (hasChanges) {
+    range.setValues(values);
   }
   return { success: true, updated: updated };
 }
@@ -339,9 +347,11 @@ function kvadratDelete(data, auth, actorTgId) {
  */
 function migrateKvadratStaffNames() {
   var sh = getKvadratSheet();
-  var values = sh.getDataRange().getValues();
+  var range = sh.getDataRange();
+  var values = range.getValues();
   var userMap = buildUsernameMap();
   var updated = 0;
+  var hasChanges = false;
 
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
@@ -353,11 +363,15 @@ function migrateKvadratStaffNames() {
 
     var currentName = String(row[KV_COL.STAFF_NAME] || '').trim();
     if (currentName !== resolvedName) {
-      sh.getRange(i + 1, KV_COL.STAFF_NAME + 1).setValue(resolvedName);
+      values[i][KV_COL.STAFF_NAME] = resolvedName;
       updated++;
+      hasChanges = true;
     }
   }
 
+  if (hasChanges) {
+    range.setValues(values);
+  }
   return { success: true, updated: updated, message: updated + " ta yozuv yangilandi" };
 }
 

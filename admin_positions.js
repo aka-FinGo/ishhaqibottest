@@ -1,7 +1,7 @@
 let currentPositionsPool = [];
 
 // Initialize positions UI
-function initPositionsUI(positions) {
+function renderPositionsUI(positions) {
     currentPositionsPool = positions || [];
     renderPositionsList();
 }

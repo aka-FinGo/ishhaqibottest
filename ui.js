@@ -317,19 +317,66 @@ function showToastMsg(msg, isErr = false) {
     t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function switchAdminSub(areaId, btn) {
+let adminInitData = null;
+
+/**
+ * ENSURE_ADMIN_DATA_LOADED
+ * Fetches employees, positions, and workflow in one shot.
+ */
+async function ensureAdminDataLoaded(force = false) {
+    if (adminInitData && !force) return adminInitData;
+    
+    try {
+        const data = await apiRequest({ action: 'admin_init' });
+        if (data.success) {
+            adminInitData = data;
+            
+            // Sync with global state
+            globalEmployeeList = data.employees;
+            if (myPermissions) {
+                myPermissions.allPositions = data.positions;
+                myPermissions.workflowConfig = data.workflowSteps;
+                myPermissions.isWorkflowStrict = data.isWorkflowStrict;
+            }
+            
+            // Update dependent UIs
+            if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.positions);
+            if (typeof populateKvadratMeta === 'function') populateKvadratMeta(data.employees);
+            
+            return data;
+        }
+    } catch (e) {
+        console.error('admin_init error:', e);
+    }
+    return null;
+}
+
+async function switchAdminSub(areaId, btn) {
     if ((areaId === 'adminHodimlarArea' || areaId === 'adminWorkflowArea' || areaId === 'adminPositionsArea') && myRole !== 'SuperAdmin') {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
+    
+    // Switch UI immediately
     ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
     if (document.getElementById(areaId)) document.getElementById(areaId).classList.remove('hidden');
     if (btn) btn.classList.add('active');
-    if (areaId === 'adminHodimlarArea') loadHodimlar();
-    if (areaId === 'adminWorkflowArea' && typeof initWorkflowAdmin === 'function') initWorkflowAdmin();
-    if (areaId === 'adminPositionsArea' && typeof initPositionsUI === 'function') initPositionsUI(myPermissions.allPositions);
+
+    // Load data in background if needed
+    if (['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea'].includes(areaId)) {
+        await ensureAdminDataLoaded();
+    }
+
+    if (areaId === 'adminHodimlarArea') renderHodimlarList(globalEmployeeList);
+    if (areaId === 'adminWorkflowArea' && typeof renderWorkflowSteps === 'function') {
+        currentWorkflowSteps = JSON.parse(JSON.stringify(myPermissions.workflowConfig || []));
+        renderWorkflowSteps();
+    }
+    if (areaId === 'adminPositionsArea' && typeof renderPositionsUI === 'function') {
+        renderPositionsUI(myPermissions.allPositions);
+    }
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
 }

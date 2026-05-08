@@ -131,27 +131,47 @@ async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
     
-    listContainer.innerHTML = `
-        <div class="skeleton-container" style="padding:0;">
-            ${Array(5).fill('<div class="skeleton-card" style="margin-bottom:12px;"><div class="skeleton" style="height:20px;width:40%;margin-bottom:10px;"></div><div class="skeleton" style="height:15px;width:70%;"></div></div>').join('')}
-        </div>`;
+    // 1. Try to load from cache first (Stale)
+    try {
+        const cached = localStorage.getItem('kvFullRecords');
+        if (cached) {
+            kvFullRecords = JSON.parse(cached);
+            if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
+            applyKvFilters();
+            console.log('📦 Kvadratlar loaded from cache');
+        }
+    } catch (e) {
+        console.warn('Cache read error:', e);
+    }
 
+    // 2. Show skeletons only if cache is empty
+    if (!kvFullRecords || kvFullRecords.length === 0) {
+        listContainer.innerHTML = `
+            <div class="skeleton-container" style="padding:0;">
+                ${Array(5).fill('<div class="skeleton-card" style="margin-bottom:12px;"><div class="skeleton" style="height:20px;width:40%;margin-bottom:10px;"></div><div class="skeleton" style="height:15px;width:70%;"></div></div>').join('')}
+            </div>`;
+    }
+
+    // 3. Revalidate from Server
     try {
         const data = await apiRequest({ action: 'kvadrat_get_all' });
         if (data.success) {
             kvFullRecords = data.data || [];
             if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
+            
+            // Save to cache
+            localStorage.setItem('kvFullRecords', JSON.stringify(kvFullRecords));
+            
             applyKvFilters();
+            console.log('🔄 Kvadratlar revalidated from server');
         } else {
-            listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Xato: ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
+            if (!kvFullRecords || kvFullRecords.length === 0) {
+                listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Xato: ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
+            }
         }
     } catch (e) {
-        console.error('initKvadratTab error:', e);
-        // Agar network error bo'lsa va dashboardda ma'lumot bo'lsa - favqulodda sinxronlash
-        if (typeof kvDashboardRecords !== 'undefined' && kvDashboardRecords.length > 0) {
-            kvFullRecords = kvDashboardRecords;
-            applyKvFilters();
-        } else {
+        console.error('initKvadratTab revalidate error:', e);
+        if (!kvFullRecords || kvFullRecords.length === 0) {
             listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Tarmoq xatosi: ${escapeHtml(e.message)}</p></div>`;
         }
     }

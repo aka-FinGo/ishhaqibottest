@@ -39,20 +39,20 @@ function saveWorkflowConfig(steps) {
   if (!sh) sh = ss.insertSheet("WorkflowSteps");
 
   sh.clear();
-  sh.appendRow(["StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd"]);
-  sh.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+  var headers = ["StepIndex", "PositionName", "ActionLabel", "StatusLabel", "IsStart", "IsEnd"];
+  sh.getRange(1, 1, 1, headers.length).setValues([headers])
+    .setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
 
   if (steps && steps.length) {
-    steps.forEach((s, idx) => {
-      sh.appendRow([
-        idx + 1,
-        s.position,
-        s.action,
-        s.status,
-        s.isStart ? 1 : 0,
-        s.isEnd ? 1 : 0
-      ]);
-    });
+    var output = steps.map((s, idx) => [
+      idx + 1,
+      s.position,
+      s.action,
+      s.status,
+      s.isStart ? 1 : 0,
+      s.isEnd ? 1 : 0
+    ]);
+    sh.getRange(2, 1, output.length, headers.length).setValues(output);
   }
   return { success: true };
 }

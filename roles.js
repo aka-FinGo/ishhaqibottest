@@ -91,18 +91,12 @@ async function addNewHodim() {
 }
 
 function openHodimSettings(tgId) {
-    apiRequest({ action: 'get_hodimlar' }).then(data => {
-        if (!data.success) {
-            showToastMsg('❌ Hodim ma\'lumotlari yuklanmadi', true);
-            return;
-        }
-        const hodim = data.data.find(h => String(h.tgId) === tgId);
-        if (!hodim) {
-            showToastMsg('❌ Hodim topilmadi', true);
-            return;
-        }
-        showHodimSettingsModal(hodim);
-    });
+    const hodim = globalEmployeeList.find(h => String(h.tgId) === tgId);
+    if (!hodim) {
+        showToastMsg('❌ Hodim topilmadi', true);
+        return;
+    }
+    showHodimSettingsModal(hodim);
 }
 
 function showHodimSettingsModal(h) {
@@ -250,40 +244,36 @@ function onHodimRoleChanged(tgId) {
 }
 
 async function loadHodimlar() {
+    await ensureAdminDataLoaded(true); // Force refresh
+    renderHodimlarList(globalEmployeeList);
+}
+
+function renderHodimlarList(data) {
     const list = document.getElementById('hodimlarList');
     if(!list) return;
-    list.innerHTML = `<div class="skeleton skeleton-item"></div><div class="skeleton skeleton-item"></div>`;
-    try {
-        const data = await apiRequest({ action: 'get_hodimlar' });
-        if (!data.success) {
-            list.innerHTML = `<div class="empty-state"><p style="color:var(--red);">${escapeHtml(data.error || 'Xato')}</p></div>`;
-            return;
-        }
-        let html = `
-            <div class="hodim-add-section" style="margin-bottom:20px;">
-                <button class="btn-main" onclick="showAddHodimModal()" style="width:100%;padding:14px;font-size:16px;border-radius:12px;">➕ Yangi Hodim Qo'shish</button>
-            </div>
-            <div class="hodimlar-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:15px;">
-        `;
-        if (!data.data.length) {
-            html += `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">👥</div><p>Hali hodim qo'shilmagan</p></div>`;
-        } else {
-            data.data.forEach(h => {
-                const roleBadge = roleBadgeHtml(h.role);
-                html += `
-                    <div class="hodim-card" onclick="openHodimSettings('${h.tgId}')" style="cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px;">👤</div>
-                        <div style="font-weight:600;font-size:14px;color:var(--navy);margin-bottom:4px;">${escapeHtml(h.username || '—')}</div>
-                        ${roleBadge}
-                    </div>
-                `;
-            });
-        }
-        html += `</div>`;
-        list.innerHTML = html;
-    } catch (e) {
-        list.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Yuklanmadi</p></div>`;
+    
+    let html = `
+        <div class="hodim-add-section" style="margin-bottom:20px;">
+            <button class="btn-main" onclick="showAddHodimModal()" style="width:100%;padding:14px;font-size:16px;border-radius:12px;">➕ Yangi Hodim Qo'shish</button>
+        </div>
+        <div class="hodimlar-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:15px;">
+    `;
+    if (!data || !data.length) {
+        html += `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">👥</div><p>Hali hodim qo'shilmagan</p></div>`;
+    } else {
+        data.forEach(h => {
+            const roleBadge = roleBadgeHtml(h.role);
+            html += `
+                <div class="hodim-card" onclick="openHodimSettings('${h.tgId}')" style="cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px;">👤</div>
+                    <div style="font-weight:600;font-size:14px;color:var(--navy);margin-bottom:4px;">${escapeHtml(h.username || '—')}</div>
+                    ${roleBadge}
+                </div>
+            `;
+        });
     }
+    html += `</div>`;
+    list.innerHTML = html;
 }
 
 async function saveHodim(tgId) {

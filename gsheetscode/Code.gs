@@ -48,6 +48,10 @@ function doPost(e) {
         result = initUser(tgId, auth, data);
         break;
 
+      case "admin_init":
+        result = getAdminInitData(tgId);
+        break;
+
       case "add":
         result = addRecord(data, auth, tgId);
         break;

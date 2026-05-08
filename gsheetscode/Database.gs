@@ -278,3 +278,24 @@ function setWorkflowStrictMode(isStrict) {
   p.setProperty('WORKFLOW_STRICT_MODE', isStrict ? '1' : '0');
   return { success: true };
 }
+
+/**
+ * GET_ADMIN_INIT_DATA
+ * Fetches all necessary data for Admin Panel in one go.
+ */
+function getAdminInitData(actorTgId) {
+  var auth = checkUserRoles(actorTgId);
+  var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+  
+  if (!isAdmin) {
+    return { success: false, error: "Admin ruxsati yo'q" };
+  }
+
+  return {
+    success: true,
+    employees: getHodimlar().data || [],
+    positions: getAllPositions() || [],
+    workflowSteps: getWorkflowConfig() || [],
+    isWorkflowStrict: getWorkflowStrictMode()
+  };
+}
