@@ -139,7 +139,7 @@ function renderMyPage() {
             }
             const itemDiv = document.createElement('div');
             itemDiv.className = 'history-item';
-            itemDiv.style.cssText = 'cursor:pointer; background:white; border-radius:12px; padding:12px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+            itemDiv.style.cssText = 'cursor:pointer; background:var(--surface); border-radius:12px; padding:12px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
             itemDiv.onclick = () => showMyDetailModal(origIdx);
             itemDiv.innerHTML = `
                 <div class="item-header" style="display:flex; justify-content:space-between; align-items:center;">

@@ -45,25 +45,8 @@ function getReminders() {
   }
 }
 
-// ✅ FIX 4: Tema qo'llash (Theme toggle synci)
-function applyTheme(theme) {
-  const isDark = theme === 'dark';
-  document.body.classList.toggle('dark', isDark);
-  const toggle = document.getElementById('themeToggle');
-  if (toggle) {
-    // Change event triggerini oldini olish
-    toggle.removeEventListener('change', toggleThemeHandler);
-    toggle.checked = isDark;
-    toggle.addEventListener('change', toggleThemeHandler);
-  }
-}
-
-// ✅ FIX 5: Theme toggle handler (event delegation)
-function toggleThemeHandler(e) {
-  const theme = e.target.checked ? 'dark' : 'light';
-  safeStorageSet(THEME_KEY, theme);
-  applyTheme(theme);
-}
+// ✅ Tema: ui.js dagi setTheme() va applyTheme() funksiyalari ishlatiladi
+// Bu yerda alohida tema logikasi yo'q — settings.js faqat eslatmalar bilan shug'ullanadi
 
 // ✅ FIX 6: Status message ko'rsatish va avtomatik o'chirish
 function showStatus(message, isSuccess = true) {
@@ -244,16 +227,6 @@ function addReminder() {
 // ✅ FIX 12: Window load event
 window.addEventListener('load', () => {
   try {
-    // Theme init
-    const saved = localStorage.getItem(THEME_KEY) || 'light';
-    applyTheme(saved);
-
-    // Theme toggle listener
-    const toggle = document.getElementById('themeToggle');
-    if (toggle) {
-      toggle.addEventListener('change', toggleThemeHandler);
-    }
-
     // Reminders render
     renderReminders();
 
@@ -268,7 +241,7 @@ window.addEventListener('load', () => {
       });
     }
 
-    console.log('✅ Settings initsiyalizatsiya bajarildi');
+    console.log('✅ Settings (eslatmalar) initsiyalizatsiya bajarildi');
   } catch (e) {
     console.error('❌ Settings load xatosi:', e);
   }

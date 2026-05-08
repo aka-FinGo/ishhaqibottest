@@ -202,7 +202,7 @@ function renderKvList() {
 
     if (!kvFilteredRecords || !kvFilteredRecords.length) {
         container.innerHTML = `
-            <div class="empty-state" style="background:#fff; border:2px dashed #CBD5E1; border-radius:24px; padding:60px 20px; text-align:center; margin:20px 0;">
+            <div class="empty-state" style="background:var(--surface); border:2px dashed #CBD5E1; border-radius:24px; padding:60px 20px; text-align:center; margin:20px 0;">
                 <div class="empty-icon" style="font-size:48px; margin-bottom:16px;">📏</div>
                 <p style="font-size:16px; font-weight:700; color:#1E293B; margin:0;">Ma'lumotlar topilmadi</p>
                 <p style="font-size:13px; color:#64748B; margin-top:8px;">Ushbu davr yoki filtrlar bo'yicha ma'lumot yo'q.</p>

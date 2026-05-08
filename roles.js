@@ -112,7 +112,7 @@ function showHodimSettingsModal(h) {
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1000;';
     
     modal.innerHTML = `
-    <div class="card" style="width:95%;max-width:500px;max-height:90vh;overflow-y:auto;background:#fff;border-radius:15px;padding:20px;">
+    <div class="card" style="width:95%;max-width:500px;max-height:90vh;overflow-y:auto;background:var(--surface);border-radius:15px;padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
             <h3 style="margin:0;color:var(--navy);">⚙️ Xodim Sozlamalari:</h3>
             <button onclick="this.closest('.modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">×</button>
@@ -267,7 +267,7 @@ function renderHodimlarList(data) {
         data.forEach(h => {
             const roleBadge = roleBadgeHtml(h.role);
             html += `
-                <div class="hodim-card" onclick="openHodimSettings('${h.tgId}')" style="cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                <div class="hodim-card" onclick="openHodimSettings('${h.tgId}')" style="cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface);text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
                     <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px;">👤</div>
                     <div style="font-weight:600;font-size:14px;color:var(--navy);margin-bottom:4px;">${escapeHtml(h.username || '—')}</div>
                     ${roleBadge}

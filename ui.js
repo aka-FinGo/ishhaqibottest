@@ -455,12 +455,12 @@ function showConfirmModal(message, onConfirm) {
 
     const modalHtml = `
         <div id="${modalId}" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:99999; animation:fadeConfirm .2s ease;">
-            <div style="background:#fff; width:90%; max-width:340px; border-radius:24px; padding:28px; box-shadow:0 20px 50px rgba(0,0,0,0.3); animation:popConfirm .3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <div style="background:var(--surface); width:90%; max-width:340px; border-radius:24px; padding:28px; box-shadow:0 20px 50px rgba(0,0,0,0.3); animation:popConfirm .3s cubic-bezier(0.34, 1.56, 0.64, 1);">
                 <div style="font-size:54px; text-align:center; margin-bottom:20px;">⚠️</div>
                 <div style="font-size:17px; font-weight:800; color:#0F172A; text-align:center; margin-bottom:12px; line-height:1.5; font-family:sans-serif;">${message.replace(/\n/g, '<br>')}</div>
                 <p style="font-size:14px; color:#64748B; text-align:center; margin-bottom:24px; font-weight:500;">Ushbu amalni davom ettirmoqchimisiz?</p>
                 <div style="display:flex; gap:12px;">
-                    <button id="modalNo" style="flex:1; padding:14px; border-radius:14px; border:1.5px solid #E2E8F0; background:#fff; color:#64748B; font-weight:700; cursor:pointer; font-size:15px; transition:all .2s;">Yo'q</button>
+                    <button id="modalNo" style="flex:1; padding:14px; border-radius:14px; border:1.5px solid #E2E8F0; background:var(--surface); color:#64748B; font-weight:700; cursor:pointer; font-size:15px; transition:all .2s;">Yo'q</button>
                     <button id="modalYes" style="flex:1; padding:14px; border-radius:14px; border:none; background:#0F172A; color:#fff; font-weight:700; cursor:pointer; font-size:15px; box-shadow:0 8px 20px rgba(15,23,42,0.25); transition:all .2s;">Ha, saqlash</button>
                 </div>
             </div>
