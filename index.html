@@ -71,7 +71,9 @@
                     <select id="myFilterYear" onchange="applyMyFilters()">
                         <option value="all">Yillar</option>
                     </select>
-                    <button class="btn-secondary" onclick="resetMyFilters()" style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;" title="Tozalash">🔄</button>
+                    <button class="btn-secondary" onclick="resetMyFilters()"
+                        style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;"
+                        title="Tozalash">🔄</button>
                 </div>
                 <button class="btn-main bg-navy" onclick="exportMyExcel()"
                     style="margin-top:0;padding:11px;font-size:13px;">
@@ -176,11 +178,14 @@
                 <h2>👤 Profil</h2>
             </div>
 
-            <div class="card premium-hero-card" style="background: linear-gradient(135deg, var(--green), var(--green-dark)) !important; margin-bottom: 20px;">
+            <div class="card premium-hero-card"
+                style="background: linear-gradient(135deg, var(--green), var(--green-dark)) !important; margin-bottom: 20px;">
                 <div class="premium-hero-content">
-                    <div class="premium-hero-label" style="color: rgba(255,255,255,0.7) !important;">Hush kelibsiz!</div>
+                    <div class="premium-hero-label" style="color: rgba(255,255,255,0.7) !important;">Hush kelibsiz!
+                    </div>
                     <div class="premium-hero-value" id="profileUserName" style="font-size: 24px !important;">...</div>
-                    <div class="premium-hero-unit" id="profileUserRole" style="color: #fff !important; opacity: 0.8;">...</div>
+                    <div class="premium-hero-unit" id="profileUserRole" style="color: #fff !important; opacity: 0.8;">
+                        ...</div>
                 </div>
                 <div class="premium-hero-bg-icon">👤</div>
             </div>
@@ -188,7 +193,8 @@
             <!-- Admin Panel Button (Conditional) -->
             <div id="profileAdminSection" class="hidden">
                 <div class="section-title">Boshqaruv</div>
-                <button class="btn-main bg-navy" onclick="switchTab('adminTab', 'nav-profile')" style="margin-bottom: 20px;">
+                <button class="btn-main bg-navy" onclick="switchTab('adminTab', 'nav-profile')"
+                    style="margin-bottom: 20px;">
                     👑 Admin Panelga kirish
                 </button>
             </div>
@@ -196,10 +202,12 @@
             <div class="section-title">Ilova Mavzusi</div>
             <div class="card">
                 <div style="display: flex; gap: 10px;">
-                    <div class="perm-label" id="theme-default" onclick="setTheme('')" style="flex:1; justify-content:center;">
+                    <div class="perm-label" id="theme-default" onclick="setTheme('')"
+                        style="flex:1; justify-content:center;">
                         <span>✨ Standart</span>
                     </div>
-                    <div class="perm-label" id="theme-dark" onclick="setTheme('dark.css')" style="flex:1; justify-content:center;">
+                    <div class="perm-label" id="theme-dark" onclick="setTheme('dark.css')"
+                        style="flex:1; justify-content:center;">
                         <span>🌙 Qorong'u</span>
                     </div>
                 </div>
@@ -207,18 +215,23 @@
 
             <div class="section-title">Ma'lumotlar</div>
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
                     <span style="font-weight: 600;">🔔 Bildirishnomalar</span>
-                    <label class="premium-switch" style="position: relative; display: inline-block; width: 46px; height: 24px;">
+                    <label class="premium-switch"
+                        style="position: relative; display: inline-block; width: 46px; height: 24px;">
                         <input type="checkbox" checked disabled style="opacity: 0; width: 0; height: 0;">
-                        <span class="premium-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E2E8F0; transition: .4s; border-radius: 24px;"></span>
+                        <span class="premium-slider"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E2E8F0; transition: .4s; border-radius: 24px;"></span>
                     </label>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
                     <span style="font-weight: 600;">📶 Offline Rejim</span>
-                    <label class="premium-switch" style="position: relative; display: inline-block; width: 46px; height: 24px;">
+                    <label class="premium-switch"
+                        style="position: relative; display: inline-block; width: 46px; height: 24px;">
                         <input type="checkbox" checked disabled style="opacity: 0; width: 0; height: 0;">
-                        <span class="premium-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E2E8F0; transition: .4s; border-radius: 24px;"></span>
+                        <span class="premium-slider"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E2E8F0; transition: .4s; border-radius: 24px;"></span>
                     </label>
                 </div>
             </div>
@@ -430,7 +443,9 @@
                         <select id="filterYear" onchange="applyFilters()">
                             <option value="all">Yillar</option>
                         </select>
-                        <button class="btn-secondary" onclick="resetAdminFilters()" style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;" title="Tozalash">🔄</button>
+                        <button class="btn-secondary" onclick="resetAdminFilters()"
+                            style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;"
+                            title="Tozalash">🔄</button>
                     </div>
                 </div>
                 <div id="adminList"></div>
@@ -452,21 +467,31 @@
             <div class="page-header" style="margin-bottom: 20px;">
                 <div>
                     <h2 style="display:flex; align-items:center; gap:8px;">
-                        <span style="background: linear-gradient(135deg, var(--green), var(--green-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🧾 Buyurtmalar</span>
+                        <span
+                            style="background: linear-gradient(135deg, var(--green), var(--green-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🧾
+                            Buyurtmalar</span>
                     </h2>
-                    <p style="font-size:12px; color:var(--text-muted); font-weight:600; margin-top:2px; opacity:0.8;">Buyurtmalar ro'yxati va holati</p>
+                    <p style="font-size:12px; color:var(--text-muted); font-weight:600; margin-top:2px; opacity:0.8;">
+                        Buyurtmalar ro'yxati va holati</p>
                 </div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)" style="background: var(--surface); border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);">
+                    <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash" onclick="kvRefreshAll(this)"
+                        style="background: var(--surface); border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);">
                         🔄
                     </button>
-                    <div class="header-avatar" style="background: linear-gradient(135deg, #6366f1, #a855f7); width:38px; height:38px; font-size:16px;">🧾</div>
+                    <div class="header-avatar"
+                        style="background: linear-gradient(135deg, #6366f1, #a855f7); width:38px; height:38px; font-size:16px;">
+                        🧾</div>
                 </div>
             </div>
 
-            <div class="page-switcher" style="background: rgba(241, 245, 249, 0.8); padding: 5px; border-radius: 14px; margin-bottom: 24px;">
-                <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')" style="border:none; border-radius:10px;">📈 Dashboard</button>
-                <button class="page-switcher-btn active" style="border:none; border-radius:10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">🧾 Buyurtmalar</button>
+            <div class="page-switcher"
+                style="background: rgba(241, 245, 249, 0.8); padding: 5px; border-radius: 14px; margin-bottom: 24px;">
+                <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')"
+                    style="border:none; border-radius:10px;">📈 Dashboard</button>
+                <button class="page-switcher-btn active"
+                    style="border:none; border-radius:10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">🧾
+                    Buyurtmalar</button>
             </div>
 
             <!-- Modern Hero Stat Card -->
@@ -479,7 +504,9 @@
             </div>
 
             <div class="premium-filter-card" style="margin-bottom: 24px;">
-                <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-left: 4px;">Saralash va Filtrlar</div>
+                <div
+                    style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-left: 4px;">
+                    Saralash va Filtrlar</div>
                 <div class="filter-row" style="margin-bottom: 10px;">
                     <div class="filter-col">
                         <label>Oy</label>
