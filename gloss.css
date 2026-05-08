@@ -1,0 +1,37 @@
+/* gloss.css — Shaffof "Glassmorphism" dizayni */
+:root {
+    --bg: #F1F5F9;
+    --surface: rgba(255, 255, 255, 0.7);
+    --border: rgba(255, 255, 255, 0.4);
+    --text: #0F172A;
+    --text-muted: #64748B;
+    --navy: #1E293B;
+    --green: #10B981;
+}
+
+body {
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+    background-attachment: fixed;
+}
+
+.card, .stat-card, .filter-box, .history-item, .modal-content {
+    background: var(--surface) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05) !important;
+}
+
+.budget-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 64, 175, 0.8) 100%) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+.bottom-nav {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+.btn-main {
+    backdrop-filter: blur(4px);
+}

@@ -1,0 +1,73 @@
+/* dark.css — Tungi rejim (Dark Mode) */
+:root {
+    --bg: #0F172A;
+    --surface: #1E293B;
+    --border: #334155;
+    --text: #F1F5F9;
+    --text-muted: #94A3B8;
+    --navy: #F8FAFC;
+    --green: #10B981;
+    --green-dark: #34D399;
+    --green-glow: rgba(52,211,153,0.1);
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.card, .stat-card, .filter-box, .history-item, .modal-content, .compact-item, .mini-stat {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+}
+
+input, select, textarea {
+    background: #1E293B !important;
+    border-color: var(--border) !important;
+    color: #F1F5F9 !important;
+}
+
+input::placeholder {
+    color: #475569 !important;
+}
+
+.bottom-nav {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-top: 1px solid var(--border) !important;
+}
+
+.nav-item {
+    color: #94A3B8 !important;
+}
+
+.nav-item.active {
+    color: var(--green) !important;
+}
+
+.section-title, .dash-section-title {
+    color: #94A3B8 !important;
+}
+
+.item-date, .rate-tag {
+    background: #334155 !important;
+    color: #F1F5F9 !important;
+}
+
+.budget-card {
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.modal-drag {
+    background: #475569 !important;
+}
+
+/* Dashboard specific dark fixes */
+.dash-stat-card {
+    background: #1E293B !important;
+    border-color: #334155 !important;
+}
+.dash-stat-value {
+    color: #F1F5F9 !important;
+}

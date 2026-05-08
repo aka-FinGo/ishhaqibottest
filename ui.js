@@ -149,6 +149,8 @@ function processUserData(data) {
     
     // UI Visibility (Instant update from cache)
     applyRoleBasedUI();
+    applyTheme();
+    updateProfileUI();
     
     if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
 }
@@ -158,12 +160,7 @@ function processUserData(data) {
  * Updates visibility of nav items and buttons based on myRole and permissions.
  */
 function applyRoleBasedUI() {
-    const navAdmin = document.getElementById('nav-admin');
-    if (navAdmin) {
-        const showAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
-        navAdmin.classList.toggle('hidden', !showAdmin);
-    }
-    
+    // Profil tugmasi har doim ko'rinadi, shuning uchun bu yerda uni yashirish shart emas
     setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
     setCompanyExportVisibility(canExportCompanyData);
     updateContactAdminButton();
@@ -225,16 +222,63 @@ function switchTab(tabId, navId) {
     const tabEl = document.getElementById(tabId);
     if (tabEl) tabEl.classList.add('active');
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    if (navId !== 'nav-add') {
+    if (navId && navId !== 'nav-add') {
         const el = document.getElementById(navId);
         if (el) el.classList.add('active');
     }
-    if (tabId === 'adminTab') initAdminTab();
-    if (tabId === 'dashboardTab') initDashboardTab();
-    if (tabId === 'kvadratTab') initKvadratTab();
+    if (tabId === 'adminTab') {
+        if (typeof initAdminTab === 'function') initAdminTab();
+        else if (typeof loadAdminData === 'function') loadAdminData();
+    }
+    if (tabId === 'dashboardTab') {
+        if (typeof initDashboardTab === 'function') initDashboardTab();
+        else if (typeof renderDashboard === 'function') renderDashboard();
+    }
+    if (tabId === 'kvadratTab') {
+        if (typeof initKvadratTab === 'function') initKvadratTab();
+        else if (typeof loadKvData === 'function') loadKvData();
+    }
+    if (tabId === 'profileTab') updateProfileUI();
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
     if (tabId === 'addTab') checkAddPermission();
     if (typeof updateKvFabVisibility === 'function') updateKvFabVisibility();
+}
+
+function setTheme(themeFile) {
+    const link = document.getElementById('dynamic-theme');
+    if (!link) return;
+    
+    link.href = themeFile ? themeFile : '';
+    localStorage.setItem('user_theme', themeFile || '');
+    
+    // Update active state in UI
+    document.querySelectorAll('.perm-label').forEach(el => el.classList.remove('checked'));
+    if (!themeFile) document.getElementById('theme-default')?.classList.add('checked');
+    else if (themeFile.includes('light')) document.getElementById('theme-light')?.classList.add('checked');
+    else if (themeFile.includes('dark')) document.getElementById('theme-dark')?.classList.add('checked');
+    else if (themeFile.includes('gloss')) document.getElementById('theme-gloss')?.classList.add('checked');
+    
+    showToast(themeFile ? "Mavzu o'zgardi" : "Standart mavzu");
+}
+
+function applyTheme() {
+    const saved = localStorage.getItem('user_theme');
+    if (saved !== null) {
+        setTheme(saved);
+    }
+}
+
+function updateProfileUI() {
+    const nameEl = document.getElementById('profileUserName');
+    const roleEl = document.getElementById('profileUserRole');
+    if (nameEl) nameEl.textContent = myUsername || 'Foydalanuvchi';
+    if (roleEl) roleEl.textContent = myRole || 'User';
+    
+    const adminSection = document.getElementById('profileAdminSection');
+    if (adminSection) {
+        const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+        adminSection.classList.toggle('hidden', !hasAdminAccess);
+    }
 }
 
 function handleFabAction() {

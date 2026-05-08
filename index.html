@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uz">
 
 <head>
@@ -13,8 +13,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Aristokrat Ish Haqi (v1.0.22.1)</title>
-    <meta name="app-version" content="v1.0.22">
+    <title>Aristokrat Ish Haqi (v1.0.23.1)</title>
+    <meta name="app-version" content="v1.0.23">
+    <link id="dynamic-theme" rel="stylesheet" href="">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -170,6 +171,71 @@
         </div>
 
         <!-- TAB 3: ADMIN -->
+        <!-- Profil Tab -->
+        <div id="profileTab" class="tab-content">
+            <div class="page-header">
+                <h2>👤 Profil</h2>
+            </div>
+
+            <div class="card premium-hero-card" style="background: linear-gradient(135deg, var(--green), var(--green-dark)) !important; margin-bottom: 20px;">
+                <div class="premium-hero-content">
+                    <div class="premium-hero-label" style="color: rgba(255,255,255,0.7) !important;">Hush kelibsiz!</div>
+                    <div class="premium-hero-value" id="profileUserName" style="font-size: 24px !important;">...</div>
+                    <div class="premium-hero-unit" id="profileUserRole" style="color: #fff !important; opacity: 0.8;">...</div>
+                </div>
+                <div class="premium-hero-bg-icon">👤</div>
+            </div>
+
+            <!-- Admin Panel Button (Conditional) -->
+            <div id="profileAdminSection" class="hidden">
+                <div class="section-title">Boshqaruv</div>
+                <button class="btn-main bg-navy" onclick="switchTab('adminTab', 'nav-profile')" style="margin-bottom: 20px;">
+                    👑 Admin Panelga kirish
+                </button>
+            </div>
+
+            <div class="section-title">Ilova Mavzusi</div>
+            <div class="card">
+                <div class="hodim-perms-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="perm-label" id="theme-default" onclick="setTheme('')">
+                        <span>✨ Standart</span>
+                    </div>
+                    <div class="perm-label" id="theme-light" onclick="setTheme('light.css')">
+                        <span>☀️ Yorug'</span>
+                    </div>
+                    <div class="perm-label" id="theme-dark" onclick="setTheme('dark.css')">
+                        <span>🌙 Qorong'u</span>
+                    </div>
+                    <div class="perm-label" id="theme-gloss" onclick="setTheme('gloss.css')">
+                        <span>💎 Shaffof</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Ma'lumotlar</div>
+            <div class="card">
+                <div class="switch-row" style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                    <span>🔔 Bildirishnomalar</span>
+                    <label class="premium-switch">
+                        <input type="checkbox" checked disabled>
+                        <span class="premium-slider"></span>
+                    </label>
+                </div>
+                <div class="switch-row" style="padding: 10px 0;">
+                    <span>📶 Offline Rejim</span>
+                    <label class="premium-switch">
+                        <input type="checkbox" checked disabled>
+                        <span class="premium-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; opacity: 0.5; font-size: 12px;">
+                Aristokrat App v1.0.23<br>
+                Ishlab chiquvchi: Antigravity AI
+            </div>
+        </div>
+
         <div id="adminTab" class="tab-content">
             <div class="page-header">
                 <h2>👑 Admin Panel</h2>
@@ -646,9 +712,10 @@
             <div class="nav-item" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
                 <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
             </div>
-            <div class="nav-item hidden" id="nav-admin" onclick="switchTab('adminTab','nav-admin')">
-                <span class="nav-icon">👑</span><span>Admin</span>
+            <div class="nav-item" id="nav-profile" onclick="switchTab('profileTab','nav-profile')">
+                <span class="nav-icon">👤</span><span>Profil</span>
             </div>
+            <div class="nav-item hidden" id="nav-admin"></div>
         </div>
 
         <!-- MODAL: KVADRAT DASHBOARD -->
