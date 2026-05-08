@@ -146,7 +146,27 @@ function processUserData(data) {
     if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
     canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
     canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
+    
+    // UI Visibility (Instant update from cache)
+    applyRoleBasedUI();
+    
     if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+}
+
+/**
+ * APPLY_ROLE_BASED_UI
+ * Updates visibility of nav items and buttons based on myRole and permissions.
+ */
+function applyRoleBasedUI() {
+    const navAdmin = document.getElementById('nav-admin');
+    if (navAdmin) {
+        const showAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
+        navAdmin.classList.toggle('hidden', !showAdmin);
+    }
+    
+    setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
+    setCompanyExportVisibility(canExportCompanyData);
+    updateContactAdminButton();
 }
 
 async function initializeApp() {
@@ -179,13 +199,6 @@ async function initializeApp() {
             processUserData(data);
             saveCacheData(myFullRecords, data);
             
-            if (myRole === 'SuperAdmin' || myRole === 'Admin') {
-                const navAdmin = document.getElementById('nav-admin');
-                if (navAdmin) navAdmin.classList.remove('hidden');
-            }
-            setSelfCheckButtonsVisibility(myRole === 'SuperAdmin' || myRole === 'Admin');
-            setCompanyExportVisibility(canExportCompanyData);
-            updateContactAdminButton();
             if (data.autoAdded) showToastMsg("✅ Siz ro'yxatga qo'shildingiz. Ruxsat uchun admin bilan bog'laning.");
             if (typeof initMyFilters === 'function') initMyFilters();
             _appInitialized = true; _appInitRetries = 0;
