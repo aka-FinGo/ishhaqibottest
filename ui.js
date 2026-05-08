@@ -269,6 +269,7 @@ function applyTheme() {
 }
 
 function updateProfileUI() {
+    console.log('👤 Profil UI yangilanmoqda. Rol:', myRole);
     const nameEl = document.getElementById('profileUserName');
     const roleEl = document.getElementById('profileUserRole');
     if (nameEl) nameEl.textContent = myUsername || 'Foydalanuvchi';
@@ -277,6 +278,7 @@ function updateProfileUI() {
     const adminSection = document.getElementById('profileAdminSection');
     if (adminSection) {
         const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+        console.log('👑 Admin panel tugmasi:', hasAdminAccess ? 'KO\'RINADI' : 'YASHIRILDI');
         adminSection.classList.toggle('hidden', !hasAdminAccess);
     }
 }

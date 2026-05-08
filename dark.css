@@ -1,4 +1,4 @@
-/* dark.css — Tungi rejim (Dark Mode) */
+/* dark.css — Tungi rejim (Dark Mode) - ULTRA OVERRIDE */
 :root {
     --bg: #0F172A;
     --surface: #1E293B;
@@ -6,68 +6,80 @@
     --text: #F1F5F9;
     --text-muted: #94A3B8;
     --navy: #F8FAFC;
-    --green: #10B981;
-    --green-dark: #34D399;
-    --green-glow: rgba(52,211,153,0.1);
 }
 
 body {
-    background: var(--bg);
-    color: var(--text);
-}
-
-.card, .stat-card, .filter-box, .history-item, .modal-content, .compact-item, .mini-stat {
-    background: var(--surface) !important;
-    border-color: var(--border) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
-}
-
-input, select, textarea {
-    background: #1E293B !important;
-    border-color: var(--border) !important;
+    background-color: #0F172A !important;
     color: #F1F5F9 !important;
 }
 
-input::placeholder {
-    color: #475569 !important;
+/* Force apply to common elements */
+div.card, div.stat-card, div.filter-box, div.history-item, div.modal-content, div.compact-item, div.mini-stat, div.sub-tabs {
+    background-color: #1E293B !important;
+    border-color: #334155 !important;
+    color: #F1F5F9 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
 }
 
-.bottom-nav {
+/* Text overrides */
+h1, h2, h3, h4, h5, h6, span, p, div, label {
+    color: inherit;
+}
+
+.stat-label, .budget-label, .section-title, .dash-section-title, .premium-hero-label {
+    color: #94A3B8 !important;
+}
+
+.stat-value, .budget-amount, .premium-hero-value, .page-header h2, .modal-title {
+    color: #FFFFFF !important;
+}
+
+/* Input fields */
+input, select, textarea {
+    background-color: #0F172A !important;
+    border-color: #334155 !important;
+    color: #FFFFFF !important;
+}
+
+/* Bottom Nav */
+div.bottom-nav {
     background: rgba(15, 23, 42, 0.95) !important;
-    border-top: 1px solid var(--border) !important;
+    border-top: 1px solid #334155 !important;
+    backdrop-filter: blur(20px) !important;
 }
 
 .nav-item {
-    color: #94A3B8 !important;
+    color: #64748B !important;
 }
 
 .nav-item.active {
-    color: var(--green) !important;
+    color: #10B981 !important;
 }
 
-.section-title, .dash-section-title {
-    color: #94A3B8 !important;
-}
-
-.item-date, .rate-tag {
-    background: #334155 !important;
-    color: #F1F5F9 !important;
-}
-
-.budget-card {
+/* Specific elements */
+.premium-hero-card {
     background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%) !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
 }
 
-.modal-drag {
-    background: #475569 !important;
+.item-date, .rate-tag, .meta-chip, .sub-btn {
+    background-color: #334155 !important;
+    color: #F1F5F9 !important;
 }
 
-/* Dashboard specific dark fixes */
-.dash-stat-card {
-    background: #1E293B !important;
-    border-color: #334155 !important;
+.sub-btn.active {
+    background-color: #10B981 !important;
+    color: #FFFFFF !important;
 }
-.dash-stat-value {
+
+.perm-label {
+    background-color: #1E293B !important;
+    border-color: #334155 !important;
     color: #F1F5F9 !important;
+}
+
+.perm-label.checked {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    border-color: #10B981 !important;
+    color: #10B981 !important;
 }

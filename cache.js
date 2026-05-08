@@ -3,7 +3,7 @@
  * Ma'lumotlarni localStorage'da versiya va muddati bilan saqlaydi.
  */
 const AppCache = {
-    VERSION: '1.0.25', // Ilova versiyasi (o'zgarsa kesh tozalanadi)
+    VERSION: '1.0.23', // Ilova versiyasi (o'zgarsa kesh tozalanadi)
     KEYS: {
         MY_RECORDS:   'ari_my_recs',
         ADMIN_DATA:   'ari_admin_data',

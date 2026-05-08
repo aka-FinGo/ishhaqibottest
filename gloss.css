@@ -1,37 +1,37 @@
-/* gloss.css — Shaffof "Glassmorphism" dizayni */
+/* gloss.css — Shaffof "Glassmorphism" dizayni - ULTRA OVERRIDE */
 :root {
     --bg: #F1F5F9;
     --surface: rgba(255, 255, 255, 0.7);
-    --border: rgba(255, 255, 255, 0.4);
+    --border: rgba(255, 255, 255, 0.5);
     --text: #0F172A;
-    --text-muted: #64748B;
-    --navy: #1E293B;
-    --green: #10B981;
 }
 
 body {
-    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
-    background-attachment: fixed;
+    background: linear-gradient(135deg, #E2E8F0 0%, #F8FAFC 100%) !important;
+    background-attachment: fixed !important;
 }
 
-.card, .stat-card, .filter-box, .history-item, .modal-content {
-    background: var(--surface) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.05) !important;
+div.card, div.stat-card, div.filter-box, div.history-item, div.modal-content, div.compact-item, div.mini-stat, div.sub-tabs {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1) !important;
+}
+
+div.bottom-nav {
+    background: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 .budget-card {
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 64, 175, 0.8) 100%) !important;
-    backdrop-filter: blur(8px) !important;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(59, 130, 246, 0.8) 100%) !important;
+    backdrop-filter: blur(10px) !important;
 }
 
-.bottom-nav {
-    background: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(20px) !important;
-}
-
-.btn-main {
-    backdrop-filter: blur(4px);
+.sub-btn.active {
+    background: rgba(16, 185, 129, 0.8) !important;
+    color: #fff !important;
 }
