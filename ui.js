@@ -113,6 +113,13 @@ function saveCacheData(records, userData) {
 
 function processUserData(data) {
     if (!data) return;
+    
+    if (data.employeeList) {
+        const _empRaw = data.employeeList;
+        window._kvEmpMap = _empRaw;
+        globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
+    }
+
     myInList = data.inList || false;
     myCanAdd = data.canAdd !== false;
     myUsername = data.username || '';

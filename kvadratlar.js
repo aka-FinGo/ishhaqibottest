@@ -62,8 +62,15 @@ async function kvRefreshAll(btn) {
 function populateKvadratMeta(staffList) {
     const staffFilter = document.getElementById('kvFilterStaff');
     const kvStaffModal = document.getElementById('kvStaffSelect');
+    
+    // Eski qiymatlarni saqlab qolish
+    const oldStaffVal = staffFilter ? staffFilter.value : 'all';
+    const oldModalStaffVal = kvStaffModal ? kvStaffModal.value : '';
+    const oldYearVal = document.getElementById('kvFilterYear') ? document.getElementById('kvFilterYear').value : 'all';
+    const oldProcessVal = document.getElementById('kvFilterProcess') ? document.getElementById('kvFilterProcess').value : 'all';
+
     if (staffFilter) {
-        staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
+        staffFilter.innerHTML = '<option value="all">Barcha xodimlar</option>';
         staffList.forEach(emp => {
             const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
             const opt = document.createElement('option');
@@ -71,9 +78,12 @@ function populateKvadratMeta(staffList) {
             opt.textContent = name;
             staffFilter.appendChild(opt);
         });
+        if (oldStaffVal !== 'all' && staffFilter.querySelector(`option[value="${oldStaffVal}"]`)) {
+            staffFilter.value = oldStaffVal;
+        }
     }
     if (kvStaffModal) {
-        kvStaffModal.innerHTML = '<option value="">Hodimni tanlang...</option>';
+        kvStaffModal.innerHTML = '<option value="">Xodimni tanlang...</option>';
         staffList.forEach(emp => {
             const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
             const opt = document.createElement('option');
@@ -81,6 +91,9 @@ function populateKvadratMeta(staffList) {
             opt.textContent = name;
             kvStaffModal.appendChild(opt);
         });
+        if (oldModalStaffVal && kvStaffModal.querySelector(`option[value="${oldModalStaffVal}"]`)) {
+            kvStaffModal.value = oldModalStaffVal;
+        }
     }
     const yearSel = document.getElementById('kvFilterYear');
     if (yearSel) {
@@ -91,6 +104,9 @@ function populateKvadratMeta(staffList) {
             opt.value = y;
             opt.textContent = y;
             yearSel.appendChild(opt);
+        }
+        if (oldYearVal !== 'all' && yearSel.querySelector(`option[value="${oldYearVal}"]`)) {
+            yearSel.value = oldYearVal;
         }
     }
     const processSelect = document.getElementById('kvFilterProcess');
@@ -105,6 +121,9 @@ function populateKvadratMeta(staffList) {
             opt.textContent = label;
             processSelect.appendChild(opt);
         });
+        if (oldProcessVal !== 'all' && processSelect.querySelector(`option[value="${oldProcessVal}"]`)) {
+            processSelect.value = oldProcessVal;
+        }
     }
     _initKvFormYears();
 }
