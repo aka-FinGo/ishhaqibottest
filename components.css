@@ -1,0 +1,657 @@
+/* ==============================================================
+   COMPONENTS.CSS — JS fayllaridan ajratilgan barcha stillar
+   Versiya: 1.0.23
+   ============================================================== */
+
+/* ---------------------------------------------------------------
+   1. KOMPONENT RANGLAR UCHUN CSS O'ZGARUVCHILAR
+      dark.css bu o'zgaruvchilarni :root da override qiladi —
+      barcha komponentlar avtomatik mavzuga moslashadi.
+   --------------------------------------------------------------- */
+:root {
+  --comp-chip-uzs-bg:   #dcfce7;
+  --comp-chip-uzs-text: #166534;
+  --comp-chip-usd-bg:   #dbeafe;
+  --comp-chip-usd-text: #1e40af;
+  --comp-edit-bg:       #FEF3C7;
+  --comp-edit-text:     #92400E;
+  --comp-del-bg:        #FEE2E2;
+  --comp-del-text:      #991B1B;
+  --comp-period-text:   #0ea5e9;
+  --comp-period-bg:     #F0F9FF;
+  --comp-hist-bg:       #FFFBEB;
+  --comp-hist-border:   #FEF3C7;
+  --comp-hist-title:    #B45309;
+  --comp-hist-val:      #92400E;
+  --comp-uzs-val:       #059669;
+  --comp-usd-val:       #92400E;
+  --comp-wf-start-bg:   #FDE68A;
+  --comp-wf-start-clr:  #92400E;
+  --comp-wf-mid-bg:     #FECACA;
+  --comp-wf-mid-clr:    #991B1B;
+  --comp-wf-end-bg:     #DCFCE7;
+  --comp-wf-end-clr:    #166534;
+}
+
+/* ---------------------------------------------------------------
+   2. UMUMIY OVERLAY VA MODAL
+   --------------------------------------------------------------- */
+.js-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: modalBg .2s ease;
+}
+
+.js-modal-box {
+  background: var(--surface);
+  border-radius: 15px;
+  padding: 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 500px;
+  animation: slideUp .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.js-modal-box--sm   { max-width: 380px; }
+.js-modal-box--md   { max-width: 500px; }
+.js-modal-box--lg   { max-width: 600px; width: 95%; }
+
+.js-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.js-modal-title {
+  margin: 0;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 800;
+}
+.js-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 4px;
+}
+.js-modal-close:hover { color: var(--text); }
+
+/* ---------------------------------------------------------------
+   3. TASDIQLASH DIALOG (showCustomConfirm)
+   --------------------------------------------------------------- */
+.js-confirm-box {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px;
+  max-width: 350px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+.js-confirm-title {
+  margin: 0 0 12px;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 700;
+}
+.js-confirm-msg {
+  color: var(--text-muted);
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.js-reason-wrap { margin-bottom: 20px; }
+.js-reason-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--navy-light);
+}
+.js-confirm-actions { display: flex; gap: 12px; }
+.js-btn-cancel {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background .2s;
+}
+.js-btn-cancel:hover { background: var(--border); }
+.js-btn-confirm-del {
+  flex: 1;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.js-btn-confirm-ok {
+  flex: 1;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+/* ---------------------------------------------------------------
+   4. SKELET ANIMATSIYALAR (enhanced_admin_list.js dan)
+   --------------------------------------------------------------- */
+@keyframes js-spinner {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes js-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.js-skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.js-skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--bg) 25%,
+    var(--border) 50%,
+    var(--bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: js-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------
+   5. ADMIN RO'YXAT ELEMENTI (admin-list-item)
+   --------------------------------------------------------------- */
+.ali {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.ali:hover  { box-shadow: var(--shadow-md); }
+.ali:active { transform: scale(0.99); }
+
+.ali__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.ali__name  { font-weight: 600; color: var(--navy); flex-grow: 1; }
+.ali__date  { color: var(--text-muted); font-size: 12px; text-align: right; min-width: 80px; }
+.ali__bot   { display: flex; justify-content: space-between; align-items: center; }
+.ali__comment {
+  color: var(--text-muted);
+  font-size: 13px;
+  flex-grow: 1;
+  max-width: 70%;
+}
+.ali__chips  { display: flex; gap: 8px; flex-shrink: 0; }
+.ali__period { color: var(--comp-period-text); font-size: 11px; margin-top: 6px; }
+
+/* Chip tugmachalar */
+.chip-uzs {
+  background: var(--comp-chip-uzs-bg);
+  color: var(--comp-chip-uzs-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.chip-usd {
+  background: var(--comp-chip-usd-bg);
+  color: var(--comp-chip-usd-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* O'chirish confirmation modal (enhanced_admin_list.js) */
+.dc-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+.dc-box {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px;
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+.dc-title  { margin: 0 0 16px; color: #b91c1c; font-size: 18px; font-weight: 700; }
+.dc-desc   { color: var(--text-muted); margin: 0 0 16px; font-size: 14px; }
+.dc-label  { display: block; margin-bottom: 8px; font-weight: 500; color: var(--navy-light); font-size: 14px; }
+.dc-actions { display: flex; gap: 12px; margin-top: 8px; }
+.dc-cancel {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.dc-del {
+  flex: 1;
+  background: var(--comp-del-bg);
+  color: var(--comp-del-text);
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+/* ---------------------------------------------------------------
+   6. HODIM SOZLAMALARI MODAL (roles.js)
+   --------------------------------------------------------------- */
+.hs-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.hs-box {
+  width: 95%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+}
+.hs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.hs-title  { margin: 0; color: var(--navy); font-size: 18px; font-weight: 800; }
+.hs-close  {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.hs-avatar-wrap { text-align: center; margin-bottom: 20px; }
+.hs-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 10px;
+}
+.hs-username { font-weight: 600; font-size: 16px; color: var(--navy); }
+.hs-tgid     { font-size: 12px; color: var(--text-muted); }
+
+/* Rol ma'lumotlari kartasi */
+.role-info-card {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: #fff;
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+}
+.role-info-card__title { font-size: 13px; font-weight: 700; margin-bottom: 10px; opacity: 0.8; }
+.role-info-card__list  { font-size: 12px; line-height: 2; opacity: 0.85; }
+
+/* ---------------------------------------------------------------
+   7. BOSQICH KONFIGURATSIYA DIALOG (admin_workflow.js)
+   --------------------------------------------------------------- */
+.sc-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.sc-box {
+  width: 90%;
+  max-width: 500px;
+  background: var(--surface);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+}
+.sc-title  { margin-top: 0; color: var(--navy); font-size: 18px; font-weight: 800; }
+.sc-desc   { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; }
+.sc-label  {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+  color: var(--navy);
+  font-size: 14px;
+}
+.sc-group  { margin-bottom: 15px; }
+.sc-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font);
+}
+.sc-actions { display: flex; gap: 10px; }
+.sc-save {
+  flex: 1;
+  padding: 12px;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.sc-cancel-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+/* ---------------------------------------------------------------
+   8. BATAFSIL MODAL (detail_modal.js)
+   --------------------------------------------------------------- */
+.dm-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.dm-badge {
+  font-weight: 700;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.dm-badge--uzs { background: var(--comp-chip-uzs-bg); color: var(--comp-uzs-val); }
+.dm-badge--usd { background: var(--comp-edit-bg);     color: var(--comp-usd-val); }
+
+.dm-act-row { display: flex; gap: 8px; }
+.dm-act-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: opacity .2s;
+}
+.dm-act-btn:hover  { opacity: 0.85; }
+.dm-act-btn--edit  { background: var(--comp-edit-bg); color: var(--comp-edit-text); }
+.dm-act-btn--del   { background: var(--comp-del-bg);  color: var(--comp-del-text);  }
+
+.dm-body-header   { margin-bottom: 20px; }
+.dm-title         { margin: 0; font-size: 22px; color: var(--navy); font-weight: 800; }
+.dm-date-row      { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.dm-date-chip     { color: var(--text-muted); font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.dm-period-chip   {
+  color: var(--comp-period-text);
+  background: var(--comp-period-bg);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Tahrirlash tarixi bloki */
+.dm-edit-hist {
+  background: var(--comp-hist-bg);
+  border: 1px solid var(--comp-hist-border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+.dm-edit-hist__title {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--comp-hist-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dm-edit-hist__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.dm-edit-hist__key   { font-size: 12px; color: var(--comp-hist-val); }
+.dm-edit-hist__val   { font-size: 12px; font-weight: 700; color: var(--comp-hist-val); text-decoration: line-through; }
+.dm-edit-hist__reason { font-size: 12px; color: var(--comp-hist-val); display: flex; gap: 6px; }
+
+/* Summalar kartasi */
+.dm-amounts {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+.dm-amounts__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dm-amounts__row + .dm-amounts__row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.dm-amounts__key  { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.dm-amounts__uzs  { font-size: 18px; color: var(--comp-uzs-val); font-weight: 800; }
+.dm-amounts__usd  { font-size: 16px; color: var(--comp-usd-val); font-weight: 800; }
+.dm-amounts__rate { font-size: 14px; color: var(--navy);         font-weight: 700; }
+.dm-amounts__conv { font-size: 16px; color: var(--comp-uzs-val); font-weight: 800; }
+.dm-amounts__name { font-size: 14px; color: var(--navy);         font-weight: 700; }
+.dm-close-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--navy);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background .2s;
+}
+.dm-close-btn:hover { background: var(--bg); }
+
+/* ---------------------------------------------------------------
+   9. KV BATAFSIL MODAL (kvadratlar.js)
+   --------------------------------------------------------------- */
+.kvdm-btn-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.kvdm-edit-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--comp-edit-bg);
+  color: var(--comp-edit-text);
+  border: 1px solid #FCD34D;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.kvdm-del-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--comp-del-bg);
+  color: var(--comp-del-text);
+  border: 1px solid #FECACA;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.kvdm-info-box {
+  margin-top: 20px;
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+.kvdm-info-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kvdm-info-title__line {
+  background: var(--text-muted);
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+}
+
+/* Timeline tarix */
+.kvdm-tl-item {
+  padding-left: 20px;
+  position: relative;
+  padding-bottom: 16px;
+}
+.kvdm-tl-item:last-child { padding-bottom: 0; border-left-color: transparent; }
+.kvdm-tl-border { border-left: 2.5px solid var(--border); }
+.kvdm-tl-item:last-child .kvdm-tl-border { border-left-color: transparent; }
+
+.kvdm-tl-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  /* --step-clr CSS o'zgaruvchisi JS dan o'rnatiladi */
+  border: 3px solid var(--step-clr, var(--green));
+  position: absolute;
+  left: -7px;
+  top: 2px;
+  box-shadow: 0 0 0 3px var(--surface);
+}
+.kvdm-tl-status { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -0.2px; }
+.kvdm-tl-meta   { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.kvdm-tl-who    { color: var(--navy-light); font-weight: 700; }
+.kvdm-tl-sep    { margin: 0 4px; opacity: 0.5; }
+
+.kvdm-close-btn {
+  width: 100%;
+  height: 52px;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  box-shadow: var(--shadow-sm);
+  transition: background .2s;
+}
+.kvdm-close-btn:hover { background: var(--bg); }
+
+/* ---------------------------------------------------------------
+   10. WORKFLOW ISH JARAYONI TUGMASI
+       --wf-bg va --wf-shadow JS dan dinamik o'rnatiladi
+   --------------------------------------------------------------- */
+.wf-claim-btn {
+  width: 100%;
+  border: none;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 12px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: var(--font);
+  background: var(--wf-bg, var(--green));
+  box-shadow: 0 4px 12px var(--wf-shadow, rgba(16, 185, 129, 0.4));
+  transition: opacity .2s, transform .15s;
+}
+.wf-claim-btn:hover  { opacity: 0.9; }
+.wf-claim-btn:active { transform: scale(0.97); }

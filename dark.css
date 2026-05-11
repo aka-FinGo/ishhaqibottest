@@ -1,0 +1,232 @@
+/* dark.css — Tungi rejim (Dark Mode) */
+:root {
+    --bg: #0B1220;
+    --surface: #111827;
+    --border: #1F2937;
+    --text: #F3F4F6;
+    --text-muted: #9CA3AF;
+    --navy: #1F2937;
+    --navy-mid: #111827;
+    --navy-light: #374151;
+    --green: #10B981;
+
+    /* ---- components.css uchun qora mavzu o'zgaruvchilari ---- */
+    --comp-chip-uzs-bg:   rgba(16, 185, 129, 0.18);
+    --comp-chip-uzs-text: #6EE7B7;
+    --comp-chip-usd-bg:   rgba(59, 130, 246, 0.18);
+    --comp-chip-usd-text: #93C5FD;
+    --comp-edit-bg:       rgba(254, 243, 199, 0.10);
+    --comp-edit-text:     #FDE68A;
+    --comp-del-bg:        rgba(254, 226, 226, 0.10);
+    --comp-del-text:      #FCA5A5;
+    --comp-period-text:   #38BDF8;
+    --comp-period-bg:     rgba(14, 165, 233, 0.15);
+    --comp-hist-bg:       rgba(255, 251, 235, 0.05);
+    --comp-hist-border:   rgba(254, 243, 199, 0.12);
+    --comp-hist-title:    #FDE68A;
+    --comp-hist-val:      #FCD34D;
+    --comp-uzs-val:       #34D399;
+    --comp-usd-val:       #FDE68A;
+}
+
+body {
+    background-color: #0B1220 !important;
+    color: #F3F4F6 !important;
+}
+
+/* Force apply to common elements */
+div.card, div.stat-card, div.filter-box, div.history-item,
+div.modal-content, div.compact-item, div.mini-stat, div.sub-tabs,
+div.detail-card, div.hodim-card, div.page-switcher-btn,
+div.premium-filter-card {
+    background-color: #111827 !important;
+    border-color: #1F2937 !important;
+    color: #F3F4F6 !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+
+/* Text overrides */
+h1, h2, h3, h4, h5, h6, span, p, div, label {
+    color: inherit;
+}
+
+.stat-label, .budget-label, .section-title, .dash-section-title,
+.premium-hero-label, .detail-key, .item-date, .rate-tag,
+.item-comment {
+    color: #9CA3AF !important;
+}
+
+.stat-value, .budget-amount, .premium-hero-value, .page-header h2,
+.modal-title, .detail-val, .role-item-name, .item-name,
+.hist-reason, .hist-amt {
+    color: #FFFFFF !important;
+}
+
+/* Input fields */
+input, select, textarea {
+    background-color: #1F2937 !important;
+    border-color: #374151 !important;
+    color: #FFFFFF !important;
+}
+input:focus, select:focus, textarea:focus {
+    background-color: #1F2937 !important;
+    border-color: #10B981 !important;
+}
+
+/* Budget Card */
+.budget-card {
+    background: linear-gradient(135deg, #111827 0%, #1E3A8A 100%) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* Bottom Nav */
+div.bottom-nav {
+    background: rgba(11, 18, 32, 0.98) !important;
+    border-top: 1px solid #1F2937 !important;
+    backdrop-filter: blur(20px) !important;
+}
+.nav-item        { color: #6B7280 !important; }
+.nav-item.active { color: #10B981 !important; }
+.nav-fab { border: 4px solid #0B1220 !important; }
+
+/* Table Overrides */
+.kv-table-wrap {
+    background-color: #111827 !important;
+    border-color: #1F2937 !important;
+}
+.kv-table thead th {
+    background-color: #1F2937 !important;
+    color: #FFFFFF !important;
+    border-color: #374151 !important;
+}
+.kv-table tbody td {
+    background-color: #111827 !important;
+    color: #E5E7EB !important;
+    border-color: #1F2937 !important;
+}
+.kv-date-row td {
+    background-color: #1F2937 !important;
+    color: #9CA3AF !important;
+    border-color: #374151 !important;
+}
+.kv-col-m2 { color: #34D399 !important; }
+
+/* Detail Modal Rows */
+.detail-row  { border-color: #1F2937 !important; }
+.modal-drag  { background: #374151 !important; }
+
+.premium-hero-card {
+    background: linear-gradient(135deg, #111827 0%, #1F2937 100%) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.item-date, .rate-tag, .meta-chip, .sub-btn, .page-btn,
+.amount-chip.usd, .amount-chip.uzs {
+    background-color: #1F2937 !important;
+    color: #F3F4F6 !important;
+    border: 1px solid #374151 !important;
+}
+.sub-btn.active, .page-btn.active {
+    background-color: #10B981 !important;
+    color: #FFFFFF !important;
+    border-color: #10B981 !important;
+}
+
+.perm-label {
+    background-color: #111827 !important;
+    border-color: #1F2937 !important;
+    color: #F3F4F6 !important;
+}
+.perm-label.checked {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    border-color: #10B981 !important;
+    color: #10B981 !important;
+}
+
+/* Badges */
+.b-blue   { background: rgba(59, 130, 246, 0.2) !important; color: #93C5FD !important; }
+.b-green  { background: rgba(16, 185, 129, 0.2) !important; color: #6EE7B7 !important; }
+.b-yellow { background: rgba(245, 158, 11, 0.2) !important; color: #FDE047 !important; }
+.b-gray   { background: rgba(156, 163, 175, 0.2) !important; color: #E5E7EB !important; }
+
+/* Toast */
+.toast { background: #1F2937 !important; color: #FFFFFF !important; }
+
+/* ---- components.css klasslari uchun dark mode ---- */
+
+/* Overlay va modal box */
+.js-overlay     { background: rgba(0, 0, 0, 0.75) !important; }
+.js-modal-box,
+.js-confirm-box { background: #111827 !important; }
+.js-modal-title,
+.js-confirm-title { color: #F3F4F6 !important; }
+.js-btn-cancel  { background: #1F2937 !important; color: #9CA3AF !important; }
+.js-reason-label { color: #9CA3AF !important; }
+
+/* Admin ro'yxat elementi */
+.ali {
+    background: #111827 !important;
+    border-color: #1F2937 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+.ali__name    { color: #F3F4F6 !important; }
+.ali__date,
+.ali__comment { color: #9CA3AF !important; }
+
+/* O'chirish modal */
+.dc-box    { background: #111827 !important; }
+.dc-desc   { color: #9CA3AF !important; }
+.dc-label  { color: #9CA3AF !important; }
+.dc-cancel { background: #1F2937 !important; color: #9CA3AF !important; }
+
+/* Hodim sozlamalari */
+.hs-box    { background: #111827 !important; }
+.hs-title  { color: #F3F4F6 !important; }
+.hs-close  { color: #9CA3AF !important; }
+.hs-username { color: #F3F4F6 !important; }
+.hs-tgid     { color: #9CA3AF !important; }
+
+/* Bosqich konfiguratsiya */
+.sc-box      { background: #111827 !important; }
+.sc-title    { color: #F3F4F6 !important; }
+.sc-desc     { color: #9CA3AF !important; }
+.sc-label    { color: #9CA3AF !important; }
+.sc-select   {
+    background: #1F2937 !important;
+    border-color: #374151 !important;
+    color: #F3F4F6 !important;
+}
+
+/* Batafsil modal */
+.dm-title         { color: #F3F4F6 !important; }
+.dm-date-chip     { color: #9CA3AF !important; }
+.dm-amounts       {
+    background: #1F2937 !important;
+    border-color: #374151 !important;
+}
+.dm-amounts__row + .dm-amounts__row { border-top-color: #374151 !important; }
+.dm-amounts__key  { color: #9CA3AF !important; }
+.dm-amounts__rate { color: #F3F4F6 !important; }
+.dm-amounts__name { color: #F3F4F6 !important; }
+.dm-close-btn     {
+    background: #111827 !important;
+    border-color: #374151 !important;
+    color: #9CA3AF !important;
+}
+
+/* KV batafsil modal */
+.kvdm-info-box  {
+    background: #1F2937 !important;
+    border-color: #374151 !important;
+}
+.kvdm-info-title { color: #9CA3AF !important; }
+.kvdm-info-title__line { background: #9CA3AF !important; }
+.kvdm-tl-status  { color: #F3F4F6 !important; }
+.kvdm-tl-who     { color: #D1D5DB !important; }
+.kvdm-tl-dot     { background: #111827 !important; box-shadow: 0 0 0 3px #111827 !important; }
+.kvdm-close-btn  {
+    background: #111827 !important;
+    border-color: #374151 !important;
+    color: #9CA3AF !important;
+}
+.kvdm-tl-border  { border-left-color: #374151 !important; }
