@@ -1,0 +1,576 @@
+/* ============================================================
+   dark.css — Cyberpunk 2077 / High-Tech Obsidian Dark Mode
+   style(1).css bilan to'liq moslashtirilgan versiya
+   ============================================================ */
+
+:root {
+    /* === Base Surfaces === */
+    --bg:             #050505;
+    --surface:        #121214;
+    --border:         rgba(255, 255, 255, 0.06);
+    --navy:           #121214;
+    --navy-mid:       #0d0d0f;
+    --navy-light:     #1a1a1c;
+
+    /* === Text === */
+    --text:           #ffffff;
+    --text-muted:     #94a3b8;
+
+    /* === Neon Accents (style(1).css dan) === */
+    --cyan-neon:      #00f2ff;
+    --blue-neon:      #0066ff;
+    --orange-neon:    #ff8c00;
+    --red-neon:       #ff2a2a;
+    --green-neon:     #00ff88;
+    --green:          #00ff88;
+
+    /* === Gradients === */
+    --accent-gradient:  linear-gradient(135deg, #00f2ff, #0066ff);
+    --warning-gradient: linear-gradient(135deg, #ff8c00, #ff4500);
+    --surface-border:   1px solid rgba(255, 255, 255, 0.06);
+
+    /* === Glows === */
+    --cyan-glow:   0 0 12px rgba(0, 242, 255, 0.45);
+    --orange-glow: 0 0 12px rgba(255, 140, 0, 0.45);
+    --green-glow:  0 0 12px rgba(0, 255, 136, 0.45);
+    --red-glow:    0 0 10px rgba(255, 42, 42, 0.35);
+    --blue-glow:   0 0 12px rgba(0, 102, 255, 0.45);
+
+    /* === Components (dark mode vars) === */
+    --comp-chip-uzs-bg:   rgba(0, 255, 136, 0.12);
+    --comp-chip-uzs-text: #00ff88;
+    --comp-chip-usd-bg:   rgba(0, 102, 255, 0.15);
+    --comp-chip-usd-text: #60a5fa;
+    --comp-edit-bg:       rgba(255, 140, 0, 0.10);
+    --comp-edit-text:     #ffb347;
+    --comp-del-bg:        rgba(255, 42, 42, 0.10);
+    --comp-del-text:      #ff6b6b;
+    --comp-period-text:   #00f2ff;
+    --comp-period-bg:     rgba(0, 242, 255, 0.10);
+    --comp-hist-bg:       rgba(0, 242, 255, 0.04);
+    --comp-hist-border:   rgba(0, 242, 255, 0.10);
+    --comp-hist-title:    #00f2ff;
+    --comp-hist-val:      #ffffff;
+    --comp-uzs-val:       #00ff88;
+    --comp-usd-val:       #60a5fa;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+body {
+    background-color: #050505 !important;
+    color: #ffffff !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================
+   CARDS & SURFACES
+   ============================================================ */
+div.card,
+div.stat-card,
+div.filter-box,
+div.history-item,
+div.modal-content,
+div.compact-item,
+div.mini-stat,
+div.sub-tabs,
+div.detail-card,
+div.hodim-card,
+div.page-switcher-btn,
+div.premium-filter-card {
+    background-color: #121214 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7),
+                0 1px 0 rgba(255, 255, 255, 0.03) inset !important;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+div.card:hover,
+div.stat-card:hover,
+div.history-item:hover {
+    border-color: rgba(0, 242, 255, 0.2) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7),
+                var(--cyan-glow) !important;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h1, h2, h3, h4, h5, h6, span, p, div, label {
+    color: inherit;
+}
+
+.stat-label,
+.budget-label,
+.section-title,
+.dash-section-title,
+.premium-hero-label,
+.detail-key,
+.item-date,
+.rate-tag,
+.item-comment {
+    color: #94a3b8 !important;
+}
+
+.stat-value,
+.budget-amount,
+.premium-hero-value,
+.page-header h2,
+.modal-title,
+.detail-val,
+.role-item-name,
+.item-name,
+.hist-reason,
+.hist-amt {
+    color: #ffffff !important;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+input, select, textarea {
+    background-color: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+    border-radius: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    background-color: #1a1a1c !important;
+    border-color: var(--cyan-neon) !important;
+    box-shadow: var(--cyan-glow) !important;
+    outline: none;
+}
+
+/* ============================================================
+   BUDGET CARD
+   ============================================================ */
+.budget-card {
+    background: linear-gradient(135deg, #0d0d0f 0%, #0a1628 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    box-shadow: var(--cyan-glow), 0 8px 32px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+div.bottom-nav {
+    background: rgba(5, 5, 5, 0.95) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.nav-item {
+    color: #64748b !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item.active {
+    color: var(--cyan-neon) !important;
+    filter: drop-shadow(0 0 6px rgba(0, 242, 255, 0.5));
+}
+
+.nav-fab {
+    border: 4px solid #050505 !important;
+    background: var(--accent-gradient) !important;
+    box-shadow: var(--cyan-glow), 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+.kv-table-wrap {
+    background-color: #121214 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.kv-table thead th {
+    background-color: #1a1a1c !important;
+    color: var(--cyan-neon) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+}
+
+.kv-table tbody td {
+    background-color: #121214 !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.kv-table tbody tr:hover td {
+    background-color: #1a1a1c !important;
+}
+
+.kv-date-row td {
+    background-color: #0d0d0f !important;
+    color: #64748b !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.kv-col-m2 {
+    color: var(--green-neon) !important;
+    text-shadow: var(--green-glow);
+    font-weight: 700;
+}
+
+/* ============================================================
+   DETAIL MODAL
+   ============================================================ */
+.detail-row {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.modal-drag {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 3px;
+}
+
+/* ============================================================
+   PREMIUM HERO CARD
+   ============================================================ */
+.premium-hero-card {
+    background: linear-gradient(135deg, #121214 0%, #1a1a1c 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.12) !important;
+    box-shadow: var(--cyan-glow), 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ============================================================
+   PILLS / CHIPS / BUTTONS
+   ============================================================ */
+.item-date,
+.rate-tag,
+.meta-chip,
+.sub-btn,
+.page-btn,
+.amount-chip.usd,
+.amount-chip.uzs {
+    background-color: #1a1a1c !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.sub-btn.active,
+.page-btn.active {
+    background: var(--accent-gradient) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: var(--cyan-glow) !important;
+}
+
+/* ============================================================
+   PERMISSIONS
+   ============================================================ */
+.perm-label {
+    background-color: #121214 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #94a3b8 !important;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.perm-label.checked {
+    background-color: rgba(0, 242, 255, 0.08) !important;
+    border-color: var(--cyan-neon) !important;
+    color: var(--cyan-neon) !important;
+    box-shadow: var(--cyan-glow) !important;
+}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+.b-blue {
+    background: rgba(0, 102, 255, 0.15) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(0, 102, 255, 0.25) !important;
+}
+
+.b-green {
+    background: rgba(0, 255, 136, 0.12) !important;
+    color: var(--green-neon) !important;
+    border: 1px solid rgba(0, 255, 136, 0.2) !important;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.b-yellow {
+    background: rgba(255, 140, 0, 0.12) !important;
+    color: #ffb347 !important;
+    border: 1px solid rgba(255, 140, 0, 0.2) !important;
+}
+
+.b-gray {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast {
+    background: #1a1a1c !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    box-shadow: var(--cyan-glow), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 12px;
+}
+
+/* ============================================================
+   OVERLAY & MODALS (components.css)
+   ============================================================ */
+.js-overlay {
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(4px);
+}
+
+.js-modal-box,
+.js-confirm-box {
+    background: #121214 !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    border-radius: 20px;
+    box-shadow: var(--cyan-glow), 0 20px 60px rgba(0, 0, 0, 0.9) !important;
+}
+
+.js-modal-title,
+.js-confirm-title {
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+.js-btn-cancel {
+    background: #1a1a1c !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 10px;
+}
+
+.js-reason-label {
+    color: var(--cyan-neon) !important;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+}
+
+/* ============================================================
+   ADMIN LIST ITEM (ali)
+   ============================================================ */
+.ali {
+    background: #121214 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ali:hover {
+    border-color: rgba(0, 242, 255, 0.2) !important;
+    box-shadow: var(--cyan-glow), 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+.ali__name {
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+.ali__date,
+.ali__comment {
+    color: #64748b !important;
+}
+
+/* ============================================================
+   DELETE MODAL (dc)
+   ============================================================ */
+.dc-box {
+    background: #121214 !important;
+    border: 1px solid rgba(255, 42, 42, 0.2) !important;
+    border-radius: 20px;
+    box-shadow: var(--red-glow), 0 20px 60px rgba(0, 0, 0, 0.9) !important;
+}
+
+.dc-desc,
+.dc-label {
+    color: #94a3b8 !important;
+}
+
+.dc-cancel {
+    background: #1a1a1c !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 10px;
+}
+
+/* ============================================================
+   EMPLOYEE SETTINGS (hs)
+   ============================================================ */
+.hs-box {
+    background: #121214 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+}
+
+.hs-title {
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+.hs-close {
+    color: #64748b !important;
+}
+
+.hs-username {
+    color: #ffffff !important;
+}
+
+.hs-tgid {
+    color: var(--cyan-neon) !important;
+    font-weight: 700;
+}
+
+/* ============================================================
+   STEP CONFIG (sc)
+   ============================================================ */
+.sc-box {
+    background: #121214 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 20px;
+}
+
+.sc-title {
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+.sc-desc,
+.sc-label {
+    color: #94a3b8 !important;
+}
+
+.sc-select {
+    background: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+    border-radius: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sc-select:focus {
+    border-color: var(--cyan-neon) !important;
+    box-shadow: var(--cyan-glow) !important;
+}
+
+/* ============================================================
+   DETAIL MODAL (dm)
+   ============================================================ */
+.dm-title {
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+.dm-date-chip {
+    color: var(--cyan-neon) !important;
+    background: rgba(0, 242, 255, 0.08) !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.dm-amounts {
+    background: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px;
+}
+
+.dm-amounts__row + .dm-amounts__row {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.dm-amounts__key {
+    color: #64748b !important;
+}
+
+.dm-amounts__rate,
+.dm-amounts__name {
+    color: #ffffff !important;
+}
+
+.dm-close-btn {
+    background: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #94a3b8 !important;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.dm-close-btn:hover {
+    border-color: rgba(0, 242, 255, 0.3) !important;
+    color: var(--cyan-neon) !important;
+}
+
+/* ============================================================
+   KV DETAIL MODAL (kvdm)
+   ============================================================ */
+.kvdm-info-box {
+    background: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px;
+}
+
+.kvdm-info-title {
+    color: var(--cyan-neon) !important;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+}
+
+.kvdm-info-title__line {
+    background: var(--cyan-neon) !important;
+    opacity: 0.4;
+}
+
+.kvdm-tl-status {
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+.kvdm-tl-who {
+    color: #94a3b8 !important;
+}
+
+.kvdm-tl-dot {
+    background: var(--cyan-neon) !important;
+    box-shadow: 0 0 0 3px #121214, var(--cyan-glow) !important;
+}
+
+.kvdm-tl-border {
+    border-left: 1px solid rgba(0, 242, 255, 0.15) !important;
+}
+
+.kvdm-close-btn {
+    background: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #94a3b8 !important;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.kvdm-close-btn:hover {
+    border-color: rgba(0, 242, 255, 0.3) !important;
+    color: var(--cyan-neon) !important;
+}
