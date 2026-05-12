@@ -203,6 +203,7 @@ async function initializeApp() {
             if (typeof initMyFilters === 'function') initMyFilters();
             if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
             _appInitialized = true; _appInitRetries = 0;
+            if (typeof updateModuleIframe === 'function') updateModuleIframe();
         } else { throw new Error(data?.error || 'Init xatosi'); }
     } catch (error) {
         console.error('❌ Init xatosi:', error);
@@ -305,7 +306,20 @@ function switchTab(tabId, navId) {
     if (tabId === 'profileTab') updateProfileUI();
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
     if (tabId === 'addTab') checkAddPermission();
+    if (tabId === 'moduleTab') {
+        // Iframe allaqachon yuklangan, agar kerak bo'lsa refresh qilish mumkin
+    }
     if (typeof updateKvFabVisibility === 'function') updateKvFabVisibility();
+}
+
+function updateModuleIframe() {
+    const iframe = document.getElementById('moduleIframe');
+    if (iframe && typeof tgInitData !== 'undefined' && tgInitData) {
+        // GitHub Pages uchun URL. tgInitData ni hash orqali uzatamiz 
+        // shunda ichki modul ham xuddi Telegram ichida ochilgandek ishlaydi
+        const baseUrl = "https://aka-fingo.github.io/module_fl/";
+        iframe.src = baseUrl + "#tgWebAppData=" + encodeURIComponent(tgInitData);
+    }
 }
 
 function setTheme(themeFile) {
