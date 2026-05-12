@@ -287,6 +287,12 @@ function switchTab(tabId, navId) {
         const el = document.getElementById(navId);
         if (el) el.classList.add('active');
     }
+
+    // Modul sahifasi bo'lsa bottom-nav ni yashiramiz
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) {
+        bottomNav.classList.toggle('hidden', tabId === 'moduleTab');
+    }
     if (tabId === 'adminTab') {
         if (typeof initAdminTab === 'function') initAdminTab();
         else if (typeof loadAdminData === 'function') loadAdminData();
