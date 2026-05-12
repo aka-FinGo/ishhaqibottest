@@ -30,7 +30,7 @@
     <div class="container">
 
         <!-- TAB 1: HISOBOT -->
-        <div id="reportTab" class="tab-content active">
+        <div id="reportTab" class="tab-content">
             <div class="page-header">
                 <div>
                     <h2 id="greeting">Salom!</h2>
@@ -121,8 +121,8 @@
                     style="margin-top:10px;">
                     📩 Admin bilan bog'lanish
                 </button>
-                <button class="btn-secondary" onclick="switchTab('reportTab','nav-report')" style="margin-top:16px;">
-                    ← Hisobotga qaytish
+                <button class="btn-secondary" onclick="switchTab('kvadratTab','nav-kvadrat')" style="margin-top:16px;">
+                    ← Buyurtmalarga qaytish
                 </button>
             </div>
 
@@ -413,7 +413,7 @@
         </div>
 
         <!-- TAB 6: KVADRATLAR -->
-        <div id="kvadratTab" class="tab-content">
+        <div id="kvadratTab" class="tab-content active">
             <div class="page-header" style="margin-bottom:20px;">
                 <div>
                     <h2 style="display:flex; align-items:center; gap:8px;">
@@ -615,17 +615,15 @@
 
         <!-- Pastki menyu -->
         <div class="bottom-nav">
-            <div class="nav-item active" id="nav-report" onclick="switchTab('reportTab','nav-report')">
-                <span class="nav-icon">📊</span><span>Hisobot</span>
+            <div class="nav-item active" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
+                <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
             </div>
-            <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboardTab','nav-dashboard')">
-                <span class="nav-icon">📈</span><span>Dashboard</span>
-            </div>
+            <div class="nav-item hidden" id="nav-empty"></div>
             <div class="nav-fab-container">
                 <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
             </div>
-            <div class="nav-item" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
-                <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
+            <div class="nav-item" id="nav-dashboard" onclick="switchTab('reportTab','nav-dashboard')">
+                <span class="nav-icon">📊</span><span>Dashboard</span>
             </div>
             <div class="nav-item" id="nav-profile" onclick="switchTab('profileTab','nav-profile')">
                 <span class="nav-icon">👤</span><span>Profil</span>

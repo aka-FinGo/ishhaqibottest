@@ -298,6 +298,10 @@ function switchTab(tabId, navId) {
         if (typeof initKvadratTab === 'function') initKvadratTab();
         else if (typeof loadKvData === 'function') loadKvData();
     }
+    if (tabId === 'reportTab') {
+        if (typeof initMyFilters === 'function') initMyFilters();
+        if (typeof renderMyRecords === 'function') renderMyRecords();
+    }
     if (tabId === 'profileTab') updateProfileUI();
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
     if (tabId === 'addTab') checkAddPermission();
@@ -374,7 +378,7 @@ function initAdminTab() {
     const isSuperAdmin = myRole === 'SuperAdmin';
     if (myRole !== 'SuperAdmin' && myRole !== 'Admin') {
         showToastMsg('❌ Admin panel ruxsati yo\'q', true);
-        switchTab('reportTab', 'nav-report'); return;
+        switchTab('kvadratTab', 'nav-kvadrat'); return;
     }
     const navHodimlar = document.getElementById('adminNavHodimlar');
     const navNotify = document.getElementById('adminNavNotify');
