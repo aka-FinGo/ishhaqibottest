@@ -397,6 +397,23 @@ function handleDashboardNav() {
     }
 }
 
+function switchReportSub(areaId, btn) {
+    ['reportActionsArea', 'reportDashArea'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', id !== areaId);
+    });
+    document.querySelectorAll('#reportTab .page-switcher-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    // Dashboard ochilganda, hodim uchun renderUserDashboard chaqiriladi
+    if (areaId === 'reportDashArea') {
+        const container = document.getElementById('reportDashContent');
+        if (container && typeof renderUserDashboard === 'function') {
+            renderUserDashboard(container);
+        }
+    }
+}
+
 function initDashboardTab() {
     if (!canViewCompanyActions) {
         const actionsArea = document.getElementById('dashboardActionsArea');

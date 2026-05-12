@@ -38,69 +38,85 @@
                 </div>
                 <div class="header-avatar">👤</div>
             </div>
-            <div class="stats-grid">
-                <div class="stat-card uzs">
-                    <div class="stat-label">So'm</div>
-                    <div class="stat-value" id="myUzs">0</div>
-                </div>
-                <div class="stat-card usd">
-                    <div class="stat-label">Dollar</div>
-                    <div class="stat-value" id="myUsd">$0</div>
-                </div>
+            <div class="page-switcher">
+                <button id="reportTopActions" class="page-switcher-btn active" onclick="switchReportSub('reportActionsArea',this)">Amallar</button>
+                <button id="reportTopDash" class="page-switcher-btn" onclick="switchReportSub('reportDashArea',this)">Dashboard</button>
             </div>
-            <div class="budget-card">
-                <div class="budget-label">Jami Budjet (So'mda)</div>
-                <div class="budget-amount" id="myTotalBudget">0 UZS</div>
-                <div class="budget-footer">
-                    <span style="font-size:12px;color:rgba(255,255,255,0.6);font-weight:500;">Shaxsiy hisobotingiz</span>
+
+            <div id="reportActionsArea">
+                <div class="stats-grid">
+                    <div class="stat-card uzs">
+                        <div class="stat-label">So'm</div>
+                        <div class="stat-value" id="myUzs">0</div>
+                    </div>
+                    <div class="stat-card usd">
+                        <div class="stat-label">Dollar</div>
+                        <div class="stat-value" id="myUsd">$0</div>
+                    </div>
                 </div>
-            </div>
-            <div class="filter-box">
-                <div class="filter-row">
-                    <select id="myFilterMonth" onchange="applyMyFilters()">
-                        <option value="all">Barcha oylar</option>
-                        <option value="01">Yanvar</option>
-                        <option value="02">Fevral</option>
-                        <option value="03">Mart</option>
-                        <option value="04">Aprel</option>
-                        <option value="05">May</option>
-                        <option value="06">Iyun</option>
-                        <option value="07">Iyul</option>
-                        <option value="08">Avgust</option>
-                        <option value="09">Sentyabr</option>
-                        <option value="10">Oktyabr</option>
-                        <option value="11">Noyabr</option>
-                        <option value="12">Dekabr</option>
-                    </select>
-                    <select id="myFilterYear" onchange="applyMyFilters()">
-                        <option value="all">Yillar</option>
-                    </select>
-                    <button class="btn-secondary" onclick="resetMyFilters()"
-                        style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;"
-                        title="Tozalash">🔄</button>
+                <div class="budget-card">
+                    <div class="budget-label">Jami Budjet (So'mda)</div>
+                    <div class="budget-amount" id="myTotalBudget">0 UZS</div>
+                    <div class="budget-footer">
+                        <span style="font-size:12px;color:rgba(255,255,255,0.6);font-weight:500;">Shaxsiy hisobotingiz</span>
+                    </div>
                 </div>
-                <button class="btn-main bg-navy" onclick="exportMyExcel()"
-                    style="margin-top:0;padding:11px;font-size:13px;">
-                    📥 Excel hisobotni yuklab olish
-                </button>
-            </div>
-            <div class="section-title">Amallar ro'yxati</div>
-            <div id="myHistory">
-                <div class="skeleton-container" style="padding:0;">
-                    <div class="js-skeleton-card">
-                        <div class="js-skeleton-line" style="height:18px; width:60%; margin-bottom:8px;"></div>
-                        <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:8px;">
-                            <div class="js-skeleton-line" style="height:24px; width:80px; border-radius:12px;"></div>
-                            <div class="js-skeleton-line" style="height:24px; width:80px; border-radius:12px;"></div>
+                <div class="filter-box">
+                    <div class="filter-row">
+                        <select id="myFilterMonth" onchange="applyMyFilters()">
+                            <option value="all">Barcha oylar</option>
+                            <option value="01">Yanvar</option>
+                            <option value="02">Fevral</option>
+                            <option value="03">Mart</option>
+                            <option value="04">Aprel</option>
+                            <option value="05">May</option>
+                            <option value="06">Iyun</option>
+                            <option value="07">Iyul</option>
+                            <option value="08">Avgust</option>
+                            <option value="09">Sentyabr</option>
+                            <option value="10">Oktyabr</option>
+                            <option value="11">Noyabr</option>
+                            <option value="12">Dekabr</option>
+                        </select>
+                        <select id="myFilterYear" onchange="applyMyFilters()">
+                            <option value="all">Yillar</option>
+                        </select>
+                        <button class="btn-secondary" onclick="resetMyFilters()"
+                            style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;"
+                            title="Tozalash">🔄</button>
+                    </div>
+                    <button class="btn-main bg-navy" onclick="exportMyExcel()"
+                        style="margin-top:0;padding:11px;font-size:13px;">
+                        📥 Excel hisobotni yuklab olish
+                    </button>
+                </div>
+                <div class="section-title">Amallar ro'yxati</div>
+                <div id="myHistory">
+                    <div class="skeleton-container" style="padding:0;">
+                        <div class="js-skeleton-card">
+                            <div class="js-skeleton-line" style="height:18px; width:60%; margin-bottom:8px;"></div>
+                            <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
+                            <div style="display:flex; gap:8px;">
+                                <div class="js-skeleton-line" style="height:24px; width:80px; border-radius:12px;"></div>
+                                <div class="js-skeleton-line" style="height:24px; width:80px; border-radius:12px;"></div>
+                            </div>
+                        </div>
+                        <div class="js-skeleton-card">
+                            <div class="js-skeleton-line" style="height:18px; width:40%; margin-bottom:8px;"></div>
+                            <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
+                            <div style="display:flex; gap:8px;">
+                                <div class="js-skeleton-line" style="height:24px; width:100px; border-radius:12px;"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="js-skeleton-card">
-                        <div class="js-skeleton-line" style="height:18px; width:40%; margin-bottom:8px;"></div>
-                        <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:8px;">
-                            <div class="js-skeleton-line" style="height:24px; width:100px; border-radius:12px;"></div>
-                        </div>
+                </div>
+            </div>
+
+            <div id="reportDashArea" class="hidden">
+                <div id="reportDashContent">
+                    <div class="dash-empty" style="padding:60px 20px;">
+                        <div style="font-size:40px; margin-bottom:12px;">📊</div>
+                        <p>Yuklanmoqda...</p>
                     </div>
                 </div>
             </div>
@@ -623,7 +639,7 @@
                 <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
             </div>
             <div class="nav-item" id="nav-dashboard" onclick="handleDashboardNav()">
-                <span class="nav-icon">📊</span><span>Dashboard</span>
+                <span class="nav-icon">💰</span><span>Ish haqi</span>
             </div>
             <div class="nav-item" id="nav-profile" onclick="switchTab('profileTab','nav-profile')">
                 <span class="nav-icon">👤</span><span>Profil</span>
