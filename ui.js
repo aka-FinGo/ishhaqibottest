@@ -201,6 +201,7 @@ async function initializeApp() {
 
             if (data.autoAdded) showToastMsg("✅ Siz ro'yxatga qo'shildingiz. Ruxsat uchun admin bilan bog'laning.");
             if (typeof initMyFilters === 'function') initMyFilters();
+            if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
             _appInitialized = true; _appInitRetries = 0;
         } else { throw new Error(data?.error || 'Init xatosi'); }
     } catch (error) {

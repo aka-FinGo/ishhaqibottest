@@ -119,6 +119,9 @@ function _initKvFormYears() {
 }
 
 async function initKvadratTab() {
+    if (typeof populateKvadratMeta === 'function') {
+        populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
+    }
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
 

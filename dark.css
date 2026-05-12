@@ -5,54 +5,54 @@
 
 :root {
     /* === Base Surfaces === */
-    --bg:             #050505;
-    --surface:        #121214;
-    --border:         rgba(255, 255, 255, 0.06);
-    --navy:           #121214;
-    --navy-mid:       #0d0d0f;
-    --navy-light:     #1a1a1c;
+    --bg: #050505;
+    --surface: #121214;
+    --border: rgba(255, 255, 255, 0.06);
+    --navy: #fcfcfc;
+    --navy-mid: #0d0d0f;
+    --navy-light: #1a1a1c;
 
     /* === Text === */
-    --text:           #ffffff;
-    --text-muted:     #94a3b8;
+    --text: #ffffff;
+    --text-muted: #94a3b8;
 
     /* === Neon Accents (style(1).css dan) === */
-    --cyan-neon:      #00f2ff;
-    --blue-neon:      #0066ff;
-    --orange-neon:    #ff8c00;
-    --red-neon:       #ff2a2a;
-    --green-neon:     #00ff88;
-    --green:          #00ff88;
+    --cyan-neon: #00f2ff;
+    --blue-neon: #0066ff;
+    --orange-neon: #ff8c00;
+    --red-neon: #ff2a2a;
+    --green-neon: #00ff88;
+    --green: #00ff88;
 
     /* === Gradients === */
-    --accent-gradient:  linear-gradient(135deg, #00f2ff, #0066ff);
+    --accent-gradient: linear-gradient(135deg, #00f2ff, #0066ff);
     --warning-gradient: linear-gradient(135deg, #ff8c00, #ff4500);
-    --surface-border:   1px solid rgba(255, 255, 255, 0.06);
+    --surface-border: 1px solid rgba(255, 255, 255, 0.06);
 
     /* === Glows === */
-    --cyan-glow:   0 0 12px rgba(0, 242, 255, 0.45);
+    --cyan-glow: 0 0 12px rgba(0, 242, 255, 0.45);
     --orange-glow: 0 0 12px rgba(255, 140, 0, 0.45);
-    --green-glow:  0 0 12px rgba(0, 255, 136, 0.45);
-    --red-glow:    0 0 10px rgba(255, 42, 42, 0.35);
-    --blue-glow:   0 0 12px rgba(0, 102, 255, 0.45);
+    --green-glow: 0 0 12px rgba(0, 255, 136, 0.45);
+    --red-glow: 0 0 10px rgba(255, 42, 42, 0.35);
+    --blue-glow: 0 0 12px rgba(0, 102, 255, 0.45);
 
     /* === Components (dark mode vars) === */
-    --comp-chip-uzs-bg:   rgba(0, 255, 136, 0.12);
+    --comp-chip-uzs-bg: rgba(0, 255, 136, 0.12);
     --comp-chip-uzs-text: #00ff88;
-    --comp-chip-usd-bg:   rgba(0, 102, 255, 0.15);
+    --comp-chip-usd-bg: rgba(0, 102, 255, 0.15);
     --comp-chip-usd-text: #60a5fa;
-    --comp-edit-bg:       rgba(255, 140, 0, 0.10);
-    --comp-edit-text:     #ffb347;
-    --comp-del-bg:        rgba(255, 42, 42, 0.10);
-    --comp-del-text:      #ff6b6b;
-    --comp-period-text:   #00f2ff;
-    --comp-period-bg:     rgba(0, 242, 255, 0.10);
-    --comp-hist-bg:       rgba(0, 242, 255, 0.04);
-    --comp-hist-border:   rgba(0, 242, 255, 0.10);
-    --comp-hist-title:    #00f2ff;
-    --comp-hist-val:      #ffffff;
-    --comp-uzs-val:       #00ff88;
-    --comp-usd-val:       #60a5fa;
+    --comp-edit-bg: rgba(255, 140, 0, 0.10);
+    --comp-edit-text: #ffb347;
+    --comp-del-bg: rgba(255, 42, 42, 0.10);
+    --comp-del-text: #ff6b6b;
+    --comp-period-text: #00f2ff;
+    --comp-period-bg: rgba(0, 242, 255, 0.10);
+    --comp-hist-bg: rgba(0, 242, 255, 0.04);
+    --comp-hist-border: rgba(0, 242, 255, 0.10);
+    --comp-hist-title: #00f2ff;
+    --comp-hist-val: #ffffff;
+    --comp-uzs-val: #00ff88;
+    --comp-usd-val: #60a5fa;
 }
 
 /* ============================================================
@@ -83,7 +83,7 @@ div.premium-filter-card {
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
     color: #ffffff !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7),
-                0 1px 0 rgba(255, 255, 255, 0.03) inset !important;
+        0 1px 0 rgba(255, 255, 255, 0.03) inset !important;
     border-radius: 12px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -93,13 +93,22 @@ div.stat-card:hover,
 div.history-item:hover {
     border-color: rgba(0, 242, 255, 0.2) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7),
-                var(--cyan-glow) !important;
+        var(--cyan-glow) !important;
 }
 
 /* ============================================================
    TYPOGRAPHY
    ============================================================ */
-h1, h2, h3, h4, h5, h6, span, p, div, label {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+p,
+div,
+label {
     color: inherit;
 }
 
@@ -131,7 +140,9 @@ h1, h2, h3, h4, h5, h6, span, p, div, label {
 /* ============================================================
    INPUTS
    ============================================================ */
-input, select, textarea {
+input,
+select,
+textarea {
     background-color: #1a1a1c !important;
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
     color: #ffffff !important;
@@ -496,7 +507,7 @@ div.bottom-nav {
     border-radius: 12px;
 }
 
-.dm-amounts__row + .dm-amounts__row {
+.dm-amounts__row+.dm-amounts__row {
     border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
