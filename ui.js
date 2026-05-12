@@ -387,6 +387,16 @@ function initAdminTab() {
     else if (navNotify) switchAdminSub('adminNotifyArea', navNotify);
 }
 
+function handleDashboardNav() {
+    // Admin, SuperAdmin, Direktor → kompaniya budjeti (dashboardTab)
+    // Oddiy hodim → faqat o'z amallari (reportTab)
+    if (canViewCompanyActions || myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor') {
+        switchTab('dashboardTab', 'nav-dashboard');
+    } else {
+        switchTab('reportTab', 'nav-dashboard');
+    }
+}
+
 function initDashboardTab() {
     if (!canViewCompanyActions) {
         const actionsArea = document.getElementById('dashboardActionsArea');
