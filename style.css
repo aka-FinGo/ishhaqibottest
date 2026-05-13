@@ -1,12 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}:root{--navy:#0F172A;--navy-mid:#1E293B;--navy-light:#334155;--green:#10B981;--green-dark:#059669;--green-glow:rgba(16,185,129,0.15);--amber:#F59E0B;--red:#EF4444;--blue:#3B82F6;--purple:#8B5CF6;--bg:#F1F5F9;--surface:#FFFFFF;--border:#E2E8F0;--text:#0F172A;--text-muted:#64748B;--text-light:#94A3B8;--shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);--shadow-md:0 4px 16px rgba(0,0,0,0.08);--shadow-lg:0 10px 40px rgba(0,0,0,0.12);--radius:16px;--radius-sm:10px;--radius-xs:6px;--font:'Plus Jakarta Sans',-apple-system,sans-serif;}html {
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
-    height: 100%;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -webkit-touch-callout: none; /* iOS uchun menyuni yashirish */
 }
 
 body {
@@ -15,19 +9,20 @@ body {
     color: var(--text);
     min-height: 100vh;
     min-height: 100dvh;
+    margin: 0;
+    padding: 0;
     -webkit-font-smoothing: antialiased;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    font-size: 16px;
-    line-height: 1.5;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 input,
 textarea,
-[contenteditable="true"] {
+[contenteditable="true"],
+.allow-select {
     user-select: text !important;
     -webkit-user-select: text !important;
 }
