@@ -18,7 +18,12 @@
   --comp-del-bg:        #FEE2E2;
   --comp-del-text:      #991B1B;
   --comp-period-text:   #0ea5e9;
-  --comp-period-bg:     #F0F9FF;
+  --comp-period-bg:     rgba(14, 165, 233, 0.08);
+
+  /* Chart colors */
+  --chart-text: #64748b;
+  --chart-grid: rgba(0, 0, 0, 0.05);
+
   --comp-hist-bg:       #FFFBEB;
   --comp-hist-border:   #FEF3C7;
   --comp-hist-title:    #B45309;

@@ -52,7 +52,7 @@ function renderComplexStaffMonthlyChart(canvasId, records) {
                 },
                 y: {
                     stacked: true,
-                    grid: { color: 'rgba(226, 232, 240, 0.1)' },
+                    grid: { color: getChartColor('--chart-grid', 'rgba(0, 0, 0, 0.05)') },
                     ticks: { ...KV_TC, callback: KV_tickCb }
                 }
             },
@@ -63,7 +63,7 @@ function renderComplexStaffMonthlyChart(canvasId, records) {
                     labels: {
                         padding: 15,
                         font: { ...KV_BF, size: 9, weight: '600' },
-                        color: 'rgba(148, 163, 184, 1)',
+                        color: KV_TC.color,
                         boxWidth: 8,
                         usePointStyle: true
                     }

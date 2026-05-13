@@ -5,16 +5,20 @@
 
 :root {
     /* === Base Surfaces === */
-    --bg: #050505;
-    --surface: #121214;
-    --border: rgba(255, 255, 255, 0.06);
-    --navy: #fcfcfc;
+    --bg: #0B1220;
+    --surface: #111827;
+    --border: #243244;
+    --text: #E2E8F0;
+    --text-muted: #93A3B8;
+    --navy: #E2E8F0;
+
+    /* Chart Colors for Dark Mode */
+    --chart-text: #ffffff;
+    --chart-grid: rgba(255, 255, 255, 0.05);
+
     --navy-mid: #0d0d0f;
     --navy-light: #94a3b8; /* Slate-400 */
 
-    /* === Text === */
-    --text: #ffffff;
-    --text-muted: #a1a1aa;
 
     /* === Neon Accents === */
     --cyan-neon: #00f2ff;
