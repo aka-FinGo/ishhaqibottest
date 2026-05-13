@@ -230,3 +230,30 @@ input:checked + .premium-slider:before { transform: translateX(24px); }
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
+
+/* Dashboard KV specific styles */
+.kv-loading-state { display: flex; justify-content: center; padding: 40px; text-align: center; }
+.kv-loading-icon { font-size: 32px; margin-bottom: 12px; }
+.kv-loading-text { font-size: 14px; color: var(--text-muted); }
+.kv-loading-sub { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+.kv-error-state { text-align: center; padding: 40px; }
+.kv-error-icon { font-size: 48px; margin-bottom: 16px; }
+.kv-error-title { font-size: 16px; font-weight: 600; color: var(--red); margin-bottom: 8px; }
+.kv-error-details { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; max-width: 350px; margin-left: auto; margin-right: auto; }
+
+.kv-worker-card-solo { background: linear-gradient(135deg, #0F172A, #1E40AF); color: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 4px; }
+.kv-worker-card-solo-label { font-size: 11px; opacity: 0.7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.kv-worker-card-solo-main { display: flex; align-items: baseline; gap: 10px; }
+.kv-worker-card-solo-val { font-size: 28px; font-weight: 800; }
+.kv-worker-card-solo-sub { font-size: 13px; opacity: 0.7; }
+
+.kv-worker-list-card { padding: 12px 14px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); }
+.kv-worker-list-title { font-weight: 700; font-size: 12px; color: var(--navy); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+.kv-worker-row { margin-bottom: 10px; }
+.kv-worker-row-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+.kv-worker-row-name { font-weight: 700; color: var(--navy); }
+.kv-worker-row-val { font-weight: 800; color: var(--navy); }
+.kv-worker-row-orders { color: var(--text-muted); font-weight: 400; }
+.kv-worker-progress { height: 6px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
+.kv-worker-progress-bar { height: 100%; background: linear-gradient(90deg, #0F172A, #3B82F6); border-radius: 10px; }

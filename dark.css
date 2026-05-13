@@ -597,6 +597,22 @@ input:checked + .premium-slider {
     border-radius: 0 4px 4px 0;
 }
 
+/* KV Dashboard Dark Overrides */
+.kv-worker-list-card {
+    background: #121214 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+.kv-worker-list-title { color: var(--cyan-neon) !important; }
+.kv-worker-row-name, .kv-worker-row-val { color: #ffffff !important; }
+.kv-worker-progress { background: rgba(255, 255, 255, 0.05) !important; }
+.kv-worker-progress-bar { background: var(--accent-gradient) !important; box-shadow: var(--cyan-glow); }
+.kv-worker-card-solo {
+    background: linear-gradient(135deg, #0d0d0f 0%, #0a1628 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.2) !important;
+    box-shadow: var(--cyan-glow), 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
 /* Chart.js labels in Dark Mode */
 canvas {
     filter: drop-shadow(0 0 3px rgba(0, 242, 255, 0.15));
