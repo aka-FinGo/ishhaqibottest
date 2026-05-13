@@ -105,6 +105,9 @@ function loadCachedData() {
         myFullRecords = cached;
         myFilteredRecords = [...myFullRecords];
         console.log('✅ Records cached:', myFullRecords.length);
+        if (myFullRecords.length > 0) {
+            showToastMsg('⚡ Ma\'lumotlar keshdan yuklandi', false);
+        }
     }
     const cachedUser = AppCache.get(AppCache.KEYS.USER_DATA, 120);
     if (cachedUser) {

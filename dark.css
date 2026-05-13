@@ -216,10 +216,11 @@ textarea:focus {
 }
 
 .del-btn, .kvdm-del-btn, .dm-act-btn--del, .js-btn-confirm-del {
-    background: rgba(255, 42, 42, 0.15) !important;
-    color: #ff6b6b !important;
-    border: 1px solid rgba(255, 42, 42, 0.3) !important;
+    background: linear-gradient(135deg, #ef4444, #991b1b) !important;
+    color: #ffffff !important;
+    border: none !important;
     font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
 }
 
 /* ============================================================
