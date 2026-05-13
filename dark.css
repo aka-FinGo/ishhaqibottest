@@ -92,13 +92,92 @@ div.card:hover,
 div.stat-card:hover,
 div.history-item:hover,
 div.hodim-card:hover,
-div.premium-hero-card:hover,
-div.page-switcher-btn:hover {
+div.premium-hero-card:hover {
     border-color: var(--cyan-neon) !important;
     box-shadow: 0 0 25px rgba(0, 242, 255, 0.4),
                 0 0 10px rgba(0, 242, 255, 0.2),
                 0 4px 20px rgba(0, 0, 0, 0.8) !important;
     transform: translateY(-2px) scale(1.01);
+}
+
+.page-switcher {
+    background: rgba(255, 255, 255, 0.04) !important;
+    padding: 5px !important;
+    border-radius: 100px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-bottom: 24px !important;
+}
+
+.page-switcher-btn {
+    background: transparent !important;
+    border: none !important;
+    color: #8899aa !important;
+    border-radius: 100px !important;
+    font-weight: 700 !important;
+    transition: all 0.3s ease !important;
+}
+
+.page-switcher-btn.active {
+    background: var(--accent-gradient) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3) !important;
+}
+
+.history-item {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    position: relative;
+    z-index: 1;
+}
+
+.history-item:hover {
+    transform: translateY(-6px) scale(1.02);
+    z-index: 10;
+    border-color: var(--cyan-neon) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 
+                0 0 25px rgba(0, 242, 255, 0.4),
+                0 0 50px rgba(0, 242, 255, 0.15) !important;
+}
+
+.history-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-gradient);
+    opacity: 0;
+    filter: blur(25px);
+    z-index: -1;
+    transition: opacity 0.4s ease;
+    border-radius: inherit;
+}
+
+.history-item:hover::after, .hodim-card:hover::after {
+    opacity: 0.2;
+}
+
+.hodim-card {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    position: relative;
+    z-index: 1;
+}
+
+.hodim-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    z-index: 10;
+    border-color: var(--cyan-neon) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 
+                0 0 30px rgba(0, 242, 255, 0.4) !important;
+}
+
+.hodim-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-gradient);
+    opacity: 0;
+    filter: blur(30px);
+    z-index: -1;
+    transition: opacity 0.4s ease;
+    border-radius: inherit;
 }
 
 /* ============================================================
