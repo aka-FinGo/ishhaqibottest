@@ -428,4 +428,69 @@ input:checked + .premium-slider {
     50% { border-color: rgba(0, 242, 255, 0.8); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
     100% { border-color: rgba(0, 242, 255, 0.2); }
 }
+
+/* ============================================================
+   NEON DASHBOARD ENHANCEMENTS
+   ============================================================ */
+.dash-chart-card, .dash-stat-card {
+    background: linear-gradient(135deg, #0d0d0f 0%, #0a1628 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash-chart-card:hover, .dash-stat-card:hover {
+    border-color: var(--cyan-neon) !important;
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.25), 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+    transform: translateY(-3px) scale(1.01);
+}
+
+.dash-chart-title {
+    color: var(--cyan-neon) !important;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    font-weight: 800 !important;
+    letter-spacing: 0.5px;
+    font-size: 14px !important;
+}
+
+.dash-stat-label {
+    color: var(--text-muted) !important;
+    font-weight: 700 !important;
+    font-size: 10px !important;
+}
+
+.dash-stat-value {
+    color: #ffffff !important;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    font-size: 18px !important;
+}
+
+.dash-section-title {
+    color: var(--cyan-neon) !important;
+    border-left: 4px solid var(--cyan-neon);
+    padding: 6px 12px !important;
+    margin: 24px 0 16px 4px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(90deg, rgba(0, 242, 255, 0.1), transparent) !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+    border-radius: 0 4px 4px 0;
+}
+
+/* Chart.js labels in Dark Mode */
+canvas {
+    filter: drop-shadow(0 0 3px rgba(0, 242, 255, 0.15));
+}
+
+.dash-stat-sub {
+    color: var(--text-muted) !important;
+    opacity: 0.7;
+}
+
+.dash-role-badge.kv {
+    background: rgba(0, 242, 255, 0.1) !important;
+    color: var(--cyan-neon) !important;
+    border: 1px solid rgba(0, 242, 255, 0.3) !important;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
+}
+
 

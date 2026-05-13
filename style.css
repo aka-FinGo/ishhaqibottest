@@ -122,3 +122,14 @@ input:checked + .premium-slider:before { transform: translateX(24px); }
     transform: scale(0.95);
     background: rgba(15, 23, 42, 0.9);
 }
+
+.bg-red {
+    background: linear-gradient(135deg, #EF4444, #DC2626) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+    border: none !important;
+}
+.bg-red:hover {
+    background: linear-gradient(135deg, #DC2626, #B91C1C) !important;
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4) !important;
+}
