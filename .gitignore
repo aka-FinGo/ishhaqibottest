@@ -73,3 +73,4 @@ OPTIMIZATSIYA_XULOSA.md
 
 # Claude/AI backup files
 .claude/
+*.zip

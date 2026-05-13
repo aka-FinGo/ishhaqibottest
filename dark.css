@@ -333,4 +333,41 @@ div.bottom-nav {
 input:checked + .premium-slider {
     background-color: var(--green-neon) !important;
     box-shadow: var(--green-glow) !important;
+}
+
+/* ============================================================
+   SYNC INDICATOR
+   ============================================================ */
+.sync-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--cyan-neon);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(0, 242, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 242, 255, 0.2);
+}
+
+.sync-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--cyan-neon);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--cyan-neon);
+    animation: sync-pulse 1.5s infinite;
+}
+
+@keyframes sync-pulse {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+.sync-indicator.hidden {
+    display: none !important;
 }

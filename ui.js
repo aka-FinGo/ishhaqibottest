@@ -181,6 +181,7 @@ async function initializeApp() {
         if (myFullRecords.length > 0) {
             if (typeof initMyFilters === 'function') initMyFilters();
             if (typeof renderMyRecords === 'function') renderMyRecords();
+            if (typeof initKvadratTab === 'function') initKvadratTab();
         }
 
         console.log('🔄 Server dan ma\'lumot yuklanyapti...');
@@ -207,6 +208,7 @@ async function initializeApp() {
             if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
             _appInitialized = true; _appInitRetries = 0;
             if (typeof updateModuleIframe === 'function') updateModuleIframe();
+            startBackgroundSync();
         } else { throw new Error(data?.error || 'Init xatosi'); }
     } catch (error) {
         console.error('❌ Init xatosi:', error);
@@ -580,4 +582,33 @@ function showConfirmModal(message, onConfirm) {
     document.getElementById('modalNo').onclick = function () {
         document.getElementById(modalId).remove();
     };
+}
+
+let _bgSyncInterval = null;
+function startBackgroundSync() {
+    if (_bgSyncInterval) clearInterval(_bgSyncInterval);
+    _bgSyncInterval = setInterval(async () => {
+        try {
+            console.log('🔄 Fon sinxronizatsiyasi boshlandi...');
+            // Faqat init qilamiz, u barcha kerakli ma'lumotlarni yangilaydi
+            const data = await apiRequest({ action: 'init' }, { timeoutMs: 15000 });
+            if (data && data.success) {
+                myFullRecords = data.data || [];
+                myFilteredRecords = [...myFullRecords];
+                const _empRaw = data.employeeList || {};
+                window._kvEmpMap = _empRaw;
+                globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
+                
+                // UI ni yangilash (agar foydalanuvchi hozir ko'rayotgan bo'lsa)
+                if (typeof renderMyRecords === 'function') renderMyRecords();
+                if (typeof initKvadratTab === 'function') initKvadratTab();
+                if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+                
+                saveCacheData(myFullRecords, data);
+                console.log('✅ Fon sinxronizatsiyasi yakunlandi');
+            }
+        } catch (e) {
+            console.error('⚠️ Fon sinxronizatsiyasi xatosi:', e);
+        }
+    }, 180000); // 3 daqiqa
 }

@@ -171,6 +171,9 @@ async function apiRequest(payload, opts) {
   try {
     console.log('📤 API so\'rov yuborilmoqda:', body.action || 'unknown');
     
+    const syncEl = document.getElementById('syncIndicator');
+    if (syncEl) syncEl.classList.remove('hidden');
+    
     const res = await fetch(API_URL, {
       method: 'POST',
       // IMPORTANT:
@@ -215,6 +218,8 @@ async function apiRequest(payload, opts) {
     throw err;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
+    const syncEl = document.getElementById('syncIndicator');
+    if (syncEl) syncEl.classList.add('hidden');
   }
 }
 
