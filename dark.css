@@ -91,10 +91,14 @@ div.premium-filter-card {
 div.card:hover,
 div.stat-card:hover,
 div.history-item:hover,
-div.hodim-card:hover {
-    border-color: rgba(0, 242, 255, 0.3) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7),
-        var(--cyan-glow) !important;
+div.hodim-card:hover,
+div.premium-hero-card:hover,
+div.page-switcher-btn:hover {
+    border-color: var(--cyan-neon) !important;
+    box-shadow: 0 0 25px rgba(0, 242, 255, 0.4),
+                0 0 10px rgba(0, 242, 255, 0.2),
+                0 4px 20px rgba(0, 0, 0, 0.8) !important;
+    transform: translateY(-2px) scale(1.01);
 }
 
 /* ============================================================
@@ -370,4 +374,48 @@ input:checked + .premium-slider {
 
 .sync-indicator.hidden {
     display: none !important;
-}
+}
+
+/* ============================================================
+   ADMIN NOTIFY ENHANCEMENT
+   ============================================================ */
+#adminNotifyArea .card {
+    background: linear-gradient(145deg, #121214, #0a0a0c) !important;
+    border: 1px solid rgba(0, 242, 255, 0.1) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+#adminNotifyArea .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-gradient);
+    opacity: 0.5;
+}
+
+#adminReminderText {
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    padding: 12px !important;
+}
+
+#adminReminderText:focus {
+    background: rgba(0, 242, 255, 0.03) !important;
+}
+
+#adminNotifyConfirmBox {
+    background: rgba(0, 242, 255, 0.05) !important;
+    border: 1px dashed var(--cyan-neon) !important;
+    animation: notify-pulse 2s infinite;
+}
+
+@keyframes notify-pulse {
+    0% { border-color: rgba(0, 242, 255, 0.2); }
+    50% { border-color: rgba(0, 242, 255, 0.8); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+    100% { border-color: rgba(0, 242, 255, 0.2); }
+}
+

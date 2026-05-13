@@ -332,14 +332,9 @@ function showKvDetailModal(idx) {
                 const nextStepPos = normalizePos(nextStep.position);
                 if (normalizedMyPoss.indexOf(nextStepPos) !== -1 ||
                     (typeof myRole !== 'undefined' && myRole === 'SuperAdmin' && normalizedMyPoss.length === 0)) {
-                    let btnColor = typeof getWorkflowStepColors === 'function'
-                        ? (getWorkflowStepColors(nextStep.index - 1, totalSteps).bg || '#10B981')
-                        : '#10B981';
-                    
-                    const actLower = String(nextStep.action || '').toLowerCase();
-                    if (actLower.includes('qadoq') || actLower.includes('yig\'d')) {
-                        btnColor = '#065f46'; // To'q yashil (Emerald 800)
-                    }
+                    /* Barcha claim tugmalari to'q yashil bo'lsin */
+                    const btnColor = '#065f46'; 
+
                     /* CSS o'zgaruvchisi orqali rang */
                     claimBtnsHtml = `
                         <button class="wf-claim-btn"
@@ -356,14 +351,9 @@ function showKvDetailModal(idx) {
                 return normalizedMyPoss.indexOf(normalizePos(s.position)) !== -1;
             });
             availableSteps.forEach(s => {
-                let btnColor = typeof getWorkflowStepColors === 'function'
-                    ? (getWorkflowStepColors(s.index - 1, totalSteps).bg || '#6366f1')
-                    : '#6366f1';
+                /* Barcha claim tugmalari to'q yashil bo'lsin */
+                const btnColor = '#065f46';
 
-                const actLower = String(s.action || '').toLowerCase();
-                if (actLower.includes('qadoq') || actLower.includes('yig\'d')) {
-                    btnColor = '#065f46'; // To'q yashil
-                }
                 claimBtnsHtml += `
                     <button class="wf-claim-btn"
                         style="--wf-bg:${btnColor}; --wf-shadow:${btnColor}66;"
