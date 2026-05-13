@@ -1,4 +1,4 @@
-﻿// ================= DASHBOARD =================
+// ================= DASHBOARD =================
 // Optimizatsiya: Chart instance caching va memory management
 const _charts = {};
 function destroyChart(id) { 
@@ -117,7 +117,7 @@ function fmt(v) {
 
 // ---- Chart helpers ----
 const BF = { family: "'Plus Jakarta Sans',sans-serif" };
-const TC = { font: { ...BF, size: 11 }, color: '#64748B' };
+const TC = { font: { ...BF, size: 11 }, color: '#ffffff' };
 const TU = { callbacks: { label: c => ` ${c.dataset.label || ''}: ${Number(c.raw).toLocaleString()} UZS` } };
 const tickCb = v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v;
 
@@ -133,7 +133,7 @@ function mkDonut(id, labels, vals, colors) {
             cutout: '70%',
             animation: { duration: 900, easing: 'easeOutQuart' },
             plugins: {
-                legend: { position: 'bottom', labels: { padding: 14, font: { ...BF, size: 11, weight: '600' }, color: '#334155', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
+                legend: { position: 'bottom', labels: { padding: 14, font: { ...BF, size: 11, weight: '600' }, color: '#ffffff', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
                 tooltip: { callbacks: { label: c => ` ${c.label}: ${Number(c.raw).toLocaleString()} UZS` } }
             }
         }
@@ -151,10 +151,10 @@ function mkBar(id, labels, datasets, stacked = false) {
             animation: { duration: 800, easing: 'easeOutQuart' },
             scales: {
                 x: { stacked, grid: { display: false }, ticks: TC },
-                y: { stacked, grid: { color: '#F1F5F9' }, ticks: { ...TC, callback: tickCb } }
+                y: { stacked, grid: { color: 'rgba(226, 232, 240, 0.05)' }, ticks: { ...TC, callback: tickCb } }
             },
             plugins: {
-                legend: { display: datasets.length > 1, labels: { font: { ...BF, size: 11 }, color: '#334155', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
+                legend: { display: datasets.length > 1, labels: { font: { ...BF, size: 11 }, color: '#ffffff', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
                 tooltip: TU
             }
         }
@@ -171,8 +171,8 @@ function mkHBar(id, labels, vals, colors) {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             animation: { duration: 800, easing: 'easeOutQuart' },
             scales: {
-                x: { grid: { color: '#F1F5F9' }, ticks: { ...TC, callback: tickCb } },
-                y: { grid: { display: false }, ticks: { font: { ...BF, size: 12, weight: '600' }, color: '#0F172A' } }
+                x: { grid: { color: 'rgba(226, 232, 240, 0.05)' }, ticks: { ...TC, callback: tickCb } },
+                y: { grid: { display: false }, ticks: { font: { ...BF, size: 12, weight: '600' }, color: '#ffffff' } }
             },
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${Number(c.raw).toLocaleString()} UZS` } } }
         }
@@ -190,10 +190,10 @@ function mkLine(id, labels, datasets) {
             animation: { duration: 900, easing: 'easeOutQuart' },
             scales: {
                 x: { grid: { display: false }, ticks: TC },
-                y: { grid: { color: '#F1F5F9' }, ticks: { ...TC, callback: tickCb } }
+                y: { grid: { color: 'rgba(226, 232, 240, 0.05)' }, ticks: { ...TC, callback: tickCb } }
             },
             plugins: {
-                legend: { display: datasets.length > 1, labels: { font: { ...BF, size: 11 }, color: '#334155', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
+                legend: { display: datasets.length > 1, labels: { font: { ...BF, size: 11 }, color: '#ffffff', boxWidth: 10, borderRadius: 3, useBorderRadius: true } },
                 tooltip: TU
             }
         }

@@ -63,7 +63,7 @@ function renderComplexStaffMonthlyChart(canvasId, records) {
                     labels: {
                         padding: 15,
                         font: { ...KV_BF, size: 9, weight: '600' },
-                        color: 'var(--text-muted)',
+                        color: 'rgba(148, 163, 184, 1)',
                         boxWidth: 8,
                         usePointStyle: true
                     }
