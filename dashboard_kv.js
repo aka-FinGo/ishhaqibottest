@@ -418,8 +418,19 @@ async function openKvDashboard() {
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 }
 
+let kvPtrInitialized = false;
+
 async function renderKvDashboardPage() {
     console.log('KV Dashboard:renderKvDashboardPage is called');
+
+    if (!kvPtrInitialized) {
+        initPullToRefresh('kvDashboardTab', 'kvPtr', async () => {
+            kvDashboardRecords = [];
+            await renderKvDashboardPage();
+        });
+        kvPtrInitialized = true;
+    }
+
     const container = document.getElementById('kvDashboardMainBody');
     if (!container) {
         console.error('KV Dashboard:kvDashboardMainBody element not found');

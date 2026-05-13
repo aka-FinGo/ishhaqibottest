@@ -185,20 +185,97 @@ function showAppLoading(msg = 'Yuklanmoqda...') {
         if (_appLoadingToast) _appLoadingToast.classList.add('show');
     });
 }
-function hideAppLoading() {
-    if (_appLoadingToast) {
-        _appLoadingToast.classList.remove('show');
-        setTimeout(() => {
-            if (_appLoadingToast) {
-                _appLoadingToast.remove();
-                _appLoadingToast = null;
+let _appInitialized = false;
+let _appInitRetries = 0;
+const MAX_INIT_RETRIES = 3;
+
+/**
+ * Pull to Refresh funksiyasini initsializatsiya qilish
+ */
+function initPullToRefresh(containerId, ptrId, refreshCallback) {
+    const container = document.getElementById(containerId);
+    const ptr = document.getElementById(ptrId);
+    if (!container || !ptr) return;
+
+    const arrow = ptr.querySelector('.ptr-arrow');
+    const icon = ptr.querySelector('.ptr-icon');
+
+    let startY = 0;
+    let isPulling = false;
+    const threshold = 70;
+
+    container.addEventListener('touchstart', (e) => {
+        if (container.scrollTop <= 5) {
+            startY = e.touches[0].pageY;
+        } else {
+            startY = 0;
+        }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (startY === 0) return;
+        const y = e.touches[0].pageY;
+        const diff = y - startY;
+
+        if (diff > 10 && container.scrollTop <= 5) {
+            isPulling = true;
+            ptr.classList.add('active');
+            
+            if (diff > threshold) {
+                ptr.classList.add('pulling');
+            } else {
+                ptr.classList.remove('pulling');
             }
-        }, 300);
-    }
+            
+            ptr.style.height = Math.min(diff * 0.5, 80) + 'px';
+            ptr.style.opacity = Math.min(diff / threshold, 1);
+            
+            if (e.cancelable) e.preventDefault();
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', async () => {
+        if (!isPulling) return;
+        isPulling = false;
+        
+        const currentHeight = parseInt(ptr.style.height || 0);
+        ptr.style.height = ''; 
+        ptr.style.opacity = '';
+
+        if (currentHeight >= 35) {
+            arrow.classList.add('hidden');
+            icon.classList.remove('hidden');
+            ptr.classList.add('active');
+            
+            try {
+                if (window.tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                await refreshCallback();
+            } catch (err) {
+                console.error('Refresh error:', err);
+                if (window.tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            } finally {
+                setTimeout(() => {
+                    ptr.classList.remove('active', 'pulling');
+                    setTimeout(() => {
+                        arrow.classList.remove('hidden');
+                        icon.classList.add('hidden');
+                    }, 300);
+                }, 500);
+            }
+        } else {
+            ptr.classList.remove('active', 'pulling');
+        }
+        startY = 0;
+    });
 }
 
 async function initializeApp() {
     try {
+        if (typeof tg !== 'undefined') {
+            tg.ready();
+            tg.expand();
+            if (tg.disableVerticalSwipe) tg.disableVerticalSwipe();
+        }
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
 
