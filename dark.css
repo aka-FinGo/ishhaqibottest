@@ -227,6 +227,15 @@ textarea:focus {
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
 }
 
+.js-btn-confirm-ok {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+
 /* ============================================================
    BUDGET CARD & PREMIUM HERO
    ============================================================ */

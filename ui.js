@@ -63,8 +63,8 @@ function showCustomConfirm(title, message, confirmText, cancelText, requireReaso
                 <p class="js-confirm-msg">${message}</p>
                 ${reasonBlock}
                 <div class="js-confirm-actions">
-                    <button class="js-btn-cancel" id="customConfirmCancel">${cancelText}</button>
-                    <button class="js-btn-confirm-del" id="customConfirmOk">${confirmText}</button>
+                    <button class="js-btn-confirm-ok" id="customConfirmOk">${confirmText}</button>
+                    <button class="js-btn-confirm-del" id="customConfirmCancel">${cancelText}</button>
                 </div>
             </div>
         </div>
@@ -566,9 +566,8 @@ function showConfirmModal(message, onConfirm) {
                     Ushbu amalni davom ettirmoqchimisiz?
                 </p>
                 <div class="js-confirm-actions">
-                    <button id="modalNo"  class="js-btn-cancel">Yo'q</button>
-                    <button id="modalYes" class="js-btn-confirm-ok"
-                        style="background:var(--navy);">Ha, saqlash</button>
+                    <button id="modalYes" class="js-btn-confirm-ok">Ha, saqlash</button>
+                    <button id="modalNo"  class="js-btn-confirm-del">Yo'q</button>
                 </div>
             </div>
         </div>
