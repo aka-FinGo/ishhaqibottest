@@ -149,6 +149,39 @@ textarea {
     transition: all 0.2s;
 }
 
+/* ============================================================
+   PERM LABELS (THEME SELECTION)
+   ============================================================ */
+.perm-label {
+    background: #1a1a1c !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #a1a1aa !important;
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    justify-content: center;
+}
+
+.perm-label.checked {
+    background: rgba(0, 242, 255, 0.1) !important;
+    border-color: var(--cyan-neon) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.2) !important;
+    font-weight: 700;
+}
+
+.perm-label.checked::after {
+    content: "✓";
+    margin-left: 6px;
+    font-weight: 900;
+    color: var(--cyan-neon);
+}
+
 input:focus,
 select:focus,
 textarea:focus {

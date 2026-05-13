@@ -402,10 +402,39 @@ function updateProfileUI() {
         }
         const m2El = document.getElementById('profileCurrentMonthM2');
         if (m2El) m2El.textContent = monthlyM2.toLocaleString('uz-UZ', { maximumFractionDigits: 1 });
+
+        // Toggles holatini yuklash
+        const notifOn = localStorage.getItem('app_notifications') !== 'false'; // default true
+        const offlineOn = localStorage.getItem('app_offline_mode') === 'true'; // default false
+        
+        const notifToggle = document.getElementById('toggleNotifications');
+        const offlineToggle = document.getElementById('toggleOfflineMode');
+        
+        if (notifToggle) notifToggle.checked = notifOn;
+        if (offlineToggle) offlineToggle.checked = offlineOn;
+
     } catch (err) {
         console.warn('Profile stats calculation error:', err);
     }
 }
+
+function toggleSetting(type, isEnabled) {
+    console.log(`⚙️ Sozlama o'zgardi: ${type} = ${isEnabled}`);
+    
+    // Haptic feedback
+    if (window.tg && tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+    if (type === 'notifications') {
+        localStorage.setItem('app_notifications', isEnabled);
+        showToastMsg(isEnabled ? '✅ Bildirishnomalar yoqildi' : '🔔 Bildirishnomalar o\'chirildi');
+    } else if (type === 'offline') {
+        localStorage.setItem('app_offline_mode', isEnabled);
+        showToastMsg(isEnabled ? '📶 Offline rejim faollashdi' : '🌐 Onlayn rejimga o\'tildi');
+    }
+}
+
 
 
 function handleFabAction() {

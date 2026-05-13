@@ -133,3 +133,34 @@ input:checked + .premium-slider:before { transform: translateX(24px); }
     background: linear-gradient(135deg, #DC2626, #B91C1C) !important;
     box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4) !important;
 }
+
+.perm-label {
+    background: var(--surface) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text-muted) !important;
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.perm-label.checked {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1) !important;
+    font-weight: 700;
+}
+
+.perm-label.checked::after {
+    content: "✓";
+    margin-left: 6px;
+    font-weight: 900;
+    color: var(--green);
+}

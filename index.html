@@ -264,16 +264,16 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
                     <span style="font-weight:600;">🔔 Bildirishnomalar</span>
-                    <label class="premium-switch" style="position:relative; display:inline-block; width:46px; height:24px;">
-                        <input type="checkbox" checked disabled style="opacity:0; width:0; height:0;">
-                        <span class="premium-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:var(--border); transition:.4s; border-radius:24px;"></span>
+                    <label class="premium-switch">
+                        <input type="checkbox" checked id="toggleNotifications" onchange="toggleSetting('notifications', this.checked)">
+                        <span class="premium-slider"></span>
                     </label>
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
                     <span style="font-weight:600;">📶 Offline Rejim</span>
-                    <label class="premium-switch" style="position:relative; display:inline-block; width:46px; height:24px;">
-                        <input type="checkbox" checked disabled style="opacity:0; width:0; height:0;">
-                        <span class="premium-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:var(--border); transition:.4s; border-radius:24px;"></span>
+                    <label class="premium-switch">
+                        <input type="checkbox" checked id="toggleOfflineMode" onchange="toggleSetting('offline', this.checked)">
+                        <span class="premium-slider"></span>
                     </label>
                 </div>
             </div>
