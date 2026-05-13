@@ -365,10 +365,48 @@ function updateProfileUI() {
     const adminSection = document.getElementById('profileAdminSection');
     if (adminSection) {
         const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
-        console.log('👑 Admin panel tugmasi:', hasAdminAccess ? 'KO\'RINADI' : 'YASHIRILDI');
         adminSection.classList.toggle('hidden', !hasAdminAccess);
     }
+
+    // --- Joriy oy statistikasi ---
+    try {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth() + 1;
+        const curPeriod = `${curYear}-${String(curMonth).padStart(2, '0')}`;
+
+        // 1. Ish haqi (So'mda)
+        let monthlyUzs = 0;
+        if (typeof myFullRecords !== 'undefined' && Array.isArray(myFullRecords)) {
+            monthlyUzs = myFullRecords.reduce((sum, r) => {
+                if (r.actionPeriod === curPeriod) return sum + (Number(r.amountUZS) || 0);
+                return sum;
+            }, 0);
+        }
+        const uzsEl = document.getElementById('profileCurrentMonthUzs');
+        if (uzsEl) uzsEl.textContent = monthlyUzs.toLocaleString();
+
+        // 2. Kvadratlar (m²)
+        let monthlyM2 = 0;
+        if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
+            const myName = myUsername || (typeof employeeName !== 'undefined' ? employeeName : '');
+            monthlyM2 = kvFullRecords.reduce((sum, r) => {
+                const rYear = Number(r.year);
+                const rMonth = Number(String(r.month || '').replace('_', '').replace("'", ""));
+                const rStaff = r.staffName || '';
+                if (rYear === curYear && rMonth === curMonth && rStaff === myName) {
+                    return sum + (Number(r.totalM2) || 0);
+                }
+                return sum;
+            }, 0);
+        }
+        const m2El = document.getElementById('profileCurrentMonthM2');
+        if (m2El) m2El.textContent = monthlyM2.toLocaleString('uz-UZ', { maximumFractionDigits: 1 });
+    } catch (err) {
+        console.warn('Profile stats calculation error:', err);
+    }
 }
+
 
 function handleFabAction() {
     const activeTab = document.querySelector('.tab-content.active');
