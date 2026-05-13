@@ -554,6 +554,17 @@ async function saveKv() {
         showToastMsg('❌ Ma\'lumotlarni to\'liq kiriting', true); return;
     }
 
+    // Dublikatni tekshirish (Buyurtma raqami bo'yicha)
+    const isDuplicate = kvFullRecords.some(r => {
+        if (rowId && String(r.rowId) === String(rowId)) return false;
+        return String(r.no || '').trim().toLowerCase() === orderNumber.toLowerCase();
+    });
+
+    if (isDuplicate) {
+        showToastMsg('❌ Bu Buyurtma № oldin kiritilgan!', true);
+        return;
+    }
+
     if (rowId) {
         const rec        = kvFullRecords.find(r => String(r.rowId) === String(rowId));
         const isAdmin    = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
