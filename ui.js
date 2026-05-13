@@ -185,9 +185,17 @@ function showAppLoading(msg = 'Yuklanmoqda...') {
         if (_appLoadingToast) _appLoadingToast.classList.add('show');
     });
 }
-let _appInitialized = false;
-let _appInitRetries = 0;
-const MAX_INIT_RETRIES = 3;
+function hideAppLoading() {
+    if (_appLoadingToast) {
+        _appLoadingToast.classList.remove('show');
+        setTimeout(() => {
+            if (_appLoadingToast) {
+                _appLoadingToast.remove();
+                _appLoadingToast = null;
+            }
+        }, 300);
+    }
+}
 
 /**
  * Pull to Refresh funksiyasini initsializatsiya qilish
