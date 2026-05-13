@@ -409,11 +409,11 @@ function showKvDetailModal(idx) {
                 <span class="detail-badge" style="background:var(--comp-chip-usd-bg); color:var(--comp-chip-usd-text);">
                     📐 Buyurtma Tafsiloti
                 </span>
-                <h3 style="margin:10px 0 5px; color:var(--navy); font-weight:800;">
-                    📌 ${escapeHtml(rec.orderName || '—')}
+                <h3 style="margin:10px 0 5px; color:var(--navy); font-weight:800; font-size: 19px; letter-spacing: -0.5px;">
+                    ${escapeHtml(String(rec.no || '—'))}${rec.month ? '_' + String(rec.month).replace(/^_+/, '').replace(/^'/, '') : ''} | Sana: ${escapeHtml(rec.date || '—')}
                 </h3>
-                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                    №${escapeHtml(String(rec.no || '—'))} | Sana: ${escapeHtml(rec.date || '—')}
+                <div style="font-size:14px; color:var(--text-muted); font-weight:700; letter-spacing: 0.2px;">
+                    📌 ${escapeHtml(rec.orderName || '—')}
                 </div>
             </div>
 

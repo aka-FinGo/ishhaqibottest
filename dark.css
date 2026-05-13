@@ -10,7 +10,7 @@
     --border: rgba(255, 255, 255, 0.06);
     --navy: #fcfcfc;
     --navy-mid: #0d0d0f;
-    --navy-light: #1a1a1c;
+    --navy-light: #94a3b8; /* Slate-400 */
 
     /* === Text === */
     --text: #ffffff;
@@ -411,6 +411,16 @@ input:checked + .premium-slider {
     background: rgba(0, 242, 255, 0.05) !important;
     border: 1px dashed var(--cyan-neon) !important;
     animation: notify-pulse 2s infinite;
+}
+
+/* Timeline Tarixi Overrides */
+.kvdm-tl-who {
+    color: var(--cyan-neon) !important;
+    opacity: 0.9;
+}
+
+.kvdm-tl-status {
+    color: #ffffff !important;
 }
 
 @keyframes notify-pulse {
