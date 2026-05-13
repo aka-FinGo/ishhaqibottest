@@ -192,3 +192,41 @@ input:checked + .premium-slider:before { transform: translateX(24px); }
     font-weight: 900;
     color: var(--green);
 }
+
+/* App Loading Notification */
+.app-loading-bar {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity: 0;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+}
+.app-loading-bar.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+.app-loading-bar .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2.5px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}

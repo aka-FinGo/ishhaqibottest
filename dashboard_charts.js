@@ -76,7 +76,11 @@ function renderComplexStaffMonthlyChart(canvasId, records) {
                     bodyFont: { ...KV_BF, size: 12 },
                     padding: 12,
                     callbacks: {
-                        label: (c) => ` ${c.dataset.label}: ${Number(c.raw).toLocaleString()} m²`
+                        label: (c) => {
+                            const val = Number(c.raw) || 0;
+                            if (val <= 0) return null;
+                            return ` ${c.dataset.label}: ${val.toLocaleString()} m²`;
+                        }
                     }
                 }
             }

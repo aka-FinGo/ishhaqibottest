@@ -172,19 +172,47 @@ function applyRoleBasedUI() {
     updateContactAdminButton();
 }
 
+let _appLoadingToast = null;
+function showAppLoading(msg = 'Yuklanmoqda...') {
+    if (_appLoadingToast) _appLoadingToast.remove();
+    const html = `<div id="appLoadingToast" class="app-loading-bar">
+        <div class="spinner"></div>
+        <span>${msg}</span>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    _appLoadingToast = document.getElementById('appLoadingToast');
+    requestAnimationFrame(() => {
+        if (_appLoadingToast) _appLoadingToast.classList.add('show');
+    });
+}
+function hideAppLoading() {
+    if (_appLoadingToast) {
+        _appLoadingToast.classList.remove('show');
+        setTimeout(() => {
+            if (_appLoadingToast) {
+                _appLoadingToast.remove();
+                _appLoadingToast = null;
+            }
+        }, 300);
+    }
+}
+
 async function initializeApp() {
     try {
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
 
+        showAppLoading('Kesh yuklanmoqda...');
         loadCachedData();
         if (myFullRecords.length > 0) {
             if (typeof initMyFilters === 'function') initMyFilters();
             if (typeof renderMyRecords === 'function') renderMyRecords();
             if (typeof initKvadratTab === 'function') initKvadratTab();
+            showAppLoading('Keshdan yuklandi, server bilan yangilanmoqda...');
+        } else {
+            showAppLoading('Server bilan bog\'lanmoqda...');
         }
 
-        console.log('🔄 Server dan ma\'lumot yuklanyapti...');
         const data = await apiRequest({
             action: 'init',
             firstName: user ? (user.first_name || '') : '',
@@ -209,8 +237,10 @@ async function initializeApp() {
             _appInitialized = true; _appInitRetries = 0;
             if (typeof updateModuleIframe === 'function') updateModuleIframe();
             startBackgroundSync();
+            hideAppLoading();
         } else { throw new Error(data?.error || 'Init xatosi'); }
     } catch (error) {
+        hideAppLoading();
         console.error('❌ Init xatosi:', error);
         if (_appInitRetries < MAX_INIT_RETRIES) {
             _appInitRetries++;
