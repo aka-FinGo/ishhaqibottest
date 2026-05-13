@@ -237,8 +237,6 @@ function initPullToRefresh(containerId, ptrId, refreshCallback) {
             
             ptr.style.height = Math.min(diff * 0.5, 80) + 'px';
             ptr.style.opacity = Math.min(diff / threshold, 1);
-            
-            if (e.cancelable) e.preventDefault();
         }
     }, { passive: false });
 
@@ -282,7 +280,6 @@ async function initializeApp() {
         if (typeof tg !== 'undefined') {
             tg.ready();
             tg.expand();
-            if (tg.disableVerticalSwipe) tg.disableVerticalSwipe();
         }
         const firstName = user ? user.first_name : 'Xodim';
         document.getElementById('greeting').innerText = `Salom, ${firstName}!`;
