@@ -25,7 +25,7 @@ var KV_BASE_HEADERS = [
 ];
 
 function getKvadratSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName(KVADRAT_SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(KVADRAT_SHEET_NAME);
@@ -178,22 +178,29 @@ function kvadratAdd(data, auth, actorTgId) {
     sh.getRange(row, 4).setNumberFormat('@'); // Year format
     sh.getRange(row, 5).setNumberFormat('0.00');
 
+    // Keshni tozalash
+    CacheService.getScriptCache().remove("kv_data_all");
+
     return { success: true, rowId: row };
   });
 }
 
 function kvadratGetAll(options) {
-  var sh = getKvadratSheet();
-  var values      = sh.getDataRange().getValues();
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get("kv_data_all");
+  if (cached) return { success: true, data: JSON.parse(cached), fromCache: true };
+
+  var range = KVADRAT_SHEET_NAME + "!A:Z";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var values = res.values || [];
+  
   var records     = [];
-  var userMap     = buildUsernameMap(); // tgId → username map
+  var userMap     = buildUsernameMap();
 
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
     var isDeleted = row[KV_COL.IS_DELETED];
-    if (isDeleted === 1 || isDeleted === true ||
-        String(isDeleted).toLowerCase() === '1' ||
-        String(isDeleted).toLowerCase() === 'true') continue;
+    if (isDeleted == 1 || isDeleted == "true" || String(isDeleted).toLowerCase() == '1') continue;
 
     var rawMonth = String(row[KV_COL.MONTH] || '');
     var cleanMonth = rawMonth.replace(/^'/, '');
@@ -205,7 +212,7 @@ function kvadratGetAll(options) {
 
     records.push({
       rowId:      i + 1,
-      date:       formatDateCell(row[KV_COL.DATE]),
+      date:       String(row[KV_COL.DATE] || ''),
       no:         String(row[KV_COL.NO] || ''),
       month:      cleanMonth,
       year:       year,
@@ -218,15 +225,12 @@ function kvadratGetAll(options) {
       logs:              (function(){
         try { return JSON.parse(row[KV_COL.STEP_LOGS] || '[]'); }
         catch(e) { return []; }
-      })(),
-      yiguvchiName: String(row[KV_COL.YIGUVCHI_NAME] || ''),
-      yiguvchiM2:   Number(row[KV_COL.YIGUVCHI_M2]) || 0,
-      qadoqlovchiName: String(row[KV_COL.QADOQLOVCHI_NAME] || ''),
-      qadoqlovchiM2:   Number(row[KV_COL.QADOQLOVCHI_M2]) || 0
+      })()
     });
   }
 
   records.reverse();
+  cache.put("kv_data_all", JSON.stringify(records), CACHE_TTL);
   return { success: true, data: records };
 }
 
@@ -273,6 +277,7 @@ function kvadratEdit(data, auth, actorTgId) {
     }
     
     addAuditLog_(actorTgId, 'kvadrat_edit', row, null, null, reason);
+    CacheService.getScriptCache().remove("kv_data_all");
     return { success: true };
   });
 }
@@ -336,6 +341,7 @@ function kvadratDelete(data, auth, actorTgId) {
 
     sh.getRange(row, KV_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'kvadrat_delete', row, null, 'deleted', reason);
+    CacheService.getScriptCache().remove("kv_data_all");
     return { success: true };
   });
 }

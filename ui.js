@@ -694,11 +694,11 @@ async function ensureAdminDataLoaded(force = false) {
 }
 
 async function switchAdminSub(areaId, btn) {
-    if ((areaId === 'adminHodimlarArea' || areaId === 'adminWorkflowArea' || areaId === 'adminPositionsArea') && myRole !== 'SuperAdmin') {
+    if ((areaId === 'adminHodimlarArea' || areaId === 'adminWorkflowArea' || areaId === 'adminPositionsArea' || areaId === 'adminAIArea') && myRole !== 'SuperAdmin') {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
 
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
@@ -719,6 +719,7 @@ async function switchAdminSub(areaId, btn) {
     }
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
+    if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
 }
 
 function toggleRate() {

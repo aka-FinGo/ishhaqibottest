@@ -42,6 +42,14 @@ function doPost(e) {
     var auth   = checkUserRoles(tgId);
     var result;
 
+    // Yozish amallari uchun LockService
+    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report'];
+    var lock = null;
+    if (writeActions.indexOf(action) !== -1) {
+      lock = LockService.getScriptLock();
+      lock.waitLock(15000);
+    }
+
     switch (action) {
 
       case "init":
@@ -216,10 +224,28 @@ function doPost(e) {
         result = savePositions(data.positions);
         break;
 
+      // ---- AI Agent Boshqaruvi ----
+      case "ai_get_config":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin AI sozlamalarini ko'ra oladi" });
+        result = { success:true, config: getAIProvidersConfig() };
+        break;
+
+      case "ai_save_config":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin AI sozlamalarini o'zgartira oladi" });
+        result = saveAIConfig(data.config);
+        break;
+
+      case "ai_run_report":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin AI hisobotini ishga tushura oladi" });
+        dailyReportTask(); // Bu funksiya Telegramga javob yuboradi
+        result = { success:true, message: "AI Hisobot yaratish jarayoni boshlandi. Natija Telegramga yuboriladi." };
+        break;
+
       default:
         result = { success: false, error: "Noma'lum: " + action };
     }
 
+    if (lock) lock.releaseLock();
     return sendJSON(result);
 
   } catch(err) {
@@ -330,7 +356,7 @@ function getRateLimitSeconds_(action) {
 }
 
 function getErrorSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName('ErrorLog');
   if (!sh) {
     sh = ss.insertSheet('ErrorLog');

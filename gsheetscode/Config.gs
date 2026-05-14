@@ -14,7 +14,8 @@ var CONFIG = {
   REMINDER_TEXT: "⚠️ Eslatma!\nKompaniya kelajagi uchun olgan avans va oyliklaringizni botga o'z vaqtida yozib qo'yishingizni so'raymiz! Yordamingiz uchun rahmat! )",
   ERROR_ALERT_ENABLED: true,
   ERROR_ALERT_THRESHOLD: 3,
-  ERROR_ALERT_WINDOW_SEC: 300
+  ERROR_ALERT_WINDOW_SEC: 300,
+  SPREADSHEET_ID: SpreadsheetApp.getActiveSpreadsheet().getId()
 };
 
 function sendJSON(data) {

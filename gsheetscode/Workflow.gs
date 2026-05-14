@@ -6,13 +6,15 @@
  * Gets the current workflow configuration from the sheet.
  */
 function getWorkflowConfig() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName("WorkflowSteps");
-  if (!sh) return [];
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get("workflow_config");
+  if (cached) return JSON.parse(cached);
 
-  var data = sh.getDataRange().getValues();
-  var steps = [];
+  var range = "WorkflowSteps!A:F";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var data = res.values || [];
   
+  var steps = [];
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     steps.push({
@@ -24,9 +26,9 @@ function getWorkflowConfig() {
       isEnd:    Number(row[5]) === 1
     });
   }
-  
-  // Sort by index just in case
   steps.sort((a, b) => a.index - b.index);
+  
+  cache.put("workflow_config", JSON.stringify(steps), 21600);
   return steps;
 }
 
@@ -34,7 +36,7 @@ function getWorkflowConfig() {
  * Saves the workflow configuration from Admin panel.
  */
 function saveWorkflowConfig(steps) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName("WorkflowSteps");
   if (!sh) sh = ss.insertSheet("WorkflowSteps");
 
@@ -54,6 +56,7 @@ function saveWorkflowConfig(steps) {
     ]);
     sh.getRange(2, 1, output.length, headers.length).setValues(output);
   }
+  CacheService.getScriptCache().remove("workflow_config");
   return { success: true };
 }
 

@@ -6,13 +6,15 @@
  * Gets all defined technical positions.
  */
 function getAllPositions() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName("Lavozimlar");
-  if (!sh) return [];
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get("all_positions");
+  if (cached) return JSON.parse(cached);
 
-  var data = sh.getDataRange().getValues();
-  var positions = [];
+  var range = "Lavozimlar!A:B";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var data = res.values || [];
   
+  var positions = [];
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (row[0]) {
@@ -22,6 +24,7 @@ function getAllPositions() {
       });
     }
   }
+  cache.put("all_positions", JSON.stringify(positions), 21600);
   return positions;
 }
 
@@ -29,7 +32,7 @@ function getAllPositions() {
  * Saves technical positions from Admin panel.
  */
 function savePositions(list) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName("Lavozimlar");
   if (!sh) sh = ss.insertSheet("Lavozimlar");
 
@@ -47,5 +50,6 @@ function savePositions(list) {
       }
     });
   }
+  CacheService.getScriptCache().remove("all_positions");
   return { success: true };
 }

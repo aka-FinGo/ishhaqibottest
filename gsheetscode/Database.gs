@@ -60,7 +60,7 @@ var POSITIONS_HEADERS = [
 
 function getSheets() {
   if (_MEMO.sheets) return _MEMO.sheets;
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var dataSheet = ss.getSheets()[0];
   ensureDataInfrastructure_(dataSheet);
   var empSheet = ss.getSheetByName("Hodimlar");
@@ -83,7 +83,12 @@ function getSheets() {
     positionsSheet = ss.insertSheet("Lavozimlar");
     ensurePositionsInfrastructure_(positionsSheet);
   }
-  _MEMO.sheets = { dataSheet: dataSheet, empSheet: empSheet, workflowSheet: workflowSheet, positionsSheet: positionsSheet };
+  var aiSheet = ss.getSheetByName("AI_Sozlamalar");
+  if (!aiSheet) {
+    aiSheet = ss.insertSheet("AI_Sozlamalar");
+    ensureAIInfrastructure_(aiSheet);
+  }
+  _MEMO.sheets = { dataSheet: dataSheet, empSheet: empSheet, workflowSheet: workflowSheet, positionsSheet: positionsSheet, aiSheet: aiSheet };
   return _MEMO.sheets;
 }
 
@@ -161,28 +166,53 @@ function ensurePositionsInfrastructure_(sh) {
   sh.appendRow(["Loyihachi", "📐"]); sh.appendRow(["Yig'uvchi", "🔧"]); sh.appendRow(["Qadoqlovchi", "📦"]);
 }
 
+function ensureAIInfrastructure_(sh) {
+  sh.clear();
+  var headers = ["Provider", "Model", "API_Key", "Priority", "IsActive", "BaseURL"];
+  sh.appendRow(headers);
+  sh.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#7e22ce").setFontColor("#ffffff");
+  
+  // Default providers
+  sh.appendRow(["Groq", "llama3-70b-8192", "", 1, 1, "https://api.groq.com/openai/v1/chat/completions"]);
+  sh.appendRow(["Gemini", "gemini-1.5-flash", "", 2, 1, "https://generativelanguage.googleapis.com/v1beta/models/"]);
+  sh.appendRow(["OpenRouter", "google/gemini-pro-1.5", "", 3, 0, "https://openrouter.ai/api/v1/chat/completions"]);
+  sh.appendRow(["Ollama", "llama3", "", 4, 0, "http://localhost:11434/api/generate"]);
+}
+
 function getDataRows_() {
-  var now = new Date().getTime();
-  if (_MEMO.dataRows && (now - _MEMO.dataTimestamp) < CACHE_TTL * 1000) {
-    return _MEMO.dataRows;
-  }
-  _MEMO.dataRows = getSheets().dataSheet.getDataRange().getValues();
-  _MEMO.dataTimestamp = now;
-  return _MEMO.dataRows;
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get("db_data_rows");
+  if (cached) return JSON.parse(cached);
+
+  var range = getSheets().dataSheet.getName() + "!A:Z";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var values = res.values || [];
+  
+  cache.put("db_data_rows", JSON.stringify(values), CACHE_TTL);
+  return values;
 }
 
 function resetDataCache_() {
+  CacheService.getScriptCache().remove("db_data_rows");
   _MEMO.dataRows = null;
   _MEMO.dataTimestamp = 0;
 }
 
 function getEmployeeRows_() {
-  if (_MEMO.empRows) return _MEMO.empRows;
-  _MEMO.empRows = getSheets().empSheet.getDataRange().getValues();
-  return _MEMO.empRows;
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get("db_emp_rows");
+  if (cached) return JSON.parse(cached);
+
+  var range = "Hodimlar!A:Z";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var values = res.values || [];
+
+  cache.put("db_emp_rows", JSON.stringify(values), CACHE_TTL);
+  return values;
 }
 
 function resetEmployeeCache_() {
+  CacheService.getScriptCache().remove("db_emp_rows");
   _MEMO.empRows = null; 
   _MEMO.usernameMap = null;
 }
@@ -194,7 +224,7 @@ function resetAllCaches_() {
 }
 
 function getAuditSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName('AuditLog');
   if (!sh) {
     sh = ss.insertSheet('AuditLog');
