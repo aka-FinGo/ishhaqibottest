@@ -6,7 +6,7 @@ async function loadAIConfig() {
     listContainer.innerHTML = '<div class="dash-empty">⏳ Yuklanmoqda...</div>';
 
     try {
-        const res = await apiRequest('ai_get_config', {});
+        const res = await apiRequest({ action: 'ai_get_config' });
         if (!res.success) {
             listContainer.innerHTML = `<div class="status-msg error">${res.error}</div>`;
             return;
@@ -98,7 +98,7 @@ async function saveAIConfigUI() {
     tg.MainButton.setText('SAQLANMOQDA...').show().disable();
 
     try {
-        const res = await apiRequest('ai_save_config', { config: config });
+        const res = await apiRequest({ action: 'ai_save_config', config: config });
         if (res.success) {
             tg.showAlert('AI Sozlamalari saqlandi! ✅');
             loadAIConfig(); // Qayta yuklash
@@ -121,7 +121,7 @@ async function runAIReportTest() {
     status.innerText = '🚀 Jarayon boshlandi...';
 
     try {
-        const res = await apiRequest('ai_run_report', {});
+        const res = await apiRequest({ action: 'ai_run_report' });
         if (res.success) {
             status.className = 'status-msg success';
             status.innerText = '✅ ' + res.message;
