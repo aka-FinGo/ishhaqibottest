@@ -46,7 +46,10 @@ function renderAIConfigList(providers) {
                 <div style="font-weight:bold; color:var(--cyan-neon);">${p.provider}</div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:10px; color:var(--text-muted);">Aktivmi?</span>
-                    <input type="checkbox" class="ai-active-check" ${p.isActive ? 'checked' : ''} style="width:18px;height:18px;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="ai-active-check" ${p.isActive ? 'checked' : ''}>
+                        <span class="toggle-slider"></span>
+                    </label>
                 </div>
             </div>
             
