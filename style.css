@@ -299,3 +299,49 @@ input:checked + .premium-slider:before { transform: translateX(24px); }
 @keyframes ptr-spin {
     to { transform: rotate(360deg); }
 }
+
+/* =========================================
+   Toggle Switch (iOS Style)
+   ========================================= */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    transition: .3s;
+    border-radius: 24px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.toggle-slider:before {
+    position: absolute;
+    content: '';
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+input:checked + .toggle-slider {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+}
+input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
