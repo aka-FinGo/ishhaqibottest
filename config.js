@@ -310,7 +310,7 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
-// DOMContentLoaded da NetworkStatus ni ishga tushirish
-if (typeof document !== 'undefined') {
+// DOMContentLoaded da NetworkStatus ni ishga tushirish (faqat brauzer muhitida)
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
   document.addEventListener('DOMContentLoaded', function () { NetworkStatus.init(); });
 }
