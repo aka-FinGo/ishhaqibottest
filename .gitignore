@@ -75,3 +75,8 @@ OPTIMIZATSIYA_XULOSA.md
 .claude/
 *.zip
 cache optimizatsiya qilish.md
+temp_*.js
+tests/
+project/
+old_style.css
+*.local.json

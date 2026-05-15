@@ -230,50 +230,76 @@ function callOllamaAPI_(prompt, model, baseURL) {
  * Bu funksiya Time-Driven Trigger orqali har kuni 08:00 da ishlashi kerak.
  */
 function dailyReportTask() {
+  var startTime = new Date();
+  Logger.log('[dailyReportTask] Boshlandi: ' + startTime.toISOString());
+
   try {
     var rawData = gatherDailyDataForAI_();
-    if (rawData.length < 50) { // Agar ma'lumot juda kam yoki yo'q bo'lsa
-       sendTelegramNotification({ 
-         employeeName: "AI Agent", 
-         amountUZS: 0, 
-         amountUSD: 0, 
-         rate: 0, 
-         comment: "📉 Bugun tahlil qilish uchun yetarli ma'lumot topilmadi.", 
-         date: new Date().toLocaleDateString() 
-       });
-       return;
+
+    if (rawData.length < 50) {
+      var noDataMsg = '📉 Bugun tahlil qilish uchun yetarli ma\'lumot topilmadi.';
+      Logger.log('[dailyReportTask] ' + noDataMsg);
+      _sendReportToAdmin_(noDataMsg, false);
+      return;
     }
 
-    var prompt = "Quyida kompaniyaning oxirgi 24 soatlik moliyaviy harajatlari va ishlangan ishlar (kvadratlar) ma'lumoti keltirilgan. " +
-                 "Ma'lumotlar JSON formatida. Iltimos, o'zbek tilida qisqa, aniq va londa tahliliy hisobot tayyorlang. " +
-                 "Hisobotda: umumiy xarajatlar, eng ko'p ish qilgan hodimlar va asosiy e'tibor qaratish kerak bo'lgan holatlarni yoriting. \n\n" +
-                 "Ma'lumot: " + rawData;
+    var prompt = 'Quyida kompaniyaning oxirgi 24 soatlik moliyaviy harajatlari va ishlangan ishlar (kvadratlar) ma\'lumoti keltirilgan. ' +
+                 'Ma\'lumotlar JSON formatida. Iltimos, o\'zbek tilida qisqa, aniq va londa tahliliy hisobot tayyorlang. ' +
+                 'Hisobotda: umumiy xarajatlar, eng ko\'p ish qilgan hodimlar va asosiy e\'tibor qaratish kerak bo\'lgan holatlarni yoriting. \n\n' +
+                 'Ma\'lumot: ' + rawData;
 
+    // AI chaqirish — xato bo'lsa 1 marta qayta urinish
     var aiResponse = callAI(prompt);
-    
+    if (!aiResponse.success) {
+      Logger.log('[dailyReportTask] Birinchi urinish muvaffaqiyatsiz: ' + aiResponse.error + '. Qayta urinilmoqda...');
+      Utilities.sleep(3000);
+      aiResponse = callAI(prompt);
+    }
+
     if (aiResponse.success) {
-      // AI javobini SuperAdmin yoki maxsus guruhga yuborish
-      var msg = "🤖 *AI Kunlik Hisobot (" + aiResponse.provider + ")*\n\n" + aiResponse.text;
-      
-      // Standart notification funksiyasini biroz moslashtirib chaqiramiz yoki to'g'ridan to'g'ri UrlFetchApp qilamiz
-      var url = "https://api.telegram.org/bot" + CONFIG.BOT_TOKEN + "/sendMessage";
-      var payload = {
-        chat_id: CONFIG.SUPER_ADMIN_ID,
-        text: msg,
-        parse_mode: "Markdown"
-      };
-      
-      UrlFetchApp.fetch(url, {
-        method: "post",
-        contentType: "application/json",
-        payload: JSON.stringify(payload)
-      });
-      
+      var msg = '🤖 *AI Kunlik Hisobot (' + aiResponse.provider + ')*\n\n' + aiResponse.text;
+      _sendReportToAdmin_(msg, true);
+      Logger.log('[dailyReportTask] Muvaffaqiyatli yuborildi. Provider: ' + aiResponse.provider +
+                 ' | Davomiyligi: ' + (new Date() - startTime) + 'ms');
     } else {
-      Logger.log("AI Report Error: " + aiResponse.error);
+      Logger.log('[dailyReportTask] AI Report Error (barcha provayderlar muvaffaqiyatsiz): ' + aiResponse.error);
+      _sendReportToAdmin_('⚠️ AI hisobot yaratishda xato: ' + aiResponse.error, false);
+    }
+
+  } catch (e) {
+    Logger.log('[dailyReportTask] Kutilmagan xato: ' + e.message + '\nStack: ' + e.stack);
+    try {
+      _sendReportToAdmin_('🔴 Tizim xatosi (dailyReportTask): ' + e.message, false);
+    } catch (e2) {
+      Logger.log('[dailyReportTask] Admin xabar yuborishda ham xato: ' + e2.message);
+    }
+  }
+}
+
+/**
+ * SuperAdminga Telegram xabar yuborish (ichki yordamchi funksiya)
+ */
+function _sendReportToAdmin_(text, isMarkdown) {
+  var url = 'https://api.telegram.org/bot' + CONFIG.BOT_TOKEN + '/sendMessage';
+  var payload = {
+    chat_id: CONFIG.SUPER_ADMIN_ID,
+    text: text
+  };
+  if (isMarkdown) payload.parse_mode = 'Markdown';
+
+  try {
+    var res = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    var code = res.getResponseCode();
+    if (code !== 200) {
+      Logger.log('[_sendReportToAdmin_] Telegram xato ' + code + ': ' + res.getContentText().substring(0, 200));
     }
   } catch (e) {
-    Logger.log("Cronjob Fatal Error: " + e.message);
+    Logger.log('[_sendReportToAdmin_] UrlFetch xatosi: ' + e.message);
   }
 }
 
@@ -294,9 +320,10 @@ function gatherDailyDataForAI_() {
   });
   
   var recentKv = kvData.filter(function(r) {
-    var d = parseDateInput_(r.date, null); // assuming Kvadrat has similar date parsing
-    // Kvadrat date might just be a string, simpler check for demo:
-    return true; // Aslida bu yerda ham sana bo'yicha filtrlash kerak
+    // Kvadrat sanasini tekshirish (ISO yoki DD/MM/YYYY formatlarida bo'lishi mumkin)
+    if (!r.date) return false;
+    var parsed = parseDateInput_(r.date, null);
+    return parsed && parsed.dateObj >= yesterday;
   });
   
   // Juda katta bo'lib ketmasligi uchun xulosalaymiz yoki qisqartiramiz

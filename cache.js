@@ -5,9 +5,10 @@
 const AppCache = {
     VERSION: '1.0.23', // Ilova versiyasi (o'zgarsa kesh tozalanadi)
     KEYS: {
-        MY_RECORDS:   'ari_my_recs',
-        ADMIN_DATA:   'ari_admin_data',
-        USER_DATA:    'ari_user_meta'
+        MY_RECORDS: 'ari_my_recs',
+        ADMIN_DATA: 'ari_admin_data',
+        USER_DATA: 'ari_user_meta',
+        KV_RECORDS: 'ari_kv_recs'    // Kvadratlar uchun (ilgari to'g'ridan localStorage)
     },
 
     /**
@@ -22,7 +23,7 @@ const AppCache = {
             };
             localStorage.setItem(key, JSON.stringify(payload));
             return true;
-        } catch(e) {
+        } catch (e) {
             console.error('Cache set error:', e);
             if (e.name === 'QuotaExceededError') {
                 this.clearAll(); // To'lib qolsa hammasini tozalash
@@ -42,7 +43,7 @@ const AppCache = {
             if (!raw) return null;
 
             const payload = JSON.parse(raw);
-            
+
             // Versiya mos kelmasa - eski kesh
             if (payload.v !== this.VERSION) {
                 this.remove(key);
@@ -57,7 +58,7 @@ const AppCache = {
             }
 
             return payload.d;
-        } catch(e) {
+        } catch (e) {
             console.error('Cache get error:', e);
             this.remove(key);
             return null;
@@ -70,7 +71,7 @@ const AppCache = {
     remove(key) {
         try {
             localStorage.removeItem(key);
-        } catch(e) {}
+        } catch (e) { }
     },
 
     /**

@@ -8,7 +8,7 @@ function normalizePos(pos) {
 const KV_ITEMS_PER_PAGE = 15;
 let kvCurrentPage = 1;
 
-const KV_MONTHS_UZ = ['','Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+const KV_MONTHS_UZ = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
 
 function kvMonthLabel(monthStr) {
     const clean = String(monthStr || '').replace(/^_+/, '').replace(/^'/, '');
@@ -102,9 +102,9 @@ function populateKvadratMeta(staffList) {
 }
 
 function _initKvFormYears() {
-    const curYear  = new Date().getFullYear();
+    const curYear = new Date().getFullYear();
     const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-    const yearEl   = document.getElementById('kvActionYear');
+    const yearEl = document.getElementById('kvActionYear');
     if (yearEl) {
         yearEl.innerHTML = '';
         for (let y = curYear + 1; y >= curYear - 2; y--) {
@@ -125,11 +125,11 @@ async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
 
-    /* Keshdan ko'rsat */
+    /* Keshdan ko'rsat (AppCache orqali — versiya va TTL nazorati bilan) */
     try {
-        const cached = localStorage.getItem('kvFullRecords');
+        const cached = AppCache.get(AppCache.KEYS.KV_RECORDS, 60);
         if (cached) {
-            kvFullRecords = JSON.parse(cached);
+            kvFullRecords = cached;
             if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
             applyKvFilters();
         }
@@ -151,7 +151,7 @@ async function initKvadratTab() {
         if (data.success) {
             kvFullRecords = data.data || [];
             if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
-            localStorage.setItem('kvFullRecords', JSON.stringify(kvFullRecords));
+            AppCache.set(AppCache.KEYS.KV_RECORDS, kvFullRecords);
             applyKvFilters();
         } else {
             if (!kvFullRecords || kvFullRecords.length === 0) {
@@ -172,20 +172,20 @@ function updateKvFabVisibility() {
     if (!fab) return;
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab && activeTab.id === 'kvadratTab') {
-        const positions  = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
+        const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
         const isLoyihachi = myRole === 'SuperAdmin' || positions.indexOf('Loyihachi') !== -1;
-        fab.style.visibility   = isLoyihachi ? 'visible' : 'hidden';
+        fab.style.visibility = isLoyihachi ? 'visible' : 'hidden';
         fab.style.pointerEvents = isLoyihachi ? 'auto' : 'none';
-        fab.style.opacity       = isLoyihachi ? '1' : '0';
+        fab.style.opacity = isLoyihachi ? '1' : '0';
     } else {
-        fab.style.visibility   = 'visible';
+        fab.style.visibility = 'visible';
         fab.style.pointerEvents = 'auto';
-        fab.style.opacity       = '1';
+        fab.style.opacity = '1';
     }
 }
 
 function renderKvList() {
-    const container    = document.getElementById('kvList');
+    const container = document.getElementById('kvList');
     const totalDisplay = document.getElementById('kvTotalM2');
     if (!container) return;
 
@@ -206,17 +206,17 @@ function renderKvList() {
 
         let lastDavr = null;
         const sortedKvData = [...kvFilteredRecords].sort((a, b) => {
-            const davrA = a.year && a.month ? `${a.year}-${String(a.month).replace('_','').padStart(2,'0')}` : getDavrSortKey('', a.date, '');
-            const davrB = b.year && b.month ? `${b.year}-${String(b.month).replace('_','').padStart(2,'0')}` : getDavrSortKey('', b.date, '');
+            const davrA = a.year && a.month ? `${a.year}-${String(a.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', a.date, '');
+            const davrB = b.year && b.month ? `${b.year}-${String(b.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', b.date, '');
             if (davrB !== davrA) return davrB.localeCompare(davrA);
             return (parseInt(b.no, 10) || 0) - (parseInt(a.no, 10) || 0);
         });
 
-        const totalPages    = Math.ceil(sortedKvData.length / KV_ITEMS_PER_PAGE);
-        const start         = (kvCurrentPage - 1) * KV_ITEMS_PER_PAGE;
+        const totalPages = Math.ceil(sortedKvData.length / KV_ITEMS_PER_PAGE);
+        const start = (kvCurrentPage - 1) * KV_ITEMS_PER_PAGE;
         const paginatedData = sortedKvData.slice(start, start + KV_ITEMS_PER_PAGE);
 
-        const wrap  = document.createElement('div');
+        const wrap = document.createElement('div');
         wrap.className = 'kv-table-wrap';
         const table = document.createElement('table');
         table.className = 'kv-table';
@@ -225,9 +225,9 @@ function renderKvList() {
 
         paginatedData.forEach((rec, loopIdx) => {
             const globalIdx = (kvCurrentPage - 1) * KV_ITEMS_PER_PAGE + loopIdx;
-            const origIdx   = kvFilteredRecords.indexOf(rec);
-            const currentDavr = rec.year && rec.month ? `${rec.year}-${String(rec.month).replace('_','').padStart(2,'0')}` : getDavrSortKey('', rec.date, '');
-            const relDavr     = getDavrLabel(currentDavr);
+            const origIdx = kvFilteredRecords.indexOf(rec);
+            const currentDavr = rec.year && rec.month ? `${rec.year}-${String(rec.month).replace('_', '').padStart(2, '0')}` : getDavrSortKey('', rec.date, '');
+            const relDavr = getDavrLabel(currentDavr);
 
             if (relDavr !== lastDavr) {
                 const trDate = document.createElement('tr');
@@ -237,9 +237,9 @@ function renderKvList() {
                 lastDavr = relDavr;
             }
 
-            const m2Val      = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { minimumFractionDigits:1, maximumFractionDigits:1 });
+            const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             const monthClean = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
-            const config     = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+            const config = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
             const totalSteps = config.length >= 2 ? config.length : 3;
             const currentStepIdx = Number(rec.currentStep) || 1;
 
@@ -255,7 +255,7 @@ function renderKvList() {
 
             const trData = document.createElement('tr');
             trData.className = 'kv-data-row';
-            trData.onclick   = () => showKvDetailModal(origIdx);
+            trData.onclick = () => showKvDetailModal(origIdx);
             trData.innerHTML = `
                 <td class="kv-col-seq">${globalIdx + 1}</td>
                 <td class="kv-col-no"><b>${escapeHtml(String(rec.no || '—'))}</b></td>
@@ -282,7 +282,7 @@ function renderKvList() {
             for (let i = 1; i <= totalPages; i++) {
                 const btn = document.createElement('button');
                 btn.className = `page-btn ${i === kvCurrentPage ? 'active' : ''}`;
-                btn.onclick   = () => goToKvPage(i);
+                btn.onclick = () => goToKvPage(i);
                 btn.innerText = i;
                 pagDiv.appendChild(btn);
             }
@@ -312,16 +312,16 @@ function showKvDetailModal(idx) {
         const rec = kvFilteredRecords[idx];
         if (!rec) return;
 
-        const m2Val        = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
-        const status       = rec.status || 'yangi';
-        const config       = (typeof myPermissions !== 'undefined' && myPermissions && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
-        const myPoss       = (typeof myPermissions !== 'undefined' && myPermissions && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
+        const m2Val = (Number(rec.totalM2) || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 2 });
+        const status = rec.status || 'yangi';
+        const config = (typeof myPermissions !== 'undefined' && myPermissions && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
+        const myPoss = (typeof myPermissions !== 'undefined' && myPermissions && Array.isArray(myPermissions.positions)) ? myPermissions.positions : [];
         const currentStepIdx = Number(rec.currentStep) || 1;
-        const isStrict     = (typeof myPermissions !== 'undefined' && myPermissions && myPermissions.isWorkflowStrict);
-        const logs         = rec.logs || [];
-        const doneSteps    = logs.map(l => Number(l.step));
+        const isStrict = (typeof myPermissions !== 'undefined' && myPermissions && myPermissions.isWorkflowStrict);
+        const logs = rec.logs || [];
+        const doneSteps = logs.map(l => Number(l.step));
         const normalizedMyPoss = myPoss.map(p => normalizePos(p));
-        const totalSteps   = config.length >= 2 ? config.length : 3;
+        const totalSteps = config.length >= 2 ? config.length : 3;
 
         /* ---- Claim tugmalari ---- */
         let claimBtnsHtml = '';
@@ -333,7 +333,7 @@ function showKvDetailModal(idx) {
                 if (normalizedMyPoss.indexOf(nextStepPos) !== -1 ||
                     (typeof myRole !== 'undefined' && myRole === 'SuperAdmin' && normalizedMyPoss.length === 0)) {
                     /* Barcha claim tugmalari to'q yashil bo'lsin */
-                    const btnColor = '#065f46'; 
+                    const btnColor = '#065f46';
 
                     /* CSS o'zgaruvchisi orqali rang */
                     claimBtnsHtml = `
@@ -366,14 +366,14 @@ function showKvDetailModal(idx) {
         /* ---- Tarix ---- */
         let historyHtml = '';
         logs.forEach((log, lIdx) => {
-            const stepCfg  = config.find(s => s.index === log.step);
+            const stepCfg = config.find(s => s.index === log.step);
             const stepColor = typeof getWorkflowStepColors === 'function'
                 ? (getWorkflowStepColors((log.step || 1) - 1, totalSteps).bg || 'var(--green)')
                 : 'var(--green)';
             const name = log.u ||
                 (String(log.uid) === String(rec.ownerTgId) ? rec.staffName :
-                (typeof globalEmployeeList !== 'undefined' && globalEmployeeList &&
-                    globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid));
+                    (typeof globalEmployeeList !== 'undefined' && globalEmployeeList &&
+                        globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid))?.username || log.uid));
             const isLast = lIdx === logs.length - 1;
 
             historyHtml += `
@@ -383,21 +383,21 @@ function showKvDetailModal(idx) {
                     <div class="kvdm-tl-meta">
                         <span class="kvdm-tl-who">${escapeHtml(name)}</span>
                         <span class="kvdm-tl-sep">•</span>
-                        ${new Date(log.d).toLocaleString('uz-UZ', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+                        ${new Date(log.d).toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>`;
         });
 
         /* ---- Tahrirlash / O'chirish tugmalari ---- */
-        const isAdmin       = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
-        const hasPerms      = (typeof myPermissions !== 'undefined' && myPermissions);
-        const canEdit       = (isAdmin && hasPerms && myPermissions.canEdit)  || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
-        const canDelete     = (isAdmin && hasPerms && myPermissions.canDelete) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
+        const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+        const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
+        const canEdit = (isAdmin && hasPerms && myPermissions.canEdit) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
+        const canDelete = (isAdmin && hasPerms && myPermissions.canDelete) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
 
         const buttonsRow = (canEdit || canDelete) ? `
             <div class="kvdm-btn-row">
-                ${canEdit   ? `<button class="kvdm-edit-btn" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : ''}
-                ${canDelete ? `<button class="kvdm-del-btn"  onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>`   : ''}
+                ${canEdit ? `<button class="kvdm-edit-btn" onclick="closeKvDetailModal();openKvModal(${rec.rowId})">✏️ Tahrirlash</button>` : ''}
+                ${canDelete ? `<button class="kvdm-del-btn"  onclick="closeKvDetailModal();deleteKv(${rec.rowId})">🗑 O'chirish</button>` : ''}
             </div>` : '';
 
         /* ---- Modal kontent ---- */
@@ -462,9 +462,9 @@ function closeKvDetailModal() {
 }
 
 function applyKvFilters() {
-    const month   = document.getElementById('kvFilterMonth')?.value   || 'all';
-    const year    = document.getElementById('kvFilterYear')?.value    || 'all';
-    const staff   = document.getElementById('kvFilterStaff')?.value   || 'all';
+    const month = document.getElementById('kvFilterMonth')?.value || 'all';
+    const year = document.getElementById('kvFilterYear')?.value || 'all';
+    const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
 
     kvFilteredRecords = kvFullRecords.filter(rec => {
@@ -506,7 +506,7 @@ function applyKvFilters() {
 function openKvModal(rowId = null) {
     const modal = document.getElementById('kvadratModal');
     const title = document.getElementById('kvModalTitle');
-    const form  = document.getElementById('kvForm');
+    const form = document.getElementById('kvForm');
     form.reset();
     document.getElementById('kvRowId').value = rowId || '';
     _initKvFormYears();
@@ -515,10 +515,10 @@ function openKvModal(rowId = null) {
         title.innerText = '✏️ Tahrirlash';
         const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
         if (rec) {
-            document.getElementById('kvOrderNumber').value  = rec.no       || '';
-            document.getElementById('kvOrderName').value    = rec.orderName || '';
-            document.getElementById('kvTotalM2Input').value = rec.totalM2  || '';
-            document.getElementById('kvStaffSelect').value  = rec.staffName || '';
+            document.getElementById('kvOrderNumber').value = rec.no || '';
+            document.getElementById('kvOrderName').value = rec.orderName || '';
+            document.getElementById('kvTotalM2Input').value = rec.totalM2 || '';
+            document.getElementById('kvStaffSelect').value = rec.staffName || '';
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             const mEl = document.getElementById('kvActionMonth');
             if (mEl && cleanMonth) mEl.value = cleanMonth.padStart(2, '0');
@@ -542,13 +542,13 @@ function closeKvModal() {
 }
 
 async function saveKv() {
-    const rowId       = document.getElementById('kvRowId').value;
+    const rowId = document.getElementById('kvRowId').value;
     const orderNumber = (document.getElementById('kvOrderNumber').value || '').trim();
-    const orderName   = (document.getElementById('kvOrderName').value   || '').trim();
-    const totalM2     = parseFloat(document.getElementById('kvTotalM2Input').value) || 0;
-    const staffName   = document.getElementById('kvStaffSelect').value;
-    const month       = document.getElementById('kvActionMonth')?.value || '';
-    const year        = document.getElementById('kvActionYear')?.value  || new Date().getFullYear();
+    const orderName = (document.getElementById('kvOrderName').value || '').trim();
+    const totalM2 = parseFloat(document.getElementById('kvTotalM2Input').value) || 0;
+    const staffName = document.getElementById('kvStaffSelect').value;
+    const month = document.getElementById('kvActionMonth')?.value || '';
+    const year = document.getElementById('kvActionYear')?.value || new Date().getFullYear();
 
     if (!orderNumber || !orderName || totalM2 <= 0 || !staffName) {
         showToastMsg('❌ Ma\'lumotlarni to\'liq kiriting', true); return;
@@ -566,10 +566,10 @@ async function saveKv() {
     }
 
     if (rowId) {
-        const rec        = kvFullRecords.find(r => String(r.rowId) === String(rowId));
-        const isAdmin    = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+        const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
+        const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
         const canEditAll = isAdmin && myPermissions.canEdit;
-        const isOwner    = rec && String(rec.ownerTgId) === String(telegramId);
+        const isOwner = rec && String(rec.ownerTgId) === String(telegramId);
         if (!canEditAll && !isOwner && myRole !== 'SuperAdmin') {
             showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni tahrirlay olasiz', true); return;
         }
@@ -611,11 +611,11 @@ async function saveKv() {
 }
 
 async function deleteKv(rowId) {
-    const rec        = kvFullRecords.find(r => String(r.rowId) === String(rowId));
+    const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
     if (!rec) return;
-    const isAdmin    = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
     const canDeleteAll = isAdmin && myPermissions.canDelete;
-    const isOwner    = String(rec.ownerTgId) === String(telegramId);
+    const isOwner = String(rec.ownerTgId) === String(telegramId);
     if (!canDeleteAll && !isOwner && myRole !== 'SuperAdmin') {
         showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni o\'chira olasiz', true); return;
     }
