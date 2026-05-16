@@ -308,7 +308,8 @@ function _sendReportToAdmin_(text, isMarkdown) {
  */
 function gatherDailyDataForAI_() {
   var now = new Date();
-  var yesterday = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+  // "Kecha" boshlangan vaqtini (00:00:00) olamiz, shunda sana bo'yicha solishtirganda to'g'ri ishlaydi
+  var yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
   
   var financeData = adminGetAll().data || [];
   var kvData = kvadratGetAll().data || [];

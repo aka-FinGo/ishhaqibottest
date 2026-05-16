@@ -237,8 +237,13 @@ function doPost(e) {
 
       case "ai_run_report":
         if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin AI hisobotini ishga tushura oladi" });
-        dailyReportTask(); // Bu funksiya Telegramga javob yuboradi
+        dailyReportTask();
         result = { success:true, message: "AI Hisobot yaratish jarayoni boshlandi. Natija Telegramga yuboriladi." };
+        break;
+
+      case "ai_chat":
+        // Admin/Direktor/SuperAdmin uchun webapp ichida AI suhbat
+        result = handleAIChat(data, auth, tgId);
         break;
 
       default:
