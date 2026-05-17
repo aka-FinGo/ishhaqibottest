@@ -3,12 +3,13 @@
  * Ma'lumotlarni localStorage'da versiya va muddati bilan saqlaydi.
  */
 const AppCache = {
-    VERSION: '1.0.23', // Ilova versiyasi (o'zgarsa kesh tozalanadi)
+    VERSION: '1.0.23',
     KEYS: {
         MY_RECORDS: 'ari_my_recs',
         ADMIN_DATA: 'ari_admin_data',
         USER_DATA: 'ari_user_meta',
-        KV_RECORDS: 'ari_kv_recs'    // Kvadratlar uchun (ilgari to'g'ridan localStorage)
+        KV_RECORDS: 'ari_kv_recs',
+        DATA_VERSIONS: 'ari_data_versions'  // Har jadval uchun server timestamp
     },
 
     /**
@@ -80,5 +81,42 @@ const AppCache = {
     clearAll() {
         Object.values(this.KEYS).forEach(k => this.remove(k));
         console.log('🗑 Barcha kesh tozalandi');
+    },
+
+    /**
+     * Server dan kelgan dataVersions ni saqlaydi.
+     * { kvadratlar: 1748180000, finance: ..., employees: ..., workflow: ... }
+     */
+    saveDataVersions(versions) {
+        try {
+            localStorage.setItem(this.KEYS.DATA_VERSIONS, JSON.stringify(versions));
+        } catch (e) { }
+    },
+
+    /**
+     * Saqlangan server versiyalarini qaytaradi.
+     */
+    getDataVersions() {
+        try {
+            const raw = localStorage.getItem(this.KEYS.DATA_VERSIONS);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) { return {}; }
+    },
+
+    /**
+     * Server versiyasi bilan solishtiradi.
+     * O'zgargan kalitlar arrayini qaytaradi.
+     * @param {Object} serverVersions - GAS dan kelgan { kvadratlar, finance, employees, workflow }
+     * @returns {string[]} - o'zgargan kalitlar, masalan ['kvadratlar', 'employees']
+     */
+    diffVersions(serverVersions) {
+        const local = this.getDataVersions();
+        const changed = [];
+        Object.keys(serverVersions || {}).forEach(key => {
+            if ((serverVersions[key] || 0) > (local[key] || 0)) {
+                changed.push(key);
+            }
+        });
+        return changed;
     }
 };

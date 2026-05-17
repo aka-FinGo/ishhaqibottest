@@ -769,29 +769,50 @@ function showConfirmModal(message, onConfirm) {
 let _bgSyncInterval = null;
 function startBackgroundSync() {
     if (_bgSyncInterval) clearInterval(_bgSyncInterval);
+
     _bgSyncInterval = setInterval(async () => {
+        if (!navigator.onLine) return;
         try {
-            console.log('🔄 Fon sinxronizatsiyasi boshlandi...');
-            // Faqat init qilamiz, u barcha kerakli ma'lumotlarni yangilaydi
             const data = await apiRequest({ action: 'init' }, { timeoutMs: 15000 });
-            if (data && data.success) {
-                myFullRecords = data.data || [];
-                myFilteredRecords = [...myFullRecords];
-                const _empRaw = data.employeeList || [];
-                globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : [];
+            if (!data || !data.success) return;
+
+            const serverVersions = data.dataVersions || {};
+            const changed = AppCache.diffVersions(serverVersions);
+
+            // Har doim o'z yozuvlarini yangilaymiz (yengil)
+            myFullRecords = data.data || [];
+            myFilteredRecords = [...myFullRecords];
+            if (typeof renderMyRecords === 'function') renderMyRecords();
+
+            if (changed.length === 0) return; // Boshqa hech narsa o'zgarmagan
+
+            console.log('🔄 O\'zgargan jadvallar:', changed);
+
+            if (changed.includes('kvadratlar')) {
+                AppCache.remove(AppCache.KEYS.KV_RECORDS);
+                const kvTab = document.getElementById('kvadratlarTab');
+                if (kvTab && !kvTab.classList.contains('hidden')) {
+                    if (typeof initKvadratTab === 'function') await initKvadratTab();
+                }
+            }
+
+            if (changed.includes('employees')) {
+                const empRaw = data.employeeList || [];
+                globalEmployeeList = Array.isArray(empRaw) ? empRaw : [];
                 window._kvEmpMap = {};
                 globalEmployeeList.forEach(e => { if (e.tgId) window._kvEmpMap[e.tgId] = e.username || ''; });
-
-                // UI ni yangilash (agar foydalanuvchi hozir ko'rayotgan bo'lsa)
-                if (typeof renderMyRecords === 'function') renderMyRecords();
-                if (typeof initKvadratTab === 'function') initKvadratTab();
                 if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
-
-                saveCacheData(myFullRecords, data);
-                console.log('✅ Fon sinxronizatsiyasi yakunlandi');
             }
+
+            if (changed.includes('workflow') && data.workflowConfig) {
+                myPermissions.workflowConfig = data.workflowConfig;
+            }
+
+            AppCache.saveDataVersions(serverVersions);
+            saveCacheData(myFullRecords, data);
+            console.log('✅ Selektiv yangilanish:', changed);
         } catch (e) {
-            console.error('⚠️ Fon sinxronizatsiyasi xatosi:', e);
+            console.warn('⚠️ Background sync xatosi:', e.message);
         }
-    }, 180000); // 3 daqiqa
+    }, 60000); // 1 daqiqa — yengil so'rov bo'lgani uchun
 }

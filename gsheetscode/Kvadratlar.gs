@@ -180,6 +180,7 @@ function kvadratAdd(data, auth, actorTgId) {
 
     // Keshni tozalash
     CacheService.getScriptCache().remove("kv_data_all");
+    touchDataVersion(DV_KEYS.KVADRATLAR);
 
     return { success: true, rowId: row };
   });
@@ -278,6 +279,7 @@ function kvadratEdit(data, auth, actorTgId) {
     
     addAuditLog_(actorTgId, 'kvadrat_edit', row, null, null, reason);
     CacheService.getScriptCache().remove("kv_data_all");
+    touchDataVersion(DV_KEYS.KVADRATLAR);
     return { success: true };
   });
 }
@@ -309,6 +311,8 @@ function migrateKvadratYears() {
   
   if (hasChanges) {
     range.setValues(values);
+    CacheService.getScriptCache().remove("kv_data_all");
+    touchDataVersion(DV_KEYS.KVADRATLAR);
   }
   return { success: true, updated: updated };
 }
@@ -342,6 +346,7 @@ function kvadratDelete(data, auth, actorTgId) {
     sh.getRange(row, KV_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'kvadrat_delete', row, null, 'deleted', reason);
     CacheService.getScriptCache().remove("kv_data_all");
+    touchDataVersion(DV_KEYS.KVADRATLAR);
     return { success: true };
   });
 }

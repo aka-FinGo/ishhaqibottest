@@ -298,7 +298,8 @@ function initUser(tgId, auth, data) {
     workflowConfig: workflowConfig,
     isWorkflowStrict: getWorkflowStrictMode(),
     data: userRecords,
-    employeeList: employeeListFull
+    employeeList: employeeListFull,
+    dataVersions: (typeof getDataVersions === 'function') ? getDataVersions() : {}
   };
 }
 
