@@ -228,13 +228,13 @@ function initPullToRefresh(containerId, ptrId, refreshCallback) {
         if (diff > 10 && container.scrollTop <= 5) {
             isPulling = true;
             ptr.classList.add('active');
-            
+
             if (diff > threshold) {
                 ptr.classList.add('pulling');
             } else {
                 ptr.classList.remove('pulling');
             }
-            
+
             ptr.style.height = Math.min(diff * 0.5, 80) + 'px';
             ptr.style.opacity = Math.min(diff / threshold, 1);
         }
@@ -243,16 +243,16 @@ function initPullToRefresh(containerId, ptrId, refreshCallback) {
     container.addEventListener('touchend', async () => {
         if (!isPulling) return;
         isPulling = false;
-        
+
         const currentHeight = parseInt(ptr.style.height || 0);
-        ptr.style.height = ''; 
+        ptr.style.height = '';
         ptr.style.opacity = '';
 
         if (currentHeight >= 35) {
             arrow.classList.add('hidden');
             icon.classList.remove('hidden');
             ptr.classList.add('active');
-            
+
             try {
                 if (window.tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 await refreshCallback();
@@ -306,9 +306,12 @@ async function initializeApp() {
             myFullRecords = data.data || [];
             myFilteredRecords = [...myFullRecords];
 
-            const _empRaw = data.employeeList || {};
-            window._kvEmpMap = _empRaw;
-            globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
+            const _empRaw = data.employeeList || [];
+            // globalEmployeeList — to'liq hodim obyektlari [{tgId, username, role, ...}]
+            globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : [];
+            // _kvEmpMap — kvadratlar uchun {tgId: username} formatida
+            window._kvEmpMap = {};
+            globalEmployeeList.forEach(e => { if (e.tgId) window._kvEmpMap[e.tgId] = e.username || ''; });
 
             processUserData(data);
             saveCacheData(myFullRecords, data);
@@ -518,10 +521,10 @@ function updateProfileUI() {
         // Toggles holatini yuklash
         const notifOn = localStorage.getItem('app_notifications') !== 'false'; // default true
         const offlineOn = localStorage.getItem('app_offline_mode') === 'true'; // default false
-        
+
         const notifToggle = document.getElementById('toggleNotifications');
         const offlineToggle = document.getElementById('toggleOfflineMode');
-        
+
         if (notifToggle) notifToggle.checked = notifOn;
         if (offlineToggle) offlineToggle.checked = offlineOn;
 
@@ -532,7 +535,7 @@ function updateProfileUI() {
 
 function toggleSetting(type, isEnabled) {
     console.log(`⚙️ Sozlama o'zgardi: ${type} = ${isEnabled}`);
-    
+
     // Haptic feedback
     if (window.tg && tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('light');
@@ -698,7 +701,7 @@ async function switchAdminSub(areaId, btn) {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
 
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea', 'adminAIChatArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
@@ -720,15 +723,6 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
     if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
-    if (areaId === 'adminAIChatArea' && typeof initAIChatArea === 'function') {
-        // Scope labelini yangilash
-        const scopeLabel = document.getElementById('aiChatScopeLabel');
-        if (scopeLabel) {
-            const isCompany = myRole === 'SuperAdmin' || myRole === 'Direktor';
-            scopeLabel.textContent = isCompany ? '📊 Kompaniya ma\'lumotlari bilan' : '👤 Faqat o\'z ma\'lumotlarim';
-        }
-        initAIChatArea();
-    }
 }
 
 function toggleRate() {
@@ -783,15 +777,16 @@ function startBackgroundSync() {
             if (data && data.success) {
                 myFullRecords = data.data || [];
                 myFilteredRecords = [...myFullRecords];
-                const _empRaw = data.employeeList || {};
-                window._kvEmpMap = _empRaw;
-                globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : Object.values(_empRaw).filter(Boolean);
-                
+                const _empRaw = data.employeeList || [];
+                globalEmployeeList = Array.isArray(_empRaw) ? _empRaw : [];
+                window._kvEmpMap = {};
+                globalEmployeeList.forEach(e => { if (e.tgId) window._kvEmpMap[e.tgId] = e.username || ''; });
+
                 // UI ni yangilash (agar foydalanuvchi hozir ko'rayotgan bo'lsa)
                 if (typeof renderMyRecords === 'function') renderMyRecords();
                 if (typeof initKvadratTab === 'function') initKvadratTab();
                 if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
-                
+
                 saveCacheData(myFullRecords, data);
                 console.log('✅ Fon sinxronizatsiyasi yakunlandi');
             }

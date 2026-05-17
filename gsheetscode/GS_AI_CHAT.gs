@@ -35,13 +35,11 @@ function handleAIChat(data, auth, tgId) {
         scope = 'own'; // Ruxsat yo'q bo'lsa o'z ma'lumotlariga tushiramiz
     }
 
-    var context = _buildChatContext_(tgId, scope, auth);
-
     // Suhbat tarixi (oxirgi 10 xabar)
     var history = Array.isArray(data.history) ? data.history.slice(-10) : [];
 
-    // Tizim prompt
-    var systemPrompt = _buildSystemPrompt_(scope, auth, context);
+    // Pro tahlilchi system prompt — GS_AI_ANALYTICS.gs dan
+    var systemPrompt = buildAnalyticsSystemPrompt(scope, auth, tgId);
 
     // AI ga yuborish
     var aiPayload = _buildAIPayload_(systemPrompt, history, userMessage);

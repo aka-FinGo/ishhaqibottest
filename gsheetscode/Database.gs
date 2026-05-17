@@ -38,12 +38,7 @@ var _MEMO = {
   empRows: null,
   usernameMap: null,
   dataRows: null,
-  dataTimestamp: 0,
-  // ESLATMA: _MEMO faqat bitta execution ichida ishlaydi.
-  // GAS har bir so'rovni alohida instance da bajaradi, shuning uchun
-  // _MEMO ni asosiy kesh sifatida ishlatmang — CacheService.getScriptCache()
-  // yagona ishonchli kesh manbai. _MEMO faqat bitta so'rov davomida
-  // takroriy SpreadsheetApp chaqiruvlarini kamaytiradi.
+  dataTimestamp: 0
 };
 
 var CACHE_TTL = 300; // 5 minutes cache for data rows
@@ -187,20 +182,14 @@ function ensureAIInfrastructure_(sh) {
 function getDataRows_() {
   var cache = CacheService.getScriptCache();
   var cached = cache.get("db_data_rows");
-  if (cached) {
-    try { return JSON.parse(cached); } catch(e) { Logger.log('[getDataRows_] Kesh parse xatosi: ' + e.message); }
-  }
+  if (cached) return JSON.parse(cached);
 
-  try {
-    var range = getSheets().dataSheet.getName() + "!A:Z";
-    var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
-    var values = res.values || [];
-    cache.put("db_data_rows", JSON.stringify(values), CACHE_TTL);
-    return values;
-  } catch(e) {
-    Logger.log('[getDataRows_] Spreadsheet o\'qishda xato: ' + e.message);
-    return [];
-  }
+  var range = getSheets().dataSheet.getName() + "!A:Z";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var values = res.values || [];
+  
+  cache.put("db_data_rows", JSON.stringify(values), CACHE_TTL);
+  return values;
 }
 
 function resetDataCache_() {
@@ -212,20 +201,14 @@ function resetDataCache_() {
 function getEmployeeRows_() {
   var cache = CacheService.getScriptCache();
   var cached = cache.get("db_emp_rows");
-  if (cached) {
-    try { return JSON.parse(cached); } catch(e) { Logger.log('[getEmployeeRows_] Kesh parse xatosi: ' + e.message); }
-  }
+  if (cached) return JSON.parse(cached);
 
-  try {
-    var range = "Hodimlar!A:Z";
-    var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
-    var values = res.values || [];
-    cache.put("db_emp_rows", JSON.stringify(values), CACHE_TTL);
-    return values;
-  } catch(e) {
-    Logger.log('[getEmployeeRows_] Hodimlar o\'qishda xato: ' + e.message);
-    return [];
-  }
+  var range = "Hodimlar!A:Z";
+  var res = Sheets.Spreadsheets.Values.get(CONFIG.SPREADSHEET_ID, range);
+  var values = res.values || [];
+
+  cache.put("db_emp_rows", JSON.stringify(values), CACHE_TTL);
+  return values;
 }
 
 function resetEmployeeCache_() {
@@ -291,7 +274,14 @@ function initUser(tgId, auth, data) {
 
   var workflowConfig = (typeof getWorkflowConfig === 'function') ? getWorkflowConfig() : [];
   var allPositions   = (typeof getAllPositions === 'function') ? getAllPositions() : [];
-  var empList        = (typeof buildUsernameMap === 'function') ? buildUsernameMap() : {};
+
+  // employeeList: to'liq hodimlar array (renderHodimlarList uchun {tgId, username, role, ...})
+  // Avval buildUsernameMap() (object) yuborilardi — bu renderHodimlarList ni buzardi
+  var employeeListFull = (typeof getHodimlar === 'function') ? (getHodimlar().data || getHodimlar()) : [];
+  // getHodimlar() ba'zan { data: [...] } ba'zan to'g'ridan array qaytarishi mumkin
+  if (!Array.isArray(employeeListFull) && employeeListFull.data) {
+    employeeListFull = employeeListFull.data;
+  }
 
   return {
     success: true,
@@ -308,7 +298,7 @@ function initUser(tgId, auth, data) {
     workflowConfig: workflowConfig,
     isWorkflowStrict: getWorkflowStrictMode(),
     data: userRecords,
-    employeeList: empList
+    employeeList: employeeListFull
   };
 }
 

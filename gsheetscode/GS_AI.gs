@@ -230,76 +230,53 @@ function callOllamaAPI_(prompt, model, baseURL) {
  * Bu funksiya Time-Driven Trigger orqali har kuni 08:00 da ishlashi kerak.
  */
 function dailyReportTask() {
-  var startTime = new Date();
-  Logger.log('[dailyReportTask] Boshlandi: ' + startTime.toISOString());
-
   try {
     var rawData = gatherDailyDataForAI_();
-
-    if (rawData.length < 50) {
-      var noDataMsg = '📉 Bugun tahlil qilish uchun yetarli ma\'lumot topilmadi.';
-      Logger.log('[dailyReportTask] ' + noDataMsg);
-      _sendReportToAdmin_(noDataMsg, false);
-      return;
+    if (rawData.length < 50) { // Agar ma'lumot juda kam yoki yo'q bo'lsa
+       sendTelegramNotification({ 
+         employeeName: "AI Agent", 
+         amountUZS: 0, 
+         amountUSD: 0, 
+         rate: 0, 
+         comment: "📉 Bugun tahlil qilish uchun yetarli ma'lumot topilmadi.", 
+         date: new Date().toLocaleDateString() 
+       });
+       return;
     }
 
-    var prompt = 'Quyida kompaniyaning oxirgi 24 soatlik moliyaviy harajatlari va ishlangan ishlar (kvadratlar) ma\'lumoti keltirilgan. ' +
-                 'Ma\'lumotlar JSON formatida. Iltimos, o\'zbek tilida qisqa, aniq va londa tahliliy hisobot tayyorlang. ' +
-                 'Hisobotda: umumiy xarajatlar, eng ko\'p ish qilgan hodimlar va asosiy e\'tibor qaratish kerak bo\'lgan holatlarni yoriting. \n\n' +
-                 'Ma\'lumot: ' + rawData;
-
-    // AI chaqirish — xato bo'lsa 1 marta qayta urinish
+    var prompt = buildAnalyticsSystemPrompt("company", {
+      isSuperAdmin: true, isAdmin: true,
+      roleKey: "SUPER_ADMIN",
+      permissions: { canViewAll: true }
+    }, null) +
+    "\n\nYuqoridagi ma'lumotlarga asoslanib KUNLIK HISOBOT tayyorla. " +
+    "Tuzilma: 1) Umumiy holat 2) Kritik muammolar " +
+    "3) Moliya 4) Hodimlar 5) Tavsiyalar. Qisqa va aniq.";
     var aiResponse = callAI(prompt);
-    if (!aiResponse.success) {
-      Logger.log('[dailyReportTask] Birinchi urinish muvaffaqiyatsiz: ' + aiResponse.error + '. Qayta urinilmoqda...');
-      Utilities.sleep(3000);
-      aiResponse = callAI(prompt);
-    }
-
+    
     if (aiResponse.success) {
-      var msg = '🤖 *AI Kunlik Hisobot (' + aiResponse.provider + ')*\n\n' + aiResponse.text;
-      _sendReportToAdmin_(msg, true);
-      Logger.log('[dailyReportTask] Muvaffaqiyatli yuborildi. Provider: ' + aiResponse.provider +
-                 ' | Davomiyligi: ' + (new Date() - startTime) + 'ms');
+      // AI javobini SuperAdmin yoki maxsus guruhga yuborish
+      var msg = "🤖 *AI Kunlik Hisobot (" + aiResponse.provider + ")*\n\n" + aiResponse.text;
+      
+      // Standart notification funksiyasini biroz moslashtirib chaqiramiz yoki to'g'ridan to'g'ri UrlFetchApp qilamiz
+      var url = "https://api.telegram.org/bot" + CONFIG.BOT_TOKEN + "/sendMessage";
+      var payload = {
+        chat_id: CONFIG.SUPER_ADMIN_ID,
+        text: msg,
+        parse_mode: "Markdown"
+      };
+      
+      UrlFetchApp.fetch(url, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload)
+      });
+      
     } else {
-      Logger.log('[dailyReportTask] AI Report Error (barcha provayderlar muvaffaqiyatsiz): ' + aiResponse.error);
-      _sendReportToAdmin_('⚠️ AI hisobot yaratishda xato: ' + aiResponse.error, false);
-    }
-
-  } catch (e) {
-    Logger.log('[dailyReportTask] Kutilmagan xato: ' + e.message + '\nStack: ' + e.stack);
-    try {
-      _sendReportToAdmin_('🔴 Tizim xatosi (dailyReportTask): ' + e.message, false);
-    } catch (e2) {
-      Logger.log('[dailyReportTask] Admin xabar yuborishda ham xato: ' + e2.message);
-    }
-  }
-}
-
-/**
- * SuperAdminga Telegram xabar yuborish (ichki yordamchi funksiya)
- */
-function _sendReportToAdmin_(text, isMarkdown) {
-  var url = 'https://api.telegram.org/bot' + CONFIG.BOT_TOKEN + '/sendMessage';
-  var payload = {
-    chat_id: CONFIG.SUPER_ADMIN_ID,
-    text: text
-  };
-  if (isMarkdown) payload.parse_mode = 'Markdown';
-
-  try {
-    var res = UrlFetchApp.fetch(url, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
-    var code = res.getResponseCode();
-    if (code !== 200) {
-      Logger.log('[_sendReportToAdmin_] Telegram xato ' + code + ': ' + res.getContentText().substring(0, 200));
+      Logger.log("AI Report Error: " + aiResponse.error);
     }
   } catch (e) {
-    Logger.log('[_sendReportToAdmin_] UrlFetch xatosi: ' + e.message);
+    Logger.log("Cronjob Fatal Error: " + e.message);
   }
 }
 
@@ -307,35 +284,22 @@ function _sendReportToAdmin_(text, isMarkdown) {
  * AI tahlil qilishi uchun oxirgi kun ma'lumotlarini to'playdi
  */
 function gatherDailyDataForAI_() {
-  var now = new Date();
-  // "Kecha" boshlangan vaqtini (00:00:00) olamiz, shunda sana bo'yicha solishtirganda to'g'ri ishlaydi
-  var yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  
-  var financeData = adminGetAll().data || [];
-  var kvData = kvadratGetAll().data || [];
-  
-  // Faqat oxirgi 24 soatni filtrlaymiz
-  var recentFinance = financeData.filter(function(r) {
-    var d = parseDateInput_(r.date, null);
-    return d && d.dateObj >= yesterday;
-  });
-  
-  var recentKv = kvData.filter(function(r) {
-    // Kvadrat sanasini tekshirish (ISO yoki DD/MM/YYYY formatlarida bo'lishi mumkin)
-    if (!r.date) return false;
-    var parsed = parseDateInput_(r.date, null);
-    return parsed && parsed.dateObj >= yesterday;
-  });
-  
-  // Juda katta bo'lib ketmasligi uchun xulosalaymiz yoki qisqartiramiz
-  var summary = {
-    moliyaviy_amallar: recentFinance.map(function(f) { 
-      return { hodim: f.name, summaUZS: f.amountUZS, summaUSD: f.amountUSD, izoh: f.comment }; 
-    }),
-    ishlangan_kvadratlar: recentKv.slice(0, 50).map(function(k) { // max 50 ta
-      return { buyurtma: k.orderName, hajm_m2: k.totalM2, status: k.status };
-    })
+  // GS_AI_ANALYTICS.gs dan to'liq boyitilgan kontekst olamiz
+  var fakeAuth = {
+    isSuperAdmin: true, isAdmin: true,
+    roleKey: 'SUPER_ADMIN',
+    permissions: { canViewAll: true }
   };
-  
-  return JSON.stringify(summary);
+  var ctx = buildAnalyticsContext('company', fakeAuth, null);
+
+  // Daily report uchun JSON ga o'tkazamiz
+  return JSON.stringify({
+    summary:            ctx.summary,
+    orderGaps:          ctx.orderGaps,
+    stuckOrders:        ctx.stuckOrders   ? { count: ctx.stuckOrders.count,   orders: ctx.stuckOrders.orders.slice(0, 10)   } : null,
+    duplicateOrders:    ctx.duplicateOrders ? { count: ctx.duplicateOrders.count, list: ctx.duplicateOrders.list.slice(0, 5) } : null,
+    financialAnomalies: ctx.financialAnomalies ? { list: ctx.financialAnomalies.list.slice(0, 5), avg: ctx.financialAnomalies.avgPerRecord } : null,
+    staffWorkload:      ctx.staffWorkload  ? { top5: ctx.staffWorkload.top5_busiest } : null,
+    noProgress:         ctx.noProgressRecords
+  });
 }
