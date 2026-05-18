@@ -43,25 +43,25 @@ function renderAdminList(data) {
     });
 
     /* Sahifalash */
-    const totalPages  = Math.ceil(sortedData.length / ADMIN_ITEMS_PER_PAGE);
-    const start       = (adminCurrentPage - 1) * ADMIN_ITEMS_PER_PAGE;
+    const totalPages = Math.ceil(sortedData.length / ADMIN_ITEMS_PER_PAGE);
+    const start = (adminCurrentPage - 1) * ADMIN_ITEMS_PER_PAGE;
     const paginatedData = sortedData.slice(start, start + ADMIN_ITEMS_PER_PAGE);
 
-    const fragment  = document.createDocumentFragment();
+    const fragment = document.createDocumentFragment();
     const container = document.createElement('div');
     container.className = 'admin-list-container';
     let lastDavr = null;
 
     paginatedData.forEach(item => {
-        const amountUZS  = item.amountUZS  || 0;
-        const amountUSD  = item.amountUSD  || 0;
-        const comment     = item.comment    || 'Izohsiz';
-        const name        = item.name       || 'Noma\'lum';
-        const date        = item.date       || 'Sana kiritilmagan';
+        const amountUZS = item.amountUZS || 0;
+        const amountUSD = item.amountUSD || 0;
+        const comment = item.comment || 'Izohsiz';
+        const name = item.name || 'Noma\'lum';
+        const date = item.date || 'Sana kiritilmagan';
         const actionPeriod = item.actionPeriod || '';
 
         const currentDavr = getDavrSortKey(item.actionPeriod, item.date, item.dateISO);
-        const relDavr     = getDavrLabel(currentDavr);
+        const relDavr = getDavrLabel(currentDavr);
 
         /* Davr sarlavhasi */
         if (relDavr !== lastDavr) {
@@ -181,7 +181,7 @@ async function performDelete(rowId) {
         showToastMsg('❌ Server xatosi: ' + error.message, true);
     } finally {
         deleteBtn.innerHTML = originalText;
-        deleteBtn.disabled  = false;
+        deleteBtn.disabled = false;
     }
 }
 
@@ -210,7 +210,7 @@ function showEditModal(rowId) {
     document.getElementById('editHeaderName').textContent = '👤 ' + (record.name || '—');
 
     let selectedMonth = '01';
-    let selectedYear  = new Date().getFullYear().toString();
+    let selectedYear = new Date().getFullYear().toString();
     if (record.actionPeriod) {
         const [year, month] = record.actionPeriod.split('-');
         if (year && month) { selectedYear = year; selectedMonth = month; }
@@ -224,8 +224,8 @@ function showEditModal(rowId) {
 
     document.getElementById('editAmountUZS').value = record.amountUZS || '';
     document.getElementById('editAmountUSD').value = record.amountUSD || '';
-    document.getElementById('editRate').value      = record.rate      || '';
-    document.getElementById('editComment').value   = record.comment   || '';
+    document.getElementById('editRate').value = record.rate || '';
+    document.getElementById('editComment').value = record.comment || '';
 
     updateEditCurrencyView();
 
@@ -253,36 +253,36 @@ function initializeYearDropdown() {
 }
 
 function updateEditCurrencyView() {
-    const amountUSD  = parseFloat(document.getElementById('editAmountUSD').value) || 0;
-    const rate       = parseFloat(document.getElementById('editRate').value)       || 0;
+    const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
+    const rate = parseFloat(document.getElementById('editRate').value) || 0;
     const calculatedUZS = amountUSD * rate;
 
-    const editUsdRow           = document.getElementById('editUsdRow');
-    const editRateRow          = document.getElementById('editRateRow');
+    const editUsdRow = document.getElementById('editUsdRow');
+    const editRateRow = document.getElementById('editRateRow');
     const editConversionPreview = document.getElementById('editConversionPreview');
 
     if (editUsdRow && editRateRow && editConversionPreview) {
         if (amountUSD > 0) {
-            editUsdRow.style.display            = 'block';
-            editRateRow.style.display           = 'block';
+            editUsdRow.style.display = 'block';
+            editRateRow.style.display = 'block';
             editConversionPreview.style.display = 'block';
-            editConversionPreview.innerHTML     = `<strong>≈ ${calculatedUZS.toLocaleString()} UZS</strong> (${amountUSD.toLocaleString()} × ${rate.toLocaleString()})`;
+            editConversionPreview.innerHTML = `<strong>≈ ${calculatedUZS.toLocaleString()} UZS</strong> (${amountUSD.toLocaleString()} × ${rate.toLocaleString()})`;
         } else {
-            editUsdRow.style.display            = 'none';
-            editRateRow.style.display           = 'none';
+            editUsdRow.style.display = 'none';
+            editRateRow.style.display = 'none';
             editConversionPreview.style.display = 'none';
         }
     }
 }
 
 async function performEdit() {
-    const rowId       = document.getElementById('editRowId').value;
+    const rowId = document.getElementById('editRowId').value;
     const actionMonth = document.getElementById('editActionMonth').value;
-    const actionYear  = document.getElementById('editActionYear').value;
-    const amountUZS   = parseFloat(document.getElementById('editAmountUZS').value) || 0;
-    const amountUSD   = parseFloat(document.getElementById('editAmountUSD').value) || 0;
-    const rate        = parseFloat(document.getElementById('editRate').value)       || 0;
-    const comment     = document.getElementById('editComment').value;
+    const actionYear = document.getElementById('editActionYear').value;
+    const amountUZS = parseFloat(document.getElementById('editAmountUZS').value) || 0;
+    const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
+    const rate = parseFloat(document.getElementById('editRate').value) || 0;
+    const comment = document.getElementById('editComment').value;
 
     const saveBtn = document.querySelector('#editForm .btn-main');
     const originalText = saveBtn.textContent;
@@ -358,14 +358,14 @@ async function loadAdminData() {
             populateMonthFilter();
             applyFilters();
         }
-    } catch (e) {}
+    } catch (e) { }
 
     /* Skelet */
     const adminListEl = document.getElementById('adminList');
     if (adminListEl && (!globalAdminData || globalAdminData.length === 0)) {
         adminListEl.innerHTML = `
             <div class="skeleton-container" style="padding:16px;">
-                ${['60%','80%','40%'].map(w => `
+                ${['60%', '80%', '40%'].map(w => `
                 <div class="js-skeleton-card">
                     <div class="js-skeleton-line" style="height:18px; width:${w}; margin-bottom:8px;"></div>
                     <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
@@ -408,15 +408,15 @@ async function loadAdminData() {
 
 /* Filtr funksiyalari */
 function applyFilters() {
-    const searchTerm     = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+    const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
     const employeeFilter = document.getElementById('filterEmployee')?.value || 'all';
-    const monthFilter    = document.getElementById('filterMonth')?.value    || 'all';
-    const yearFilter     = document.getElementById('filterYear')?.value     || 'all';
+    const monthFilter = document.getElementById('filterMonth')?.value || 'all';
+    const yearFilter = document.getElementById('filterYear')?.value || 'all';
 
     adminCurrentPage = 1;
 
     filteredData = globalAdminData.filter(item => {
-        const matchesSearch   = !searchTerm || (item.name && item.name.toLowerCase().includes(searchTerm)) || (item.comment && item.comment.toLowerCase().includes(searchTerm));
+        const matchesSearch = !searchTerm || (item.name && item.name.toLowerCase().includes(searchTerm)) || (item.comment && item.comment.toLowerCase().includes(searchTerm));
         const matchesEmployee = employeeFilter === 'all' || item.name === employeeFilter;
         let matchesMonth = monthFilter === 'all';
         if (monthFilter !== 'all') {
@@ -434,40 +434,60 @@ function applyFilters() {
     const countEl = document.getElementById('filteredCount');
     if (countEl) countEl.textContent = filteredData.length;
 
-    let totalUZS = 0, totalUSD = 0, effectiveTotalUZS = 0;
+    let totalUZS = 0, totalUSD = 0, totalUZSOnly = 0, totalUSDinUZS = 0;
     filteredData.forEach(item => {
-        const uzs  = Number(item.amountUZS) || 0;
-        const usd  = Number(item.amountUSD) || 0;
-        const rate = Number(item.rate)      || 0;
-        totalUZS += uzs; totalUSD += usd;
-        effectiveTotalUZS += uzs;
-        if (usd > 0 && rate > 0) effectiveTotalUZS += usd * rate;
+        const uzs = Number(item.amountUZS) || 0;
+        const usd = Number(item.amountUSD) || 0;
+        const rate = Number(item.rate) || 0;
+
+        totalUSD += usd;
+
+        if (usd > 0) {
+            // Dollar yozuv: amountUZS allaqachon usd*rate bo'lib keladi
+            // Ikki marta qo'shmaslik uchun faqat amountUZS ni olamiz
+            totalUSDinUZS += uzs;
+        } else {
+            // So'm yozuv: to'g'ridan qo'shamiz
+            totalUZSOnly += uzs;
+        }
     });
+
+    const effectiveTotalUZS = totalUZSOnly + totalUSDinUZS;
 
     const uzsOnlyEl = document.getElementById('totalCompanyUzsOnly');
     const usdOnlyEl = document.getElementById('totalCompanyUsdOnly');
-    if (uzsOnlyEl) uzsOnlyEl.innerHTML = `<span>${totalUZS.toLocaleString()}</span>`;
+    if (uzsOnlyEl) uzsOnlyEl.innerHTML = `<span>${totalUZSOnly.toLocaleString()}</span>`;
     if (usdOnlyEl) usdOnlyEl.innerHTML = `<span>$${totalUSD.toLocaleString()}</span>`;
 
     const budgetEl = document.getElementById('totalCompanyUzs');
     if (budgetEl) {
-        let text = effectiveTotalUZS.toLocaleString() + ' UZS';
-        if (totalUSD > 0) text += ` | $${totalUSD.toLocaleString()}`;
-        budgetEl.textContent = text;
+        if (totalUSD > 0 && totalUZSOnly > 0) {
+            budgetEl.innerHTML =
+                '<span style="font-size:0.85em;color:var(--text-muted);display:block;margin-bottom:2px;">'
+                + totalUZSOnly.toLocaleString() + ' UZS + ' + totalUSDinUZS.toLocaleString() + ' UZS ($' + totalUSD.toLocaleString() + ')</span>'
+                + effectiveTotalUZS.toLocaleString() + ' UZS';
+        } else if (totalUSD > 0) {
+            budgetEl.innerHTML =
+                '<span style="font-size:0.85em;color:var(--text-muted);display:block;margin-bottom:2px;">'
+                + '$' + totalUSD.toLocaleString() + ' → ' + totalUSDinUZS.toLocaleString() + ' UZS</span>'
+                + effectiveTotalUZS.toLocaleString() + ' UZS';
+        } else {
+            budgetEl.textContent = effectiveTotalUZS.toLocaleString() + ' UZS';
+        }
     }
 
     renderAdminList(filteredData);
 }
 
 function resetAdminFilters() {
-    const searchInput    = document.getElementById('searchInput');
+    const searchInput = document.getElementById('searchInput');
     const filterEmployee = document.getElementById('filterEmployee');
-    const filterMonth    = document.getElementById('filterMonth');
-    const filterYear     = document.getElementById('filterYear');
-    if (searchInput)    searchInput.value    = '';
+    const filterMonth = document.getElementById('filterMonth');
+    const filterYear = document.getElementById('filterYear');
+    if (searchInput) searchInput.value = '';
     if (filterEmployee) filterEmployee.value = 'all';
-    if (filterMonth)    filterMonth.value    = 'all';
-    if (filterYear)     filterYear.value     = 'all';
+    if (filterMonth) filterMonth.value = 'all';
+    if (filterYear) filterYear.value = 'all';
     applyFilters();
 }
 
@@ -511,7 +531,7 @@ function populateYearFilter() {
 function populateMonthFilter() {
     const filterMonth = document.getElementById('filterMonth');
     if (!filterMonth) return;
-    const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+    const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
     filterMonth.innerHTML = '<option value="all">Barcha oylar</option>';
     monthNames.forEach((name, index) => {
         const option = document.createElement('option');
