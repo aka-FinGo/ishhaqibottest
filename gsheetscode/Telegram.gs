@@ -37,7 +37,41 @@ function sendTelegramNotification(data) {
             "\n📝 " + (data.comment || "—") +
             "\n📅 " + (data.date    || "—");
 
+  // SuperAdmin ga har doim yuborish
   tgSendMessage_(CONFIG.CHAT_ID, msg, "HTML");
+
+  // Direktorlarga yuborish (agar yoqilgan bo'lsa)
+  sendNotifyToDirectors_(msg);
+}
+
+/**
+ * Barcha Direktor rollidagi hodimlarni topib xabar yuboradi.
+ * PropertiesService da 'NOTIFY_DIRECTOR' = '1' bo'lsa ishlaydi.
+ */
+function sendNotifyToDirectors_(msg) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var enabled = props.getProperty('NOTIFY_DIRECTOR');
+    if (enabled !== '1') return; // O'chirilgan — chiqib ketamiz
+
+    var empRows = getEmployeeRows_();
+    if (!empRows || empRows.length < 2) return;
+
+    var headers = empRows[0];
+    var direktorIdx = headers.indexOf('Direktor');
+    var tgIdIdx     = headers.indexOf('TelegramId');
+    if (direktorIdx < 0 || tgIdIdx < 0) return;
+
+    empRows.slice(1).forEach(function(row) {
+      var isDirektor = toBool01_(row[direktorIdx]);
+      var tgId       = String(row[tgIdIdx] || '').trim();
+      if (isDirektor && tgId && tgId !== String(CONFIG.SUPER_ADMIN_ID)) {
+        tgSendMessage_(tgId, msg, "HTML");
+      }
+    });
+  } catch(e) {
+    Logger.log('[sendNotifyToDirectors_] ' + e.message);
+  }
 }
 
 function getDefaultReminderTemplate_() {

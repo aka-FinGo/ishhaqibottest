@@ -720,7 +720,7 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminPositionsArea' && typeof renderPositionsUI === 'function') {
         renderPositionsUI(myPermissions.allPositions);
     }
-    if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); }
+    if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); loadDirectorNotifySetting(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
     if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
 }

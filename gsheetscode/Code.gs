@@ -148,6 +148,18 @@ function doPost(e) {
         result = setReminderTextSetting(data.text, tgId);
         break;
 
+      case "get_director_notify":
+        if (!(auth.isSuperAdmin || auth.isAdmin)) return sendJSON({ success:false, error:"Ruxsat yo'q!" });
+        var dnVal = PropertiesService.getScriptProperties().getProperty('NOTIFY_DIRECTOR');
+        result = { success: true, enabled: dnVal === '1' };
+        break;
+
+      case "set_director_notify":
+        if (!(auth.isSuperAdmin || auth.isAdmin)) return sendJSON({ success:false, error:"Ruxsat yo'q!" });
+        PropertiesService.getScriptProperties().setProperty('NOTIFY_DIRECTOR', data.enabled ? '1' : '0');
+        result = { success: true, enabled: !!data.enabled };
+        break;
+
       case "self_check":
         if (!(auth.isSuperAdmin || auth.isAdmin)) return sendJSON({ success:false, error:"Ruxsat yo'q!" });
         result = runSystemSelfCheck_();
@@ -237,13 +249,8 @@ function doPost(e) {
 
       case "ai_run_report":
         if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin AI hisobotini ishga tushura oladi" });
-        dailyReportTask();
+        dailyReportTask(); // Bu funksiya Telegramga javob yuboradi
         result = { success:true, message: "AI Hisobot yaratish jarayoni boshlandi. Natija Telegramga yuboriladi." };
-        break;
-
-      case "ai_chat":
-        // Admin/Direktor/SuperAdmin uchun webapp ichida AI suhbat
-        result = handleAIChat(data, auth, tgId);
         break;
 
       default:

@@ -220,7 +220,7 @@ function cancelReminderSend() {
 // ✅ Status xabari ko'rsatish
 function setNotifyStatus(message, isError = false, area = 'admin') {
   let statusEl;
-  
+
   if (area === 'admin_service') {
     statusEl = document.getElementById('adminServiceStatus');
   } else {
@@ -245,4 +245,80 @@ function setNotifyStatus(message, isError = false, area = 'admin') {
 function initNotificationsTab() {
   loadNotifyTargets();
   loadReminderTextSettings();
+}
+// ============================================================
+// DIREKTOR BILDIRISHNOMA TOGGLE
+// Kesh: AppCache (60 daqiqa), toggle admin paneldan boshqariladi
+// ============================================================
+
+const DIRECTOR_NOTIFY_CACHE_KEY = 'ari_director_notify';
+
+/**
+ * Direktor notify holatini yuklaydi.
+ * Avval keshdan, keyin GAS dan.
+ */
+async function loadDirectorNotifySetting() {
+  const toggle = document.getElementById('directorNotifyToggle');
+  const label = document.getElementById('directorNotifyLabel');
+  if (!toggle) return;
+
+  // Keshdan tez ko'rsatish
+  const cached = AppCache.get(DIRECTOR_NOTIFY_CACHE_KEY, 60);
+  if (cached !== null) {
+    _applyDirectorNotifyUI(toggle, label, cached.enabled);
+  }
+
+  // GAS dan yangilash
+  try {
+    const data = await apiRequest({ action: 'get_director_notify' });
+    if (data.success) {
+      AppCache.set(DIRECTOR_NOTIFY_CACHE_KEY, { enabled: data.enabled });
+      _applyDirectorNotifyUI(toggle, label, data.enabled);
+    }
+  } catch (e) {
+    handleApiError(e, 'loadDirectorNotifySetting');
+  }
+}
+
+/**
+ * Toggle bosilganda holat o'zgaradi va GAS ga saqlanadi.
+ */
+async function toggleDirectorNotify() {
+  const toggle = document.getElementById('directorNotifyToggle');
+  const label = document.getElementById('directorNotifyLabel');
+  if (!toggle) return;
+
+  const newState = !toggle.dataset.enabled || toggle.dataset.enabled === 'false';
+  toggle.disabled = true;
+
+  try {
+    const data = await apiRequest({
+      action: 'set_director_notify',
+      enabled: newState
+    });
+    if (data.success) {
+      AppCache.set(DIRECTOR_NOTIFY_CACHE_KEY, { enabled: data.enabled });
+      _applyDirectorNotifyUI(toggle, label, data.enabled);
+      setNotifyStatus(
+        data.enabled ? '✅ Direktor bildirishnomasi yoqildi' : '🔕 Direktor bildirishnomasi o\'chirildi',
+        false, 'admin'
+      );
+    } else {
+      setNotifyStatus('❌ ' + (data.error || 'Xato'), true, 'admin');
+    }
+  } catch (e) {
+    handleApiError(e, 'toggleDirectorNotify');
+  } finally {
+    toggle.disabled = false;
+  }
+}
+
+function _applyDirectorNotifyUI(toggle, label, enabled) {
+  toggle.dataset.enabled = String(enabled);
+  toggle.style.background = enabled ? 'var(--green-neon)' : 'var(--surface)';
+  toggle.style.borderColor = enabled ? 'var(--green-neon)' : 'var(--border)';
+  toggle.innerHTML = enabled
+    ? '<span style="margin-left:auto;width:18px;height:18px;border-radius:50%;background:#0a0a0a;display:block;"></span>'
+    : '<span style="width:18px;height:18px;border-radius:50%;background:var(--text-muted);display:block;"></span>';
+  if (label) label.textContent = enabled ? 'Yoqilgan' : 'O\'chirilgan';
 }
