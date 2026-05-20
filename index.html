@@ -12,13 +12,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Aristokrat Ish Haqi (v1.0.24)</title>
+    <title>Aristokrat Ish Haqi (v1.0.23.1)</title>
 
     <!-- Asosiy stillar -->
     <link rel="stylesheet" href="style.css?v=1.0.23">
     <!-- Komponent stillar (JS fayllaridan ajratilgan) -->
     <link rel="stylesheet" href="components.css?v=1.0.23">
-    <link rel="stylesheet" href="ai_chat.css?v=1.0.23">
     <!-- Dinamik mavzu (standart = bo'sh, dark = dark.css) -->
     <link id="dynamic-theme" rel="stylesheet" href="">
 
@@ -37,7 +36,7 @@
                     <h2 id="greeting">Salom!</h2>
                     <div
                         style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px; display:flex; align-items:center; gap:8px;">
-                        v1.0.24
+                        v1.0.23
                         <span id="syncIndicator" class="sync-indicator hidden">
                             <span class="sync-dot"></span>
                             Sinxronlanmoqda...
@@ -298,7 +297,7 @@
             </div>
 
             <div style="text-align:center; margin-top:20px; opacity:0.5; font-size:12px;">
-                Aristokrat App v1.0.24<br>
+                Aristokrat App v1.0.23<br>
                 Ishlab chiquvchi: Antigravity AI
             </div>
         </div>
@@ -321,8 +320,6 @@
                     onclick="switchAdminSub('adminNotifyArea',this)">📣 Xabarlar</button>
                 <button class="sub-btn admin-sub-btn" id="adminNavAI" onclick="switchAdminSub('adminAIArea',this)">🤖 AI
                     Agent</button>
-                <button class="sub-btn admin-sub-btn" id="adminNavAIChat"
-                    onclick="switchAdminSub('adminAIChatArea',this)">💬 AI Chat</button>
                 <button class="sub-btn admin-sub-btn" id="adminNavService"
                     onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
             </div>
@@ -518,401 +515,372 @@
                     <button class="btn-main bg-navy" style="width: 100%;" onclick="runAIReportTest()">🚀 Hisobotni Ishga
                         Tushirish</button>
                     <div id="aiTestStatus" class="status-msg" style="margin-top: 10px;"></div>
-
-                    <!-- AI Chat ruxsatlarini boshqarish (faqat SuperAdmin) -->
-                    <div style="height:1px;background:var(--border);margin:20px 0;"></div>
-                    <div class="card-title" style="margin-bottom:10px;font-size:14px;">💬 AI Chat Ruxsatlari</div>
-                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">SuperAdmin har doim kiradi. Quyidagi foydalanuvchilarga ham ruxsat bering:</div>
-                    <div id="aiChatUsersList" style="margin-bottom:12px;"></div>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <select id="aiChatGrantSelect" style="flex:1;">
-                            <option value="">Foydalanuvchi tanlang...</option>
-                        </select>
-                        <button class="btn-main" style="margin:0;font-size:13px;" onclick="grantAIChatUser()">✅ Ruxsat berish</button>
-                    </div>
-                </div>
-                <!-- AI CHAT AREA -->
-                <div id="adminAIChatArea" class="hidden">
-                    <!-- AI Chat alohida ai_chat.html sahifasida — iframe orqali yuklanadi -->
-                    <div id="aiChatNoAccess" style="display:none; padding:32px; text-align:center; color:var(--text-muted);">
-                        <div style="font-size:40px; margin-bottom:12px;">🔒</div>
-                        <div style="font-size:14px; font-weight:500; color:var(--text); margin-bottom:6px;">Ruxsat yo'q</div>
-                        <div style="font-size:12px;">AI Chat faqat ruxsat berilgan foydalanuvchilar uchun.<br>SuperAdminga murojaat qiling.</div>
-                    </div>
-                    <iframe id="aiChatFrame" src="" allow="microphone"
-                        style="width:100%; height:70vh; min-height:400px; border:none; border-radius:12px; display:none;">
-                    </iframe>
-                </div>
-
-            </div>
-        </div><!-- /adminTab -->
-
-            <!-- TAB 5: DASHBOARD -->
-            <div id="dashboardTab" class="tab-content">
-                <div class="page-header">
-                    <h2>📈 Dashboard</h2>
-                    <div class="header-avatar">📊</div>
-                </div>
-                <div class="page-switcher">
-                    <button id="dashTopCharts" class="page-switcher-btn"
-                        onclick="switchDashboardSub('dashboardChartsArea',this)">Dashboard</button>
-                    <button id="dashTopActions" class="page-switcher-btn active"
-                        onclick="switchDashboardSub('dashboardActionsArea',this)">Amallar</button>
-                </div>
-
-                <div id="dashboardActionsArea" class="hidden">
-                    <div class="stats-grid">
-                        <div class="stat-card uzs">
-                            <div class="stat-label">So'm</div>
-                            <div class="stat-value" id="totalCompanyUzsOnly">0</div>
-                        </div>
-                        <div class="stat-card usd">
-                            <div class="stat-label">Dollar</div>
-                            <div class="stat-value" id="totalCompanyUsdOnly">$0</div>
-                        </div>
-                    </div>
-                    <div class="budget-card" style="margin-bottom:14px;">
-                        <div class="budget-label">Kompaniya Umumiy Budjet (So'mda)</div>
-                        <div class="budget-amount" id="totalCompanyUzs">0 UZS</div>
-                        <div class="budget-footer">
-                            <span class="budget-count">📊 Filtrlangan: <span id="filteredCount">0</span> ta amal</span>
-                            <button class="excel-btn" id="companyExportBtn" onclick="exportAdminExcel()">📥
-                                Excel</button>
-                        </div>
-                    </div>
-                    <div class="filter-box">
-                        <div class="search-wrap">
-                            <span class="search-icon">🔎</span>
-                            <input type="text" id="searchInput" placeholder="Ism, izoh bo'yicha qidiring..."
-                                onkeyup="performDebounce('dashFilters', applyFilters, 300)">
-                        </div>
-                        <div class="filter-row">
-                            <select id="filterEmployee" onchange="applyFilters()">
-                                <option value="all">Barcha xodimlar</option>
-                            </select>
-                            <select id="filterMonth" onchange="applyFilters()">
-                                <option value="all">Oylar</option>
-                                <option value="01">Yanvar</option>
-                                <option value="02">Fevral</option>
-                                <option value="03">Mart</option>
-                                <option value="04">Aprel</option>
-                                <option value="05">May</option>
-                                <option value="06">Iyun</option>
-                                <option value="07">Iyul</option>
-                                <option value="08">Avgust</option>
-                                <option value="09">Sentyabr</option>
-                                <option value="10">Oktyabr</option>
-                                <option value="11">Noyabr</option>
-                                <option value="12">Dekabr</option>
-                            </select>
-                            <select id="filterYear" onchange="applyFilters()">
-                                <option value="all">Yillar</option>
-                            </select>
-                            <button class="btn-secondary" onclick="resetAdminFilters()"
-                                style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;"
-                                title="Tozalash">🔄</button>
-                        </div>
-                    </div>
-                    <div id="adminList"></div>
-                    <div id="pagination" class="pagination"></div>
-                </div>
-
-                <div id="dashboardChartsArea">
-                    <div id="dashboardContent">
-                        <div class="dash-empty" style="padding:60px 20px;">
-                            <div style="font-size:40px; margin-bottom:12px;">📊</div>
-                            <p>Yuklanmoqda...</p>
-                        </div>
-                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- TAB 6: KVADRATLAR -->
-            <div id="kvadratTab" class="tab-content active">
-                <div class="page-header" style="margin-bottom:20px;">
-                    <div>
-                        <h2 style="display:flex; align-items:center; gap:8px;">
-                            <span
-                                style="background:linear-gradient(135deg,var(--green),var(--green-dark)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🧾
-                                Buyurtmalar</span>
-                        </h2>
-                        <p style="font-size:12px; color:var(--text-muted); font-weight:600; margin-top:2px;">Buyurtmalar
-                            ro'yxati va holati</p>
+        <!-- TAB 5: DASHBOARD -->
+        <div id="dashboardTab" class="tab-content">
+            <div class="page-header">
+                <h2>📈 Dashboard</h2>
+                <div class="header-avatar">📊</div>
+            </div>
+            <div class="page-switcher">
+                <button id="dashTopCharts" class="page-switcher-btn"
+                    onclick="switchDashboardSub('dashboardChartsArea',this)">Dashboard</button>
+                <button id="dashTopActions" class="page-switcher-btn active"
+                    onclick="switchDashboardSub('dashboardActionsArea',this)">Amallar</button>
+            </div>
+
+            <div id="dashboardActionsArea" class="hidden">
+                <div class="stats-grid">
+                    <div class="stat-card uzs">
+                        <div class="stat-label">So'm</div>
+                        <div class="stat-value" id="totalCompanyUzsOnly">0</div>
                     </div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash"
-                            onclick="kvRefreshAll(this)">🔄</button>
-                        <div class="header-avatar"
-                            style="background:linear-gradient(135deg,#6366f1,#a855f7); width:38px; height:38px; font-size:16px;">
-                            🧾</div>
-                    </div>
-                </div>
-
-                <div class="page-switcher"
-                    style="background:rgba(241,245,249,0.8); padding:5px; border-radius:14px; margin-bottom:24px;">
-                    <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')"
-                        style="border:none; border-radius:10px;">📈 Dashboard</button>
-                    <button class="page-switcher-btn active"
-                        style="border:none; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.2);">🧾
-                        Buyurtmalar</button>
-                </div>
-
-                <div class="premium-hero-card" style="margin-bottom:24px;">
-                    <div class="premium-hero-content">
-                        <div class="premium-hero-label">JAMI M2 (TANLANGAN DAVR)</div>
-                        <div class="premium-hero-value" id="kvTotalM2">0</div>
-                        <div class="premium-hero-unit">m² (metr kvadrat)</div>
+                    <div class="stat-card usd">
+                        <div class="stat-label">Dollar</div>
+                        <div class="stat-value" id="totalCompanyUsdOnly">$0</div>
                     </div>
                 </div>
-
-                <div class="premium-filter-card" style="margin-bottom:24px;">
-                    <div
-                        style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
-                        Saralash va Filtrlar</div>
-                    <div class="filter-row" style="margin-bottom:10px;">
-                        <div class="filter-col">
-                            <label>Oy</label>
-                            <select id="kvFilterMonth" onchange="applyKvFilters()">
-                                <option value="all">Barcha oylar</option>
-                                <option value="01">Yanvar</option>
-                                <option value="02">Fevral</option>
-                                <option value="03">Mart</option>
-                                <option value="04">Aprel</option>
-                                <option value="05">May</option>
-                                <option value="06">Iyun</option>
-                                <option value="07">Iyul</option>
-                                <option value="08">Avgust</option>
-                                <option value="09">Sentyabr</option>
-                                <option value="10">Oktyabr</option>
-                                <option value="11">Noyabr</option>
-                                <option value="12">Dekabr</option>
-                            </select>
-                        </div>
-                        <div class="filter-col">
-                            <label>Yil</label>
-                            <select id="kvFilterYear" onchange="applyKvFilters()">
-                                <option value="all">Yillar</option>
-                            </select>
-                        </div>
+                <div class="budget-card" style="margin-bottom:14px;">
+                    <div class="budget-label">Kompaniya Umumiy Budjet (So'mda)</div>
+                    <div class="budget-amount" id="totalCompanyUzs">0 UZS</div>
+                    <div class="budget-footer">
+                        <span class="budget-count">📊 Filtrlangan: <span id="filteredCount">0</span> ta amal</span>
+                        <button class="excel-btn" id="companyExportBtn" onclick="exportAdminExcel()">📥 Excel</button>
+                    </div>
+                </div>
+                <div class="filter-box">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔎</span>
+                        <input type="text" id="searchInput" placeholder="Ism, izoh bo'yicha qidiring..."
+                            onkeyup="performDebounce('dashFilters', applyFilters, 300)">
                     </div>
                     <div class="filter-row">
-                        <div class="filter-col">
-                            <label>Mas'ul xodim:</label>
-                            <select id="kvFilterStaff" onchange="applyKvFilters()">
-                                <option value="all">Barcha xodimlar</option>
+                        <select id="filterEmployee" onchange="applyFilters()">
+                            <option value="all">Barcha xodimlar</option>
+                        </select>
+                        <select id="filterMonth" onchange="applyFilters()">
+                            <option value="all">Oylar</option>
+                            <option value="01">Yanvar</option>
+                            <option value="02">Fevral</option>
+                            <option value="03">Mart</option>
+                            <option value="04">Aprel</option>
+                            <option value="05">May</option>
+                            <option value="06">Iyun</option>
+                            <option value="07">Iyul</option>
+                            <option value="08">Avgust</option>
+                            <option value="09">Sentyabr</option>
+                            <option value="10">Oktyabr</option>
+                            <option value="11">Noyabr</option>
+                            <option value="12">Dekabr</option>
+                        </select>
+                        <select id="filterYear" onchange="applyFilters()">
+                            <option value="all">Yillar</option>
+                        </select>
+                        <button class="btn-secondary" onclick="resetAdminFilters()"
+                            style="margin-top:0;padding:10px 14px;display:flex;align-items:center;justify-content:center;"
+                            title="Tozalash">🔄</button>
+                    </div>
+                </div>
+                <div id="adminList"></div>
+                <div id="pagination" class="pagination"></div>
+            </div>
+
+            <div id="dashboardChartsArea">
+                <div id="dashboardContent">
+                    <div class="dash-empty" style="padding:60px 20px;">
+                        <div style="font-size:40px; margin-bottom:12px;">📊</div>
+                        <p>Yuklanmoqda...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: KVADRATLAR -->
+        <div id="kvadratTab" class="tab-content active">
+            <div class="page-header" style="margin-bottom:20px;">
+                <div>
+                    <h2 style="display:flex; align-items:center; gap:8px;">
+                        <span
+                            style="background:linear-gradient(135deg,var(--green),var(--green-dark)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🧾
+                            Buyurtmalar</span>
+                    </h2>
+                    <p style="font-size:12px; color:var(--text-muted); font-weight:600; margin-top:2px;">Buyurtmalar
+                        ro'yxati va holati</p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button class="kv-refresh-btn" id="kvRefreshBtn" title="Yangilash"
+                        onclick="kvRefreshAll(this)">🔄</button>
+                    <div class="header-avatar"
+                        style="background:linear-gradient(135deg,#6366f1,#a855f7); width:38px; height:38px; font-size:16px;">
+                        🧾</div>
+                </div>
+            </div>
+
+            <div class="page-switcher"
+                style="background:rgba(241,245,249,0.8); padding:5px; border-radius:14px; margin-bottom:24px;">
+                <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')"
+                    style="border:none; border-radius:10px;">📈 Dashboard</button>
+                <button class="page-switcher-btn active"
+                    style="border:none; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.2);">🧾
+                    Buyurtmalar</button>
+            </div>
+
+            <div class="premium-hero-card" style="margin-bottom:24px;">
+                <div class="premium-hero-content">
+                    <div class="premium-hero-label">JAMI M2 (TANLANGAN DAVR)</div>
+                    <div class="premium-hero-value" id="kvTotalM2">0</div>
+                    <div class="premium-hero-unit">m² (metr kvadrat)</div>
+                </div>
+            </div>
+
+            <div class="premium-filter-card" style="margin-bottom:24px;">
+                <div
+                    style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                    Saralash va Filtrlar</div>
+                <div class="filter-row" style="margin-bottom:10px;">
+                    <div class="filter-col">
+                        <label>Oy</label>
+                        <select id="kvFilterMonth" onchange="applyKvFilters()">
+                            <option value="all">Barcha oylar</option>
+                            <option value="01">Yanvar</option>
+                            <option value="02">Fevral</option>
+                            <option value="03">Mart</option>
+                            <option value="04">Aprel</option>
+                            <option value="05">May</option>
+                            <option value="06">Iyun</option>
+                            <option value="07">Iyul</option>
+                            <option value="08">Avgust</option>
+                            <option value="09">Sentyabr</option>
+                            <option value="10">Oktyabr</option>
+                            <option value="11">Noyabr</option>
+                            <option value="12">Dekabr</option>
+                        </select>
+                    </div>
+                    <div class="filter-col">
+                        <label>Yil</label>
+                        <select id="kvFilterYear" onchange="applyKvFilters()">
+                            <option value="all">Yillar</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="filter-col">
+                        <label>Mas'ul xodim:</label>
+                        <select id="kvFilterStaff" onchange="applyKvFilters()">
+                            <option value="all">Barcha xodimlar</option>
+                        </select>
+                    </div>
+                    <div class="filter-col">
+                        <label>Ish bosqichi</label>
+                        <select id="kvFilterProcess" onchange="applyKvFilters()">
+                            <option value="all">Barcha jarayonlar</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="kvWorkerStatsBar" style="margin-bottom:10px;"></div>
+            <div id="kvList"></div>
+        </div>
+
+        <!-- TAB 7: KV DASHBOARD -->
+        <div id="kvDashboardTab" class="tab-content">
+            <div id="kvPtr" class="ptr-container">
+                <div class="ptr-arrow">↓</div>
+                <div class="ptr-icon hidden"></div>
+            </div>
+            <div class="page-header">
+                <div>
+                    <h2>📊 Dashboard kv</h2>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button class="kv-refresh-btn" id="kvRefreshBtn2" title="Yangilash"
+                        onclick="kvRefreshAll(this)">🔄</button>
+                    <div class="header-avatar">📈</div>
+                </div>
+            </div>
+            <div class="page-switcher">
+                <button class="page-switcher-btn active">Dashboard kv</button>
+                <button class="page-switcher-btn" onclick="switchTab('kvadratTab','nav-kvadrat')">Buyurtmalar</button>
+            </div>
+            <div id="kvDashboardMainBody" style="padding:15px; background:var(--bg); min-height:calc(100vh - 220px);">
+            </div>
+        </div>
+
+        <!-- Tahrirlash modali -->
+        <div id="editModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-drag"></div>
+                <div class="modal-header">
+                    <div class="modal-title">✏️ Tahrirlash</div>
+                    <div class="modal-meta">
+                        <span class="meta-chip" id="editHeaderName">👤 —</span>
+                        <span class="meta-chip" id="editHeaderDate">📅 —</span>
+                    </div>
+                </div>
+                <form id="editForm" onsubmit="event.preventDefault();saveEdit();">
+                    <input type="hidden" id="editRowId">
+                    <div class="input-group">
+                        <label>Davri (Qaysi oy uchun)</label>
+                        <div style="display:flex; gap:10px;">
+                            <select id="editActionMonth" style="flex:1;">
+                                <option value="01">Yanvar</option>
+                                <option value="02">Fevral</option>
+                                <option value="03">Mart</option>
+                                <option value="04">Aprel</option>
+                                <option value="05">May</option>
+                                <option value="06">Iyun</option>
+                                <option value="07">Iyul</option>
+                                <option value="08">Avgust</option>
+                                <option value="09">Sentyabr</option>
+                                <option value="10">Oktyabr</option>
+                                <option value="11">Noyabr</option>
+                                <option value="12">Dekabr</option>
                             </select>
+                            <select id="editActionYear" style="flex:1;"></select>
                         </div>
-                        <div class="filter-col">
-                            <label>Ish bosqichi</label>
-                            <select id="kvFilterProcess" onchange="applyKvFilters()">
-                                <option value="all">Barcha jarayonlar</option>
+                    </div>
+                    <div class="input-group">
+                        <label>💰 Summa (UZS)</label>
+                        <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView()"
+                            inputmode="numeric">
+                    </div>
+                    <div class="input-group" id="editUsdRow">
+                        <label>💵 Summa (USD)</label>
+                        <input type="number" id="editAmountUSD" placeholder="Dollarda"
+                            oninput="updateEditCurrencyView()" inputmode="numeric">
+                    </div>
+                    <div class="input-group" id="editRateRow">
+                        <label>📈 Valyuta kursi (1 USD = ? UZS)</label>
+                        <input type="number" id="editRate" placeholder="Masalan: 12600"
+                            oninput="updateEditCurrencyView()" inputmode="numeric">
+                    </div>
+                    <div id="editConversionPreview"
+                        style="background:var(--comp-chip-uzs-bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none;">
+                    </div>
+                    <div class="input-group">
+                        <label>📝 Izoh</label>
+                        <textarea id="editComment" rows="3" placeholder="Izohni o'zgartirish..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-main">💾 Saqlash</button>
+                        <button type="button" class="btn-main bg-red" onclick="closeModal()">✕ Bekor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Kvadratlar modali -->
+        <div id="kvadratModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-drag"></div>
+                <div class="modal-header">
+                    <div class="modal-title" id="kvModalTitle">📐 Yangi o'lchov kiritish</div>
+                </div>
+                <form id="kvForm" onsubmit="event.preventDefault();saveKv();">
+                    <input type="hidden" id="kvRowId">
+                    <div class="input-group">
+                        <label>📅 Qaysi oy uchun</label>
+                        <div style="display:flex; gap:10px;">
+                            <select id="kvActionMonth" style="flex:1;">
+                                <option value="01">Yanvar</option>
+                                <option value="02">Fevral</option>
+                                <option value="03">Mart</option>
+                                <option value="04">Aprel</option>
+                                <option value="05">May</option>
+                                <option value="06">Iyun</option>
+                                <option value="07">Iyul</option>
+                                <option value="08">Avgust</option>
+                                <option value="09">Sentyabr</option>
+                                <option value="10">Oktyabr</option>
+                                <option value="11">Noyabr</option>
+                                <option value="12">Dekabr</option>
                             </select>
+                            <select id="kvActionYear" style="flex:1;"></select>
                         </div>
                     </div>
-                </div>
-
-                <div id="kvWorkerStatsBar" style="margin-bottom:10px;"></div>
-                <div id="kvList"></div>
-            </div>
-
-            <!-- TAB 7: KV DASHBOARD -->
-            <div id="kvDashboardTab" class="tab-content">
-                <div id="kvPtr" class="ptr-container">
-                    <div class="ptr-arrow">↓</div>
-                    <div class="ptr-icon hidden"></div>
-                </div>
-                <div class="page-header">
-                    <div>
-                        <h2>📊 Dashboard kv</h2>
+                    <div class="input-group">
+                        <label>🔢 Buyurtma raqami:</label>
+                        <input type="text" id="kvOrderNumber" placeholder="Masalan: 176" required>
                     </div>
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <button class="kv-refresh-btn" id="kvRefreshBtn2" title="Yangilash"
-                            onclick="kvRefreshAll(this)">🔄</button>
-                        <div class="header-avatar">📈</div>
+                    <div class="input-group">
+                        <label>📌 Buyurtma nomi / Mijoz ismi</label>
+                        <input type="text" id="kvOrderName" placeholder="Masalan: Ali oshxona" required>
                     </div>
-                </div>
-                <div class="page-switcher">
-                    <button class="page-switcher-btn active">Dashboard kv</button>
-                    <button class="page-switcher-btn"
-                        onclick="switchTab('kvadratTab','nav-kvadrat')">Buyurtmalar</button>
-                </div>
-                <div id="kvDashboardMainBody"
-                    style="padding:15px; background:var(--bg); min-height:calc(100vh - 220px);"></div>
-            </div>
-
-            <!-- Tahrirlash modali -->
-            <div id="editModal" class="modal hidden">
-                <div class="modal-content">
-                    <div class="modal-drag"></div>
-                    <div class="modal-header">
-                        <div class="modal-title">✏️ Tahrirlash</div>
-                        <div class="modal-meta">
-                            <span class="meta-chip" id="editHeaderName">👤 —</span>
-                            <span class="meta-chip" id="editHeaderDate">📅 —</span>
-                        </div>
+                    <div class="input-group">
+                        <label>📏 Jami m² (metr kvadrat)</label>
+                        <input type="number" step="0.01" id="kvTotalM2Input" placeholder="0.00" required
+                            inputmode="decimal">
                     </div>
-                    <form id="editForm" onsubmit="event.preventDefault();saveEdit();">
-                        <input type="hidden" id="editRowId">
-                        <div class="input-group">
-                            <label>Davri (Qaysi oy uchun)</label>
-                            <div style="display:flex; gap:10px;">
-                                <select id="editActionMonth" style="flex:1;">
-                                    <option value="01">Yanvar</option>
-                                    <option value="02">Fevral</option>
-                                    <option value="03">Mart</option>
-                                    <option value="04">Aprel</option>
-                                    <option value="05">May</option>
-                                    <option value="06">Iyun</option>
-                                    <option value="07">Iyul</option>
-                                    <option value="08">Avgust</option>
-                                    <option value="09">Sentyabr</option>
-                                    <option value="10">Oktyabr</option>
-                                    <option value="11">Noyabr</option>
-                                    <option value="12">Dekabr</option>
-                                </select>
-                                <select id="editActionYear" style="flex:1;"></select>
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>💰 Summa (UZS)</label>
-                            <input type="number" id="editAmountUZS" placeholder="So'mda"
-                                oninput="updateEditCurrencyView()" inputmode="numeric">
-                        </div>
-                        <div class="input-group" id="editUsdRow">
-                            <label>💵 Summa (USD)</label>
-                            <input type="number" id="editAmountUSD" placeholder="Dollarda"
-                                oninput="updateEditCurrencyView()" inputmode="numeric">
-                        </div>
-                        <div class="input-group" id="editRateRow">
-                            <label>📈 Valyuta kursi (1 USD = ? UZS)</label>
-                            <input type="number" id="editRate" placeholder="Masalan: 12600"
-                                oninput="updateEditCurrencyView()" inputmode="numeric">
-                        </div>
-                        <div id="editConversionPreview"
-                            style="background:var(--comp-chip-uzs-bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none;">
-                        </div>
-                        <div class="input-group">
-                            <label>📝 Izoh</label>
-                            <textarea id="editComment" rows="3" placeholder="Izohni o'zgartirish..."></textarea>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="submit" class="btn-main">💾 Saqlash</button>
-                            <button type="button" class="btn-main bg-red" onclick="closeModal()">✕ Bekor</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Kvadratlar modali -->
-            <div id="kvadratModal" class="modal hidden">
-                <div class="modal-content">
-                    <div class="modal-drag"></div>
-                    <div class="modal-header">
-                        <div class="modal-title" id="kvModalTitle">📐 Yangi o'lchov kiritish</div>
+                    <div class="input-group">
+                        <label>👤 Mas'ul xodim:</label>
+                        <select id="kvStaffSelect" required>
+                            <option value="">Xodimni tanlang...</option>
+                        </select>
                     </div>
-                    <form id="kvForm" onsubmit="event.preventDefault();saveKv();">
-                        <input type="hidden" id="kvRowId">
-                        <div class="input-group">
-                            <label>📅 Qaysi oy uchun</label>
-                            <div style="display:flex; gap:10px;">
-                                <select id="kvActionMonth" style="flex:1;">
-                                    <option value="01">Yanvar</option>
-                                    <option value="02">Fevral</option>
-                                    <option value="03">Mart</option>
-                                    <option value="04">Aprel</option>
-                                    <option value="05">May</option>
-                                    <option value="06">Iyun</option>
-                                    <option value="07">Iyul</option>
-                                    <option value="08">Avgust</option>
-                                    <option value="09">Sentyabr</option>
-                                    <option value="10">Oktyabr</option>
-                                    <option value="11">Noyabr</option>
-                                    <option value="12">Dekabr</option>
-                                </select>
-                                <select id="kvActionYear" style="flex:1;"></select>
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>🔢 Buyurtma raqami:</label>
-                            <input type="text" id="kvOrderNumber" placeholder="Masalan: 176" required>
-                        </div>
-                        <div class="input-group">
-                            <label>📌 Buyurtma nomi / Mijoz ismi</label>
-                            <input type="text" id="kvOrderName" placeholder="Masalan: Ali oshxona" required>
-                        </div>
-                        <div class="input-group">
-                            <label>📏 Jami m² (metr kvadrat)</label>
-                            <input type="number" step="0.01" id="kvTotalM2Input" placeholder="0.00" required
-                                inputmode="decimal">
-                        </div>
-                        <div class="input-group">
-                            <label>👤 Mas'ul xodim:</label>
-                            <select id="kvStaffSelect" required>
-                                <option value="">Xodimni tanlang...</option>
-                            </select>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="submit" class="btn-main">💾 Saqlash</button>
-                            <button type="button" class="btn-main bg-red" onclick="closeKvModal()">✕ Bekor</button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-main">💾 Saqlash</button>
+                        <button type="button" class="btn-main bg-red" onclick="closeKvModal()">✕ Bekor</button>
+                    </div>
+                </form>
             </div>
+        </div>
 
-            <!-- Kvadrat batafsil -->
-            <div id="kvDetailModal" class="modal hidden">
-                <div class="modal-content">
-                    <div id="kvDetailModalBody"></div>
-                </div>
+        <!-- Kvadrat batafsil -->
+        <div id="kvDetailModal" class="modal hidden">
+            <div class="modal-content">
+                <div id="kvDetailModalBody"></div>
             </div>
+        </div>
 
-            <!-- Batafsil modal -->
-            <div id="detailModal" class="modal hidden">
-                <div class="modal-content">
-                    <div id="detailModalBody"></div>
-                </div>
+        <!-- Batafsil modal -->
+        <div id="detailModal" class="modal hidden">
+            <div class="modal-content">
+                <div id="detailModalBody"></div>
             </div>
+        </div>
 
-            <!-- Pastki menyu -->
-            <div class="bottom-nav">
-                <div class="nav-item active" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
-                    <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
-                </div>
-                <div class="nav-item" id="nav-module" onclick="switchTab('moduleTab','nav-module')">
-                    <span class="nav-icon">🧩</span><span>Modul</span>
-                </div>
-                <div class="nav-fab-container">
-                    <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
-                </div>
-                <div class="nav-item" id="nav-dashboard" onclick="handleDashboardNav()">
-                    <span class="nav-icon">💰</span><span>Ish haqi</span>
-                </div>
-                <div class="nav-item" id="nav-profile" onclick="switchTab('profileTab','nav-profile')">
-                    <span class="nav-icon">👤</span><span>Profil</span>
-                </div>
-                <div class="nav-item hidden" id="nav-admin"></div>
+        <!-- Pastki menyu -->
+        <div class="bottom-nav">
+            <div class="nav-item active" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
+                <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
             </div>
+            <div class="nav-item" id="nav-module" onclick="switchTab('moduleTab','nav-module')">
+                <span class="nav-icon">🧩</span><span>Modul</span>
+            </div>
+            <div class="nav-fab-container">
+                <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
+            </div>
+            <div class="nav-item" id="nav-dashboard" onclick="handleDashboardNav()">
+                <span class="nav-icon">💰</span><span>Ish haqi</span>
+            </div>
+            <div class="nav-item" id="nav-profile" onclick="switchTab('profileTab','nav-profile')">
+                <span class="nav-icon">👤</span><span>Profil</span>
+            </div>
+            <div class="nav-item hidden" id="nav-admin"></div>
+        </div>
 
-            <script defer src="cache.js?v=1.0.23"></script>
-            <script defer src="config.js?v=1.0.23"></script>
-            <script defer src="ui.js?v=1.0.23"></script>
-            <script defer src="employee.js?v=1.0.23"></script>
-            <script defer src="admin.js?v=1.0.23"></script>
-            <script defer src="export.js?v=1.0.23"></script>
-            <script defer src="actions.js?v=1.0.23"></script>
-            <script defer src="dashboard.js?v=1.0.23"></script>
-            <script defer src="detail_modal.js?v=1.0.23"></script>
-            <script defer src="kvadratlar.js?v=1.0.23"></script>
-            <script defer src="dashboard_kv.js?v=1.0.23"></script>
-            <script defer src="dashboard_charts.js?v=1.0.0"></script>
-            <script defer src="roles.js?v=1.0.23"></script>
-            <script defer src="admin_workflow.js?v=1.0.23"></script>
-            <script defer src="admin_positions.js?v=1.0.23"></script>
-            <script defer src="enhanced_admin_list.js?v=1.0.23"></script>
-            <script defer src="admin_notifications.js?v=1.0.23"></script>
-            <script defer src="admin_ai.js?v=1.0.23"></script>
-            <script defer src="admin_ai_chat.js?v=1.0.23"></script>
-    </div><!-- /container -->
+        <script defer src="cache.js?v=1.0.23"></script>
+        <script defer src="config.js?v=1.0.23"></script>
+        <script defer src="ui.js?v=1.0.23"></script>
+        <script defer src="employee.js?v=1.0.23"></script>
+        <script defer src="admin.js?v=1.0.23"></script>
+        <script defer src="export.js?v=1.0.23"></script>
+        <script defer src="actions.js?v=1.0.23"></script>
+        <script defer src="dashboard.js?v=1.0.23"></script>
+        <script defer src="detail_modal.js?v=1.0.23"></script>
+        <script defer src="kvadratlar.js?v=1.0.23"></script>
+        <script defer src="dashboard_kv.js?v=1.0.23"></script>
+        <script defer src="dashboard_charts.js?v=1.0.0"></script>
+        <script defer src="roles.js?v=1.0.23"></script>
+        <script defer src="admin_workflow.js?v=1.0.23"></script>
+        <script defer src="admin_positions.js?v=1.0.23"></script>
+        <script defer src="enhanced_admin_list.js?v=1.0.23"></script>
+        <script defer src="admin_notifications.js?v=1.0.23"></script>
+        <script defer src="admin_ai.js?v=1.0.0"></script>
 </body>
 
 </html>

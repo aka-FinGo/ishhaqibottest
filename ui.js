@@ -587,18 +587,9 @@ function initAdminTab() {
         showToastMsg('❌ Admin panel ruxsati yo\'q', true);
         switchTab('kvadratTab', 'nav-kvadrat'); return;
     }
-    const navHodimlar   = document.getElementById('adminNavHodimlar');
-    const navNotify     = document.getElementById('adminNavNotify');
-    const navAIChat     = document.getElementById('adminNavAIChat');
-
+    const navHodimlar = document.getElementById('adminNavHodimlar');
+    const navNotify = document.getElementById('adminNavNotify');
     if (navHodimlar) navHodimlar.classList.toggle('hidden', !isSuperAdmin);
-
-    // AI Chat tugmasini faqat ruxsati bor foydalanuvchilarga ko'rsatamiz
-    if (navAIChat) {
-        const canSeeAIChat = isSuperAdmin || myPermissions?.canViewAIChat;
-        navAIChat.style.display = canSeeAIChat ? '' : 'none';
-    }
-
     if (isSuperAdmin && navHodimlar) switchAdminSub('adminHodimlarArea', navHodimlar);
     else if (navNotify) switchAdminSub('adminNotifyArea', navNotify);
 }
@@ -710,7 +701,7 @@ async function switchAdminSub(areaId, btn) {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
 
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea', 'adminAIChatArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
@@ -731,32 +722,7 @@ async function switchAdminSub(areaId, btn) {
     }
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); loadDirectorNotifySetting(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
-    if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') {
-        loadAIConfig();
-        // AI Chat ruxsatlar ro'yxatini yuklash (SuperAdmin uchun)
-        if (myRole === 'SuperAdmin') {
-            loadAIChatUsers();
-            // Dropdown ni to'ldiramiz
-            const sel = document.getElementById('aiChatGrantSelect');
-            if (sel && globalEmployeeList.length) {
-                sel.innerHTML = '<option value="">Foydalanuvchi tanlang...</option>' +
-                    globalEmployeeList.map(e =>
-                        `<option value="${escapeHtml(String(e.tgId))}">${escapeHtml(e.username || e.tgId)}</option>`
-                    ).join('');
-            }
-        }
-    }
-    if (areaId === 'adminAIChatArea') {
-        // Ruxsat tekshirish
-        const canUse = myPermissions?.canViewAIChat || myRole === 'SuperAdmin';
-        if (!canUse) {
-            // Tugmani yashirib, oldingi tabga qaytamiz
-            const navBtn = document.getElementById('adminNavAIChat');
-            if (navBtn) navBtn.style.display = 'none';
-            return;
-        }
-        if (typeof initAIChatArea === 'function') initAIChatArea();
-    }
+    if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
 }
 
 function toggleRate() {

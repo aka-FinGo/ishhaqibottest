@@ -11,7 +11,7 @@ function checkUserRoles(tgId) {
     inList: false,
     canAdd: true,
     permissions: {
-      canViewAll:false, canEdit:false, canDelete:false, canExport:false, canViewAIChat:false, canViewDash:false
+      canViewAll:false, canEdit:false, canDelete:false, canExport:false, canViewDash:false
     }
   };
 
@@ -26,7 +26,7 @@ function checkUserRoles(tgId) {
       auth.inList = true;
       auth.canAdd = true;
       auth.permissions = {
-        canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewAIChat:true, canViewDash:true
+        canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true
       };
       return auth;
     }
@@ -65,8 +65,7 @@ function resolveEmployeeAccessFromRow_(row) {
         canEdit: toBool01_(row[COL.EDIT]),
         canDelete: toBool01_(row[COL.DELETE]),
         canExport: toBool01_(row[COL.EXPORT]),
-        canViewDash: toBool01_(row[COL.VIEW_DASH]),
-        canViewAIChat: isAIChatAllowed_(String(row[COL.TG_ID] || ''))
+        canViewDash: toBool01_(row[COL.VIEW_DASH])
       },
       overrides: {
         canAdd: null, canViewAll: null, canEdit: null, canDelete: null, canExport: null, canViewDash: null
@@ -86,8 +85,7 @@ function buildModelFromRoleAndOverrides_(roleKey, overrides) {
     canEdit: defaults.permissions.canEdit,
     canDelete: defaults.permissions.canDelete,
     canExport: defaults.permissions.canExport,
-    canViewDash: defaults.permissions.canViewDash,
-    canViewAIChat: defaults.permissions.canViewAIChat || false
+    canViewDash: defaults.permissions.canViewDash
   };
   var canAdd = defaults.canAdd;
 
@@ -100,7 +98,7 @@ function buildModelFromRoleAndOverrides_(roleKey, overrides) {
 
   if (role === 'SUPER_ADMIN') {
     canAdd = true;
-    perms.canViewAll = true; perms.canEdit = true; perms.canDelete = true; perms.canExport = true; perms.canViewDash = true; perms.canViewAIChat = true;
+    perms.canViewAll = true; perms.canEdit = true; perms.canDelete = true; perms.canExport = true; perms.canViewDash = true;
   }
 
   return {
@@ -115,19 +113,6 @@ function buildModelFromRoleAndOverrides_(roleKey, overrides) {
       canAdd: null, canViewAll: null, canEdit: null, canDelete: null, canExport: null, canViewDash: null
     }
   };
-}
-
-/**
- * AI Chat ruxsatini tekshiradi.
- * SuperAdmin har doim true. Boshqalar uchun PropertiesService dan o'qiladi.
- */
-function isAIChatAllowed_(tgId) {
-  if (!tgId) return false;
-  if (isConfigSuperAdminId_(tgId)) return true;
-  try {
-    var list = PropertiesService.getScriptProperties().getProperty('AI_CHAT_USERS') || '';
-    return list.split(',').map(function(s){return s.trim();}).indexOf(String(tgId)) !== -1;
-  } catch(e) { return false; }
 }
 
 function hasNewPermissionModel_(row) {
@@ -163,18 +148,18 @@ function roleLabelFromKey_(roleKey) {
 function roleDefaults_(roleKey) {
   var role = normalizeRole_(roleKey, null);
   if (role === 'SUPER_ADMIN') {
-    return { canAdd: true, permissions: { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewAIChat:true, canViewDash:true } };
+    return { canAdd: true, permissions: { canViewAll:true, canEdit:true, canDelete:true, canExport:true, canViewDash:true } };
   }
   if (role === 'DIRECTOR') {
-    return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:true, canViewAIChat:true, canViewDash:true } };
+    return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:true, canViewDash:true } };
   }
   if (role === 'ADMIN') {
-    return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:false, canViewAIChat:false, canViewDash:false } };
+    return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:false, canViewDash:false } };
   }
   if (role === 'PENDING') {
-    return { canAdd: false, permissions: { canViewAll:false, canEdit:false, canDelete:false, canExport:false, canViewAIChat:false, canViewDash:false } };
+    return { canAdd: false, permissions: { canViewAll:false, canEdit:false, canDelete:false, canExport:false, canViewDash:false } };
   }
-  return { canAdd: true, permissions: { canViewAll:false, canEdit:true, canDelete:true, canExport:false, canViewAIChat:false, canViewDash:false } };
+  return { canAdd: true, permissions: { canViewAll:false, canEdit:true, canDelete:true, canExport:false, canViewDash:false } };
 }
 
 function deriveLegacyRoleFromRow_(row) {

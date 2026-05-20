@@ -43,7 +43,7 @@ function doPost(e) {
     var result;
 
     // Yozish amallari uchun LockService
-    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'workflow_save_config', 'positions_save_all', 'ai_save_config'];
+    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report'];
     var lock = null;
     if (writeActions.indexOf(action) !== -1) {
       lock = LockService.getScriptLock();
@@ -160,28 +160,7 @@ function doPost(e) {
         result = { success: true, enabled: !!data.enabled };
         break;
 
-      // AI Chat ruxsatlarini boshqarish (faqat SuperAdmin)
-      case "get_ai_chat_users":
-        if (!auth.isSuperAdmin) return sendJSON({ success:false, error:"Faqat SuperAdmin!" });
-        var acList = PropertiesService.getScriptProperties().getProperty('AI_CHAT_USERS') || '';
-        result = { success:true, tgIds: acList ? acList.split(',').map(function(s){return s.trim();}).filter(Boolean) : [] };
-        break;
-
-      case "set_ai_chat_user":
-        if (!auth.isSuperAdmin) return sendJSON({ success:false, error:"Faqat SuperAdmin!" });
-        var acProp = PropertiesService.getScriptProperties();
-        var acCurrent = (acProp.getProperty('AI_CHAT_USERS') || '').split(',').map(function(s){return s.trim();}).filter(Boolean);
-        var acTarget = String(data.targetTgId || '').trim();
-        if (!acTarget) return sendJSON({ success:false, error:"tgId bo'sh!" });
-        if (data.grant) {
-          if (acCurrent.indexOf(acTarget) === -1) acCurrent.push(acTarget);
-        } else {
-          acCurrent = acCurrent.filter(function(id){ return id !== acTarget; });
-        }
-        acProp.setProperty('AI_CHAT_USERS', acCurrent.join(','));
-        CacheService.getScriptCache().remove('ai_providers_config'); // auth keshini ham tozalaymiz
-        result = { success:true, tgIds: acCurrent };
-        break;
+      case "self_check":
         if (!(auth.isSuperAdmin || auth.isAdmin)) return sendJSON({ success:false, error:"Ruxsat yo'q!" });
         result = runSystemSelfCheck_();
         break;
