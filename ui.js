@@ -701,7 +701,7 @@ async function switchAdminSub(areaId, btn) {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
 
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea', 'adminAIChatArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
@@ -723,6 +723,14 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); loadDirectorNotifySetting(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
     if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
+    if (areaId === 'adminAIChatArea' && typeof initAIChatArea === 'function') {
+        const scopeLabel = document.getElementById('aiChatScopeLabel');
+        if (scopeLabel) {
+            const isCompany = myRole === 'SuperAdmin' || myRole === 'Direktor';
+            scopeLabel.textContent = isCompany ? '📊 Kompaniya ma\'lumotlari bilan' : '👤 Faqat o\'z ma\'lumotlarim';
+        }
+        initAIChatArea();
+    }
 }
 
 function toggleRate() {
