@@ -24,6 +24,7 @@ function getHodimlar() {
       canDelete:   access.permissions.canDelete ? 1 : 0,
       canExport:   access.permissions.canExport ? 1 : 0,
       canViewDash: access.permissions.canViewDash ? 1 : 0,
+      canViewAIChat: access.permissions.canViewAIChat ? 1 : 0,
       overrideCanAdd:      access.overrides.canAdd,
       overrideCanViewAll:  access.overrides.canViewAll,
       overrideCanEdit:     access.overrides.canEdit,
@@ -105,6 +106,7 @@ function addHodim(data) {
     newRow[COL.DELETE]       = eff.permissions.canDelete ? 1 : 0;
     newRow[COL.EXPORT]       = eff.permissions.canExport ? 1 : 0;
     newRow[COL.VIEW_DASH]    = eff.permissions.canViewDash ? 1 : 0;
+    newRow[COL.AI_CHAT]      = eff.permissions.canViewAIChat ? 1 : 0;
     newRow[COL.ROLE]         = cfg.role;
     newRow[COL.OVR_CAN_ADD]  = overrideToCellValue_(cfg.overrides.canAdd);
     newRow[COL.OVR_VIEW_ALL] = overrideToCellValue_(cfg.overrides.canViewAll);
@@ -143,6 +145,7 @@ function updateHodim(data) {
         updateRow[COL.DELETE]       = eff.permissions.canDelete ? 1 : 0;
         updateRow[COL.EXPORT]       = eff.permissions.canExport ? 1 : 0;
         updateRow[COL.VIEW_DASH]    = eff.permissions.canViewDash ? 1 : 0;
+        updateRow[COL.AI_CHAT]      = eff.permissions.canViewAIChat ? 1 : 0;
         updateRow[COL.ROLE]         = cfg.role;
         updateRow[COL.OVR_CAN_ADD]  = overrideToCellValue_(cfg.overrides.canAdd);
         updateRow[COL.OVR_VIEW_ALL] = overrideToCellValue_(cfg.overrides.canViewAll);

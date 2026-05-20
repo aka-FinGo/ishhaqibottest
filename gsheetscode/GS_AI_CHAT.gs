@@ -11,11 +11,10 @@
  * @param {string} tgId
  */
 function handleAIChat(data, auth, tgId) {
-    // Ruxsat tekshirish
-    var canUse = auth.isSuperAdmin || auth.isAdmin ||
-                 (auth.role === 'Direktor' || auth.roleKey === 'DIRECTOR');
+    // Ruxsat tekshirish — SuperAdmin yoki isAIChatAllowed_
+    var canUse = auth.isSuperAdmin || isAIChatAllowed_(String(tgId || ''));
     if (!canUse) {
-        return { success: false, error: 'AI chat ruxsati yo\'q' };
+        return { success: false, error: 'AI Chat ruxsati yo\'q. SuperAdminga murojaat qiling.' };
     }
 
     var userMessage = String(data.message || '').trim();

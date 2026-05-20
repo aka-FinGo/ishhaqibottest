@@ -18,7 +18,8 @@ var COL = {
   ROLE:         11,
   LAVOZIM:      12,
   GURUH:        13,
-  IS_SARDOR:    14
+  IS_SARDOR:    14,
+  AI_CHAT:      15
 };
 
 var DATA_COL = {
@@ -47,7 +48,7 @@ var EMP_HEADERS = [
   "TelegramId","Username","CanAdd",
   "SuperAdmin","Direktor","Admin",
   "canViewAll","canEdit","canDelete","canExport","canViewDash",
-  "Role", "Lavozim", "Guruh", "IsSardor"
+  "Role", "Lavozim", "Guruh", "IsSardor", "canViewAIChat"
 ];
 
 var WORKFLOW_HEADERS = [
