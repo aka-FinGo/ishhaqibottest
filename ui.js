@@ -728,6 +728,33 @@ async function switchAdminSub(areaId, btn) {
 function toggleRate() {
     const isUsd = document.getElementById('currency').value === 'USD';
     document.getElementById('rateDiv').classList.toggle('hidden', !isUsd);
+    if (!isUsd) {
+        const preview = document.getElementById('addConversionPreview');
+        if (preview) preview.style.display = 'none';
+    } else {
+        updateAddCurrencyView();
+    }
+}
+
+function updateAddCurrencyView() {
+    const amountVal = parseFloat(document.getElementById('amount').value) || 0;
+    const rateVal = parseFloat(document.getElementById('rate').value) || 0;
+    const currency = document.getElementById('currency').value;
+    const preview = document.getElementById('addConversionPreview');
+    if (!preview) return;
+
+    if (currency === 'USD' && amountVal > 0 && rateVal > 0) {
+        const calc = (amountVal * rateVal).toLocaleString();
+        preview.innerHTML = `<span style="color:var(--green-dark);font-size:13px;font-weight:600;">= ${calc} UZS (${amountVal} x ${rateVal.toLocaleString()})</span>`;
+        preview.style.display = '';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+function cancelAdd() {
+    if (typeof resetAddForm === 'function') resetAddForm();
+    switchTab('kvadratTab', 'nav-kvadrat');
 }
 
 /* ---------------------------------------------------------------

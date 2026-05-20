@@ -75,7 +75,18 @@ async function saveEdit(){
 
     try {
         const action = currentEditScope === 'self' ? 'self_edit' : 'admin_edit';
-        const data = await apiRequest({ action, rowId, amountUZS, amountUSD, rate, comment, reason, actionPeriod });
+        const data = await apiRequest({
+            action,
+            rowId,
+            amountUZS,
+            amountUSD,
+            rate,
+            comment,
+            reason,
+            actionPeriod,
+            date: r.date,
+            dateISO: r.dateISO
+        });
         if (!data.success) {
             showToastMsg('❌ ' + (data.error || 'Saqlashda xato'), true);
             return;
@@ -92,6 +103,8 @@ async function saveEdit(){
             applyMyFilters();
             showToastMsg('✅ Saqlandi!');
             return;
+        } else {
+            showToastMsg('✅ Saqlandi!');
         }
     } catch {
         showToastMsg('❌ Server xatosi', true);

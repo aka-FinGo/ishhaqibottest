@@ -203,6 +203,7 @@ function openEdit(rowId) {
 }
 
 function showEditModal(rowId) {
+    currentEditScope = 'admin';
     const record = findRecordByRowId(rowId);
     if (!record) return;
 
