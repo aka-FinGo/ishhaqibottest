@@ -15,10 +15,10 @@
     <title>Aristokrat Ish Haqi (v1.0.24)</title>
 
     <!-- Asosiy stillar -->
-    <link rel="stylesheet" href="style.css?v=1.0.24">
+    <link rel="stylesheet" href="style.css?v=1.0.23">
     <!-- Komponent stillar (JS fayllaridan ajratilgan) -->
-    <link rel="stylesheet" href="components.css?v=1.0.24">
-    <link rel="stylesheet" href="ai_chat.css?v=1.0.24">
+    <link rel="stylesheet" href="components.css?v=1.0.23">
+    <link rel="stylesheet" href="ai_chat.css?v=1.0.23">
     <!-- Dinamik mavzu (standart = bo'sh, dark = dark.css) -->
     <link id="dynamic-theme" rel="stylesheet" href="">
 
@@ -322,7 +322,7 @@
                 <button class="sub-btn admin-sub-btn" id="adminNavAI" onclick="switchAdminSub('adminAIArea',this)">🤖 AI
                     Agent</button>
                 <button class="sub-btn admin-sub-btn" id="adminNavAIChat"
-                    onclick="window.location.href='ai_chat.html'">💬 AI Chat</button>
+                    onclick="switchAdminSub('adminAIChatArea',this)">💬 AI Chat</button>
                 <button class="sub-btn admin-sub-btn" id="adminNavService"
                     onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
             </div>
@@ -518,8 +518,31 @@
                     <button class="btn-main bg-navy" style="width: 100%;" onclick="runAIReportTest()">🚀 Hisobotni Ishga
                         Tushirish</button>
                     <div id="aiTestStatus" class="status-msg" style="margin-top: 10px;"></div>
+
+                    <!-- AI Chat ruxsatlarini boshqarish (faqat SuperAdmin) -->
+                    <div style="height:1px;background:var(--border);margin:20px 0;"></div>
+                    <div class="card-title" style="margin-bottom:10px;font-size:14px;">💬 AI Chat Ruxsatlari</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">SuperAdmin har doim kiradi. Quyidagi foydalanuvchilarga ham ruxsat bering:</div>
+                    <div id="aiChatUsersList" style="margin-bottom:12px;"></div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="aiChatGrantSelect" style="flex:1;">
+                            <option value="">Foydalanuvchi tanlang...</option>
+                        </select>
+                        <button class="btn-main" style="margin:0;font-size:13px;" onclick="grantAIChatUser()">✅ Ruxsat berish</button>
+                    </div>
                 </div>
-                <!-- AI CHAT AREA (Moved to ai_chat.html) -->
+                <!-- AI CHAT AREA -->
+                <div id="adminAIChatArea" class="hidden">
+                    <!-- AI Chat alohida ai_chat.html sahifasida — iframe orqali yuklanadi -->
+                    <div id="aiChatNoAccess" style="display:none; padding:32px; text-align:center; color:var(--text-muted);">
+                        <div style="font-size:40px; margin-bottom:12px;">🔒</div>
+                        <div style="font-size:14px; font-weight:500; color:var(--text); margin-bottom:6px;">Ruxsat yo'q</div>
+                        <div style="font-size:12px;">AI Chat faqat ruxsat berilgan foydalanuvchilar uchun.<br>SuperAdminga murojaat qiling.</div>
+                    </div>
+                    <iframe id="aiChatFrame" src="" allow="microphone"
+                        style="width:100%; height:70vh; min-height:400px; border:none; border-radius:12px; display:none;">
+                    </iframe>
+                </div>
 
             </div>
         </div><!-- /adminTab -->
