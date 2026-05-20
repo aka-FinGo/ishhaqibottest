@@ -45,22 +45,38 @@ function showDetailModal(r, mode) {
 
     /* Amal tugmalari */
     let actionBtns = '';
+    const isOwner = String(r.telegramId) === String(telegramId);
+
     if (mode === 'admin' || mode === true) {
-        const canDel = myRole === 'SuperAdmin' || myPermissions.canDelete;
-        const canEd  = myRole === 'SuperAdmin' || myPermissions.canEdit;
-        const editBtn = canEd
-            ? `<button class="dm-act-btn dm-act-btn--edit"
-                title="Tahrirlash"
-                onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
-            : '';
-        const delBtn = canDel
-            ? `<button class="dm-act-btn dm-act-btn--del"
-                title="O'chirish"
-                onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
-            : '';
-        actionBtns = (editBtn || delBtn)
-            ? `<div class="dm-act-row">${editBtn}${delBtn}</div>`
-            : '';
+        if (isOwner) {
+            /* O'z amalini har doim tahrirlash/o'chirish mumkin */
+            actionBtns = `
+            <div class="dm-act-row">
+                <button class="dm-act-btn dm-act-btn--edit"
+                    title="Tahrirlash"
+                    onclick="closeDetailModal();openEdit(${rowId})">✏️</button>
+                <button class="dm-act-btn dm-act-btn--del"
+                    title="O'chirish"
+                    onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>
+            </div>`;
+        } else {
+            /* Boshqalarning amallari — ruxsatga qarab */
+            const canDel = myRole === 'SuperAdmin' || myPermissions.canDelete;
+            const canEd  = myRole === 'SuperAdmin' || myPermissions.canEdit;
+            const editBtn = canEd
+                ? `<button class="dm-act-btn dm-act-btn--edit"
+                    title="Tahrirlash"
+                    onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
+                : '';
+            const delBtn = canDel
+                ? `<button class="dm-act-btn dm-act-btn--del"
+                    title="O'chirish"
+                    onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
+                : '';
+            actionBtns = (editBtn || delBtn)
+                ? `<div class="dm-act-row">${editBtn}${delBtn}</div>`
+                : '';
+        }
     } else if (mode === 'self') {
         actionBtns = `
             <div class="dm-act-row">

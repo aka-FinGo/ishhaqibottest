@@ -754,7 +754,7 @@ function updateAddCurrencyView() {
 
 function cancelAdd() {
     if (typeof resetAddForm === 'function') resetAddForm();
-    switchTab('kvadratTab', 'nav-kvadrat');
+    handleDashboardNav();
 }
 
 /* ---------------------------------------------------------------
