@@ -43,7 +43,7 @@ function doPost(e) {
     var result;
 
     // Yozish amallari uchun LockService
-    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report'];
+    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'workflow_save_config', 'positions_save_all', 'ai_save_config'];
     var lock = null;
     if (writeActions.indexOf(action) !== -1) {
       lock = LockService.getScriptLock();
