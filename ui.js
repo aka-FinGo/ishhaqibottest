@@ -583,7 +583,7 @@ function contactAdmin() {
 
 function initAdminTab() {
     const isSuperAdmin = myRole === 'SuperAdmin';
-    if (myRole !== 'SuperAdmin' && myRole !== 'Admin') {
+    if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor') {
         showToastMsg('❌ Admin panel ruxsati yo\'q', true);
         switchTab('kvadratTab', 'nav-kvadrat'); return;
     }
