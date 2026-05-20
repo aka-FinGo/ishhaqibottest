@@ -51,30 +51,35 @@ function checkUserRoles(tgId) {
 }
 
 function resolveEmployeeAccessFromRow_(row) {
-  if (!hasNewPermissionModel_(row)) {
-    var legacyRole = deriveLegacyRoleFromRow_(row);
-    return {
-      roleKey: legacyRole,
-      roleLabel: roleLabelFromKey_(legacyRole),
-      canAdd: toBool01_(row[COL.CAN_ADD]),
-      isSuperAdmin: toBool01_(row[COL.SUPER_ADMIN]),
-      isDirektor: toBool01_(row[COL.DIREKTOR]),
-      isAdmin: toBool01_(row[COL.ADMIN]),
-      permissions: {
-        canViewAll: toBool01_(row[COL.VIEW_ALL]),
-        canEdit: toBool01_(row[COL.EDIT]),
-        canDelete: toBool01_(row[COL.DELETE]),
-        canExport: toBool01_(row[COL.EXPORT]),
-        canViewDash: toBool01_(row[COL.VIEW_DASH])
-      },
-      overrides: {
-        canAdd: null, canViewAll: null, canEdit: null, canDelete: null, canExport: null, canViewDash: null
-      }
-    };
-  }
   var role = normalizeRole_(row[COL.ROLE], row);
-  var overrides = readOverridesFromRow_(row);
-  return buildModelFromRoleAndOverrides_(role, overrides);
+  var canAdd = toBool01_(row[COL.CAN_ADD]);
+  var perms = {
+    canViewAll: toBool01_(row[COL.VIEW_ALL]),
+    canEdit: toBool01_(row[COL.EDIT]),
+    canDelete: toBool01_(row[COL.DELETE]),
+    canExport: toBool01_(row[COL.EXPORT]),
+    canViewDash: toBool01_(row[COL.VIEW_DASH])
+  };
+  
+  if (role === 'SUPER_ADMIN') {
+    canAdd = true;
+    perms = { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true };
+  }
+  
+  var isSuperAdmin = role === 'SUPER_ADMIN';
+  var isDirektor = role === 'DIRECTOR';
+  var isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+  
+  return {
+    roleKey: role,
+    roleLabel: roleLabelFromKey_(role),
+    canAdd: canAdd,
+    isSuperAdmin: isSuperAdmin,
+    isDirektor: isDirektor,
+    isAdmin: isAdmin,
+    permissions: perms,
+    overrides: deriveOverridesForEffective_(role, canAdd, perms)
+  };
 }
 
 function buildModelFromRoleAndOverrides_(roleKey, overrides) {
