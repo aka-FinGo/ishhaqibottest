@@ -583,13 +583,22 @@ function contactAdmin() {
 
 function initAdminTab() {
     const isSuperAdmin = myRole === 'SuperAdmin';
-    if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor') {
+    if (myRole !== 'SuperAdmin' && myRole !== 'Admin') {
         showToastMsg('❌ Admin panel ruxsati yo\'q', true);
         switchTab('kvadratTab', 'nav-kvadrat'); return;
     }
-    const navHodimlar = document.getElementById('adminNavHodimlar');
-    const navNotify = document.getElementById('adminNavNotify');
+    const navHodimlar   = document.getElementById('adminNavHodimlar');
+    const navNotify     = document.getElementById('adminNavNotify');
+    const navAIChat     = document.getElementById('adminNavAIChat');
+
     if (navHodimlar) navHodimlar.classList.toggle('hidden', !isSuperAdmin);
+
+    // AI Chat tugmasini faqat ruxsati bor foydalanuvchilarga ko'rsatamiz
+    if (navAIChat) {
+        const canSeeAIChat = isSuperAdmin || myPermissions?.canViewAIChat;
+        navAIChat.style.display = canSeeAIChat ? '' : 'none';
+    }
+
     if (isSuperAdmin && navHodimlar) switchAdminSub('adminHodimlarArea', navHodimlar);
     else if (navNotify) switchAdminSub('adminNotifyArea', navNotify);
 }
@@ -722,14 +731,31 @@ async function switchAdminSub(areaId, btn) {
     }
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); loadDirectorNotifySetting(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
-    if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
-    if (areaId === 'adminAIChatArea' && typeof initAIChatArea === 'function') {
-        const scopeLabel = document.getElementById('aiChatScopeLabel');
-        if (scopeLabel) {
-            const isCompany = myRole === 'SuperAdmin' || myRole === 'Direktor';
-            scopeLabel.textContent = isCompany ? '📊 Kompaniya ma\'lumotlari bilan' : '👤 Faqat o\'z ma\'lumotlarim';
+    if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') {
+        loadAIConfig();
+        // AI Chat ruxsatlar ro'yxatini yuklash (SuperAdmin uchun)
+        if (myRole === 'SuperAdmin') {
+            loadAIChatUsers();
+            // Dropdown ni to'ldiramiz
+            const sel = document.getElementById('aiChatGrantSelect');
+            if (sel && globalEmployeeList.length) {
+                sel.innerHTML = '<option value="">Foydalanuvchi tanlang...</option>' +
+                    globalEmployeeList.map(e =>
+                        `<option value="${escapeHtml(String(e.tgId))}">${escapeHtml(e.username || e.tgId)}</option>`
+                    ).join('');
+            }
         }
-        initAIChatArea();
+    }
+    if (areaId === 'adminAIChatArea') {
+        // Ruxsat tekshirish
+        const canUse = myPermissions?.canViewAIChat || myRole === 'SuperAdmin';
+        if (!canUse) {
+            // Tugmani yashirib, oldingi tabga qaytamiz
+            const navBtn = document.getElementById('adminNavAIChat');
+            if (navBtn) navBtn.style.display = 'none';
+            return;
+        }
+        if (typeof initAIChatArea === 'function') initAIChatArea();
     }
 }
 
