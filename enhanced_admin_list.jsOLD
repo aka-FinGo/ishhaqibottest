@@ -322,13 +322,9 @@ function closeEditModal() {
 /* ---------------------------------------------------------------
    loadAdminData — ruxsat tekshiruvi bilan
    --------------------------------------------------------------- */
-// enhanced_admin_list.js — loadAdminData funksiyasini to'liq almashtiring
-
 async function loadAdminData() {
-    const adminListEl = document.getElementById('adminList');
-
-    // 1. Rol tekshiruvi — Admin/Direktor/SuperAdmin emas bo'lsa butunlay bloklash
     if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor') {
+        const adminListEl = document.getElementById('adminList');
         if (adminListEl) {
             adminListEl.innerHTML = `
                 <div class="empty-state">
@@ -340,61 +336,20 @@ async function loadAdminData() {
         return;
     }
 
-    // 2. Admin lekin canViewAll yo'q → FAQAT O'Z yozuvlarini ko'rsatamiz
-    const canViewAll = myRole === 'SuperAdmin' || (myPermissions && myPermissions.canViewAll);
-
-    if (!canViewAll) {
-        // O'z yozuvlarini myFullRecords dan yuklaymiz
-        const ownData = (typeof myFullRecords !== 'undefined' && Array.isArray(myFullRecords))
-            ? myFullRecords : [];
-
-        globalAdminData = ownData;
-        globalAdminDataIsPartial = true;
-
-        // Filtr dropdownlarini to'ldirish
-        populateEmployeeFilter();
-        populateYearFilter();
-        populateMonthFilter();
-
-        // Jami budjet maydonlariga o'z summalarini yozamiz
-        let totalUZS = 0, totalUSD = 0, totalUZSConv = 0;
-        ownData.forEach(item => {
-            const uzs = Number(item.amountUZS) || 0;
-            const usd = Number(item.amountUSD) || 0;
-            totalUSD += usd;
-            if (usd > 0) totalUZSConv += uzs;
-            else totalUZS += uzs;
-        });
-        const effectiveTotal = totalUZS + totalUZSConv;
-
-        const uzsOnlyEl = document.getElementById('totalCompanyUzsOnly');
-        const usdOnlyEl = document.getElementById('totalCompanyUsdOnly');
-        const budgetEl  = document.getElementById('totalCompanyUzs');
-        if (uzsOnlyEl) uzsOnlyEl.innerHTML = `<span>${totalUZS.toLocaleString()}</span>`;
-        if (usdOnlyEl) usdOnlyEl.innerHTML = `<span>$${totalUSD.toLocaleString()}</span>`;
-        if (budgetEl)  budgetEl.textContent  = effectiveTotal.toLocaleString() + ' UZS';
-
-        // Export tugmasini yashirish (ruxsat yo'q)
-        const exportBtn = document.getElementById('companyExportBtn');
-        if (exportBtn) exportBtn.style.display = 'none';
-
-        filteredData = [...globalAdminData];
-        const countEl = document.getElementById('filteredCount');
-        if (countEl) countEl.textContent = filteredData.length;
-
-        renderAdminList(filteredData);
+    if (myRole !== 'SuperAdmin' && (!myPermissions || !myPermissions.canViewAll)) {
+        const adminListEl = document.getElementById('adminList');
+        if (adminListEl) {
+            adminListEl.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size:60px; margin-bottom:16px;">🔒</div>
+                    <h3>Ruxsat yo'q</h3>
+                    <p>Barcha amallarni ko'rish ruxsati yo'q</p>
+                </div>`;
+        }
         return;
     }
 
-    // 3. To'liq ruxsat bor (SuperAdmin, Direktor, canViewAll=true Admin)
-    // Export tugmasini ko'rsatish
-    const exportBtn = document.getElementById('companyExportBtn');
-    if (exportBtn) {
-        exportBtn.style.display = (myRole === 'SuperAdmin' || (myPermissions && myPermissions.canExport))
-            ? '' : 'none';
-    }
-
-    // Keshdan tez ko'rsatish
+    /* Keshdan ko'rsat */
     try {
         const cachedAdminData = localStorage.getItem('globalAdminData');
         if (cachedAdminData) {
@@ -404,9 +359,10 @@ async function loadAdminData() {
             populateMonthFilter();
             applyFilters();
         }
-    } catch (e) {}
+    } catch (e) { }
 
-    // Skelet
+    /* Skelet */
+    const adminListEl = document.getElementById('adminList');
     if (adminListEl && (!globalAdminData || globalAdminData.length === 0)) {
         adminListEl.innerHTML = `
             <div class="skeleton-container" style="padding:16px;">
@@ -426,7 +382,6 @@ async function loadAdminData() {
         const response = await apiRequest({ action: 'admin_get_all' });
         if (response.success) {
             globalAdminData = response.data || [];
-            globalAdminDataIsPartial = false;
             localStorage.setItem('globalAdminData', JSON.stringify(globalAdminData));
             populateEmployeeFilter();
             populateYearFilter();
@@ -434,7 +389,7 @@ async function loadAdminData() {
             applyFilters();
             renderAdminList(filteredData || globalAdminData);
         } else {
-            throw new Error(response.error || 'Ma\'lumotlarni yuklashda xatolik');
+            throw new Error(response.error || 'Ma\'lumotlarni yuklashda xatolik yuz berdi');
         }
     } catch (error) {
         console.error('Admin data load error:', error);
@@ -443,9 +398,8 @@ async function loadAdminData() {
                 <div class="empty-state">
                     <div style="font-size:60px; margin-bottom:16px;">⚠️</div>
                     <h3>Xatolik yuz berdi</h3>
-                    <p>${error.message || 'Ma\'lumotlarni yuklashda xatolik'}</p>
-                    <button onclick="loadAdminData()" class="btn-main"
-                        style="width:auto; padding:8px 16px; margin-top:16px;">
+                    <p>${error.message || 'Ma\'lumotlarni yuklashda xatolik yuz berdi'}</p>
+                    <button onclick="loadAdminData()" class="btn-main" style="width:auto; padding:8px 16px; margin-top:16px;">
                         Qayta urinib ko'rish
                     </button>
                 </div>`;
