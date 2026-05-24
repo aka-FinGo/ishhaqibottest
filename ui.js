@@ -735,7 +735,30 @@ function toggleRate() {
         updateAddCurrencyView();
     }
 }
+// ui.js ga qo'shing — toggleRate() funksiyasi yoniga
 
+function onRateInput(input) {
+    // 5 xonadan oshmasligi
+    let val = input.value.replace(/\D/g, '');
+    if (val.length > 5) val = val.slice(0, 5);
+    input.value = val;
+
+    const warn = document.getElementById('rateWarning');
+    const num = parseInt(val, 10);
+
+    if (val.length > 0 && (num < 11000 || num > 13000)) {
+        if (warn) warn.style.display = 'block';
+        input.style.borderColor = '#EF4444';
+        input.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
+    } else {
+        if (warn) warn.style.display = 'none';
+        input.style.borderColor = '';
+        input.style.boxShadow = '';
+    }
+
+    // Preview yangilash
+    updateAddCurrencyView();
+}
 function updateAddCurrencyView() {
     const amountVal = parseFloat(document.getElementById('amount').value) || 0;
     const rateVal = parseFloat(document.getElementById('rate').value) || 0;
