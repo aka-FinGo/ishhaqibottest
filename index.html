@@ -775,15 +775,31 @@
                         <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView()"
                             inputmode="numeric">
                     </div>
+                    <div class="input-group">
+                        <label>💰 Summa (UZS)</label>
+                        <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView('UZS')"
+                            inputmode="numeric">
+                    </div>
                     <div class="input-group" id="editUsdRow">
                         <label>💵 Summa (USD)</label>
                         <input type="number" id="editAmountUSD" placeholder="Dollarda"
-                            oninput="updateEditCurrencyView()" inputmode="numeric">
+                            oninput="updateEditCurrencyView('USD')" inputmode="numeric">
                     </div>
                     <div class="input-group" id="editRateRow">
                         <label>📈 Valyuta kursi (1 USD = ? UZS)</label>
                         <input type="number" id="editRate" placeholder="Masalan: 12600"
-                            oninput="updateEditCurrencyView()" inputmode="numeric">
+                            oninput="onEditRateInput(this)" inputmode="numeric" min="11000" max="13000">
+                        <div id="editRateWarning" style="
+                            display:none;
+                            color:#EF4444;
+                            font-size:12px;
+                            font-weight:600;
+                            margin-top:6px;
+                            padding:6px 10px;
+                            background:#FEE2E2;
+                            border-radius:8px;
+                            border-left:3px solid #EF4444;
+                        ">⚠️ Kurs 11 000 — 13 000 oralig'ida bo'lishi kerak!</div>
                     </div>
                     <div id="editConversionPreview"
                         style="background:var(--comp-chip-uzs-bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none;">
