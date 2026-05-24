@@ -216,7 +216,22 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
     const amountUZS = currency === 'USD' ? amount * rate : amount;
     const amountUSD = currency === 'USD' ? amount : 0;
 
-    if (currency === 'USD' && rate < 5000) return alert("Iltimos, to'g'ri kursni kiriting!");
+    if (currency === 'USD') {
+    if (!rate || rate < 11000 || rate > 13000) {
+        const rateInput = document.getElementById('rate');
+        const warn = document.getElementById('rateWarning');
+        if (rateInput) {
+            rateInput.style.borderColor = '#EF4444';
+            rateInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
+            rateInput.focus();
+        }
+        if (warn) warn.style.display = 'block';
+        showToastMsg('❌ Kurs 11 000 — 13 000 oralig\\'ida bo\\'lishi kerak!', true);
+        btn.disabled = false;
+        btn.innerText = '💾 Saqlash';
+        return;
+    }
+}
 
     const isDuplicate = myFullRecords.some(r => {
         const rUzs = Number(r.amountUZS) || 0;
