@@ -226,7 +226,7 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
             rateInput.focus();
         }
         if (warn) warn.style.display = 'block';
-        showToastMsg('❌ Kurs 11 000 — 13 000 oralig\\'ida bo\\'lishi kerak!', true);
+        showToastMsg("❌ Kurs 11 000 — 13 000 oralig'ida bo'lishi kerak!", true);
         btn.disabled = false;
         btn.innerText = '💾 Saqlash';
         return;
