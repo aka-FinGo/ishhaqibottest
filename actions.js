@@ -1,4 +1,85 @@
-let currentEditScope='admin';function findRecordByRowId(rowId){const rid=String(rowId);return globalAdminData.find(x=>String(x.rowId)===rid)||myFullRecords.find(x=>String(x.rowId)===rid)||null;}function openEdit(rowId){currentEditScope='admin';const r=findRecordByRowId(rowId);if (!r) return;document.getElementById('editRowId').value=r.rowId;document.getElementById('editAmountUZS').value=r.amountUZS||'';document.getElementById('editAmountUSD').value=r.amountUSD||'';document.getElementById('editRate').value=r.rate||'';document.getElementById('editComment').value=r.comment||'';const eMonth=document.getElementById('editActionMonth');const eYear=document.getElementById('editActionYear');if (eMonth&&eYear){if (r.actionPeriod){const parts=r.actionPeriod.split('-');eYear.value=parts[0];eMonth.value=parts[1];}else{const dMeta=getDateMonthYear(r.date);if (dMeta){eYear.value=dMeta.year;eMonth.value=dMeta.month;}}}const headerName=document.getElementById('editHeaderName');const headerDate=document.getElementById('editHeaderDate');if (headerName) headerName.innerText=r.name||'—';if (headerDate) headerDate.innerText=r.date||'—';updateEditCurrencyView();document.getElementById('editModal').classList.remove('hidden');if (tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');}function openSelfEdit(rowId){currentEditScope='self';const r=findRecordByRowId(rowId);if (!r) return;document.getElementById('editRowId').value=r.rowId;document.getElementById('editAmountUZS').value=r.amountUZS||'';document.getElementById('editAmountUSD').value=r.amountUSD||'';document.getElementById('editRate').value=r.rate||'';document.getElementById('editComment').value=r.comment||'';const eMonth=document.getElementById('editActionMonth');const eYear=document.getElementById('editActionYear');if (eMonth&&eYear){if (r.actionPeriod){const parts=r.actionPeriod.split('-');eYear.value=parts[0];eMonth.value=parts[1];}else{const dMeta=getDateMonthYear(r.date);if (dMeta){eYear.value=dMeta.year;eMonth.value=dMeta.month;}}}const headerName=document.getElementById('editHeaderName');const headerDate=document.getElementById('editHeaderDate');if (headerName) headerName.innerText=r.name||'—';if (headerDate) headerDate.innerText=r.date||'—';updateEditCurrencyView();document.getElementById('editModal').classList.remove('hidden');if (tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');}
+let currentEditScope = 'admin';
+
+function findRecordByRowId(rowId) {
+    const rid = String(rowId);
+    return globalAdminData.find(x => String(x.rowId) === rid) || myFullRecords.find(x => String(x.rowId) === rid) || null;
+}
+
+function openEdit(rowId) {
+    currentEditScope = 'admin';
+    const r = findRecordByRowId(rowId);
+    if (!r) return;
+    
+    document.getElementById('editRowId').value = r.rowId;
+    document.getElementById('editAmountUZS').value = r.amountUZS || '';
+    document.getElementById('editAmountUSD').value = r.amountUSD || '';
+    document.getElementById('editRate').value = r.rate || '';
+    document.getElementById('editComment').value = r.comment || '';
+    
+    const eMonth = document.getElementById('editActionMonth');
+    const eYear = document.getElementById('editActionYear');
+    
+    if (eMonth && eYear) {
+        if (r.actionPeriod) {
+            const parts = r.actionPeriod.split('-');
+            eYear.value = parts[0];
+            eMonth.value = parts[1];
+        } else {
+            const dMeta = getDateMonthYear(r.date);
+            if (dMeta) {
+                eYear.value = dMeta.year;
+                eMonth.value = dMeta.month;
+            }
+        }
+    }
+    
+    const headerName = document.getElementById('editHeaderName');
+    const headerDate = document.getElementById('editHeaderDate');
+    if (headerName) headerName.innerText = r.name || '—';
+    if (headerDate) headerDate.innerText = r.date || '—';
+    
+    updateEditCurrencyView();
+    document.getElementById('editModal').classList.remove('hidden');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+}
+
+function openSelfEdit(rowId) {
+    currentEditScope = 'self';
+    const r = findRecordByRowId(rowId);
+    if (!r) return;
+    
+    document.getElementById('editRowId').value = r.rowId;
+    document.getElementById('editAmountUZS').value = r.amountUZS || '';
+    document.getElementById('editAmountUSD').value = r.amountUSD || '';
+    document.getElementById('editRate').value = r.rate || '';
+    document.getElementById('editComment').value = r.comment || '';
+    
+    const eMonth = document.getElementById('editActionMonth');
+    const eYear = document.getElementById('editActionYear');
+    
+    if (eMonth && eYear) {
+        if (r.actionPeriod) {
+            const parts = r.actionPeriod.split('-');
+            eYear.value = parts[0];
+            eMonth.value = parts[1];
+        } else {
+            const dMeta = getDateMonthYear(r.date);
+            if (dMeta) {
+                eYear.value = dMeta.year;
+                eMonth.value = dMeta.month;
+            }
+        }
+    }
+    
+    const headerName = document.getElementById('editHeaderName');
+    const headerDate = document.getElementById('editHeaderDate');
+    if (headerName) headerName.innerText = r.name || '—';
+    if (headerDate) headerDate.innerText = r.date || '—';
+    
+    updateEditCurrencyView();
+    document.getElementById('editModal').classList.remove('hidden');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+}
 
 function onEditRateInput(input) {
     let val = input.value.replace(/\D/g, '');
@@ -66,7 +147,6 @@ function updateEditCurrencyView(source) {
         }
     }
 }
-
 function closeModal() {
     document.getElementById('editModal').classList.add('hidden');
 }
@@ -80,8 +160,8 @@ function askActionReason(titleText, msg = "Sababni kiriting:") {
             "Tasdiqlash",
             "Bekor qilish",
             true,
-            (reason) => resolve(reason), // onConfirm
-            () => resolve('') // onCancel
+            (reason) => resolve(reason), 
+            () => resolve('') 
         );
     });
 }
@@ -100,25 +180,24 @@ function askConfirmDialog(titleText, msg = "Tasdiqlaysizmi?") {
         );
     });
 }
+
 async function saveEdit(){
     const rowId = document.getElementById('editRowId').value;
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    // Ruxsatni tekshirish
     const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
     const canEditAll = isAdmin && myPermissions.canEdit;
     const isOwner = String(r.telegramId) === String(telegramId);
 
     if (!canEditAll && !isOwner) {
-        showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni tahrirlay olasiz', true);
+        showToastMsg("❌ Siz faqat o'zingiz kiritgan ma'lumotni tahrirlay olasiz", true);
         return;
     }
 
     const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
     const rate = parseFloat(document.getElementById('editRate').value) || 0;
     
-    // --> YANGI XAVFSIZLIK VA VALIDATSIYA BLOKI <--
     const usdVal = parseFloat(amountUSD) || 0;
     const rateVal = parseFloat(rate) || 0;
 
@@ -141,10 +220,9 @@ async function saveEdit(){
                 btn.disabled = false;
                 btn.innerText = '💾 Saqlash';
             }
-            return; // API ga so'rov ketishini to'xtatadi
+            return; 
         }
     }
-    // --> VALIDATSIYA YAKUNI <--
 
     const comment = document.getElementById('editComment').value;
     let actionPeriod = '';
@@ -225,7 +303,7 @@ async function deleteRecord(rowId) {
     const isOwner = String(r.telegramId) === String(telegramId);
 
     if (!canDeleteAll && !isOwner) {
-        showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni o\'chira olasiz', true);
+        showToastMsg("❌ Siz faqat o'zingiz kiritgan ma'lumotni o'chira olasiz", true);
         return;
     }
 
@@ -255,7 +333,7 @@ async function deleteOwnRecord(rowId) {
     if (!r) return;
 
     if (String(r.telegramId) !== String(telegramId)) {
-        showToastMsg('❌ Siz faqat o\'zingiz kiritgan ma\'lumotni o\'chira olasiz', true);
+        showToastMsg("❌ Siz faqat o'zingiz kiritgan ma'lumotni o'chira olasiz", true);
         return;
     }
 
