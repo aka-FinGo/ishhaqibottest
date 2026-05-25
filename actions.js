@@ -64,7 +64,35 @@ async function saveEdit(){
     } else {
         amountUZS = parseFloat(document.getElementById('editAmountUZS').value) || 0;
     }
+const editAmountUSD = document.getElementById('editAmountUSD').value;
+    const editRate = document.getElementById('editRate').value;
+    
+    const usdVal = parseFloat(editAmountUSD) || 0;
+    const rateVal = parseFloat(editRate) || 0;
 
+    // Agar USD summasi kiritilgan bo'lsa, kurs albatta to'g'ri bo'lishi shart
+    if (usdVal > 0) {
+        if (!rateVal || rateVal < 11000 || rateVal > 13000) {
+            const rateInput = document.getElementById('editRate');
+            const warn = document.getElementById('editRateWarning');
+            const btn = document.querySelector('#editForm button[type="submit"]');
+
+            if (rateInput) {
+                rateInput.style.borderColor = '#EF4444';
+                rateInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
+                rateInput.focus();
+            }
+            if (warn) warn.style.display = 'block';
+            
+            showToastMsg("❌ Tahrirlashda xatolik: Kurs 11 000 — 13 000 oralig'ida bo'lishi kerak!", true);
+            
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = '💾 Saqlash';
+            }
+            return; // API ga so'rov ketishini to'xtatadi
+        }
+    }
     const saveBtn = document.querySelector('#editForm .btn-main[type="submit"]');
     setButtonLoading(saveBtn, true, 'Saqlanmoqda...');
     closeModal();
