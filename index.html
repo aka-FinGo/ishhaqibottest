@@ -862,7 +862,7 @@
                     </div>
                     <div class="modal-actions">
                         <button type="submit" class="btn-main">💾 Saqlash</button>
-                        <button type="button" class="btn-main bg-red" onclick="closeKvModal()">✕ Bekor</button>
+                        <button type="button" class="btn-main bg-red" onclick="closeKvModal(); populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);">✕ Bekor</button>
                     </div>
                 </form>
             </div>
