@@ -59,18 +59,10 @@ async function kvRefreshAll(btn) {
 function populateKvadratMeta(staffList) {
     const staffFilter = document.getElementById('kvFilterStaff');
     const kvStaffModal = document.getElementById('kvStaffSelect');
-    
+
     // Faqat buyurtmalarda qatnashgan xodimlarni yig'ish
     let involvedEmployees = new Set();
-    
-    // globalEmployeeList dan barcha xodimlarni qo'shamiz (yangi buyurtma uchun)
-    if (Array.isArray(staffList)) {
-        staffList.forEach(emp => {
-            const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
-            involvedEmployees.add(name);
-        });
-    }
-    
+
     // Agar kvFullRecords mavjud bo'lsa, undagi barcha jarayonlarda qatnashgan xodimlarni qo'shamiz
     if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
         kvFullRecords.forEach(rec => {
@@ -98,6 +90,11 @@ function populateKvadratMeta(staffList) {
                 });
             }
         });
+    }
+
+    // Yangi buyurtma qo'shish uchun hozirgi foydalanuvchini ham qo'shamiz
+    if (typeof myUsername !== 'undefined' && myUsername) {
+        involvedEmployees.add(myUsername);
     }
     
     const involvedEmployeesArray = Array.from(involvedEmployees).sort();
@@ -502,11 +499,79 @@ function closeKvDetailModal() {
     document.getElementById('kvDetailModal').classList.add('hidden');
 }
 
+function updateStaffFilterByProcess(selectedProcess) {
+    const staffFilter = document.getElementById('kvFilterStaff');
+    if (!staffFilter) return;
+
+    // Agar "Barcha jarayonlar" tanlangan bo'lsa, barcha xodimlarni ko'rsatish
+    if (selectedProcess === 'all') {
+        populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
+        return;
+    }
+
+    // Faqat tanlangan jarayonda qatnashgan xodimlarni yig'ish
+    let involvedEmployees = new Set();
+
+    if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
+        kvFullRecords.forEach(rec => {
+            // Faqat tanlangan jarayondagi buyurtmalarni tekshirish
+            if (!rec.currentStep || String(rec.currentStep) !== String(selectedProcess)) return;
+
+            // Buyurtma egasi
+            if (rec.staffName) {
+                involvedEmployees.add(rec.staffName);
+            }
+            // Logs dagi barcha xodimlar
+            if (Array.isArray(rec.logs)) {
+                rec.logs.forEach(log => {
+                    if (!log || !log.uid) return;
+                    // Agar log uid ownerTgId bilan bir xil bo'lsa, staffName ni olamiz
+                    if (String(log.uid) === String(rec.ownerTgId)) {
+                        if (rec.staffName) involvedEmployees.add(rec.staffName);
+                        return;
+                    }
+                    // Aks holda globalEmployeeList dan izlaymiz
+                    if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
+                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                        if (emp) {
+                            const name = emp.username || emp.firstName || '';
+                            if (name) involvedEmployees.add(name);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    const involvedEmployeesArray = Array.from(involvedEmployees).sort();
+    const currentValue = staffFilter.value;
+
+    staffFilter.innerHTML = '<option value="all">Barcha xodimlar</option>';
+    involvedEmployeesArray.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        staffFilter.appendChild(opt);
+    });
+
+    // Agar oldingi tanlov hali ro'yxatda bo'lsa, uni saqlab qolish
+    if (currentValue !== 'all' && involvedEmployeesArray.includes(currentValue)) {
+        staffFilter.value = currentValue;
+    } else {
+        staffFilter.value = 'all';
+    }
+}
+
 function applyKvFilters() {
     const month = document.getElementById('kvFilterMonth')?.value || 'all';
     const year = document.getElementById('kvFilterYear')?.value || 'all';
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
+
+    // Jarayon tanlangan bo'lsa, xodim filterini yangilash
+    if (process !== 'all') {
+        updateStaffFilterByProcess(process);
+    }
 
     kvFilteredRecords = kvFullRecords.filter(rec => {
         if (!rec || (!rec.rowId && !rec.no)) return false;

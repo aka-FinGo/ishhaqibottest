@@ -1,67 +1,83 @@
-```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-dist/
-build/
-target/
-
-# Dependencies
-.venv/
-venv/
+# Dependency directories
 node_modules/
-.julia/
-.zig-cache/
+jspm_packages/
+web_modules/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS specific
+# OS metadata
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Coverage
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build and temporary files
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+.serverless/
+out/
+tmp/
+temp/
+
+# Claude / AI Assistant local state
+.claude/settings.local.json
+.claude/backups/
+
+# Backup and temporary files
+* — копия.js
+* - Copy.js
+*.bak
+*.tmp
+*.swp
+
+# Testing
 coverage/
-htmlcov/
-.coverage
+.nyc_output/
 
-# Compression
+# Project directory (not needed for the main application)
+project/
+
+# Copy files
+admin — копия.js
+
+# Test files
+tests/
+
+# Documentation
+OPTIMIZATSIYA_XULOSA.md
+
+# Claude/AI backup files
+.claude/
 *.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
-```
+cache optimizatsiya qilish.md
+temp_*.js
+tests/
+project/
+old_style.css
+*.local.json
+.claude/*
