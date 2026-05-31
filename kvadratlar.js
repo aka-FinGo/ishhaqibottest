@@ -59,10 +59,52 @@ async function kvRefreshAll(btn) {
 function populateKvadratMeta(staffList) {
     const staffFilter = document.getElementById('kvFilterStaff');
     const kvStaffModal = document.getElementById('kvStaffSelect');
-    if (staffFilter) {
-        staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
+    
+    // Faqat buyurtmalarda qatnashgan xodimlarni yig'ish
+    let involvedEmployees = new Set();
+    
+    // globalEmployeeList dan barcha xodimlarni qo'shamiz (yangi buyurtma uchun)
+    if (Array.isArray(staffList)) {
         staffList.forEach(emp => {
             const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
+            involvedEmployees.add(name);
+        });
+    }
+    
+    // Agar kvFullRecords mavjud bo'lsa, undagi barcha jarayonlarda qatnashgan xodimlarni qo'shamiz
+    if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
+        kvFullRecords.forEach(rec => {
+            // Buyurtma egasi
+            if (rec.staffName) {
+                involvedEmployees.add(rec.staffName);
+            }
+            // Logs dagi barcha xodimlar
+            if (Array.isArray(rec.logs)) {
+                rec.logs.forEach(log => {
+                    if (!log || !log.uid) return;
+                    // Agar log uid ownerTgId bilan bir xil bo'lsa, staffName ni olamiz
+                    if (String(log.uid) === String(rec.ownerTgId)) {
+                        if (rec.staffName) involvedEmployees.add(rec.staffName);
+                        return;
+                    }
+                    // Aks holda globalEmployeeList dan izlaymiz
+                    if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
+                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                        if (emp) {
+                            const name = emp.username || emp.firstName || '';
+                            if (name) involvedEmployees.add(name);
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    const involvedEmployeesArray = Array.from(involvedEmployees).sort();
+    
+    if (staffFilter) {
+        staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
+        involvedEmployeesArray.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name; opt.textContent = name;
             staffFilter.appendChild(opt);
@@ -70,8 +112,7 @@ function populateKvadratMeta(staffList) {
     }
     if (kvStaffModal) {
         kvStaffModal.innerHTML = '<option value="">Hodimni tanlang...</option>';
-        staffList.forEach(emp => {
-            const name = (typeof emp === 'object') ? (emp.username || emp.firstName || 'Noma\'lum') : emp;
+        involvedEmployeesArray.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name; opt.textContent = name;
             kvStaffModal.appendChild(opt);
@@ -518,7 +559,30 @@ function openKvModal(rowId = null) {
             document.getElementById('kvOrderNumber').value = rec.no || '';
             document.getElementById('kvOrderName').value = rec.orderName || '';
             document.getElementById('kvTotalM2Input').value = rec.totalM2 || '';
-            document.getElementById('kvStaffSelect').value = rec.staffName || '';
+            
+            // Faqat ushbu buyurtmada qatnashgan xodimlarni ko'rsatish
+            const involvedEmployees = new Set();
+            // Owner qo'shamiz
+            if (rec.staffName) involvedEmployees.add(rec.staffName);
+            // Logs dagi barcha xodimlarni qo'shamiz
+            const logs = rec.logs || [];
+            logs.forEach(log => {
+                if (log.u) involvedEmployees.add(log.u);
+            });
+            
+            // Selectni yangilaymiz
+            const sel = document.getElementById('kvStaffSelect');
+            if (sel) {
+                sel.innerHTML = '<option value="">Xodimni tanlang...</option>';
+                involvedEmployees.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sel.appendChild(opt);
+                });
+                sel.value = rec.staffName || '';
+            }
+            
             const cleanMonth = String(rec.month || '').replace(/^_+/, '').replace(/^'/, '');
             const mEl = document.getElementById('kvActionMonth');
             if (mEl && cleanMonth) mEl.value = cleanMonth.padStart(2, '0');
@@ -539,6 +603,7 @@ function openKvModal(rowId = null) {
 
 function closeKvModal() {
     document.getElementById('kvadratModal').classList.add('hidden');
+    // Selectni qayta tiklash - keyingi ochilishda populateKvadratMeta orqali to'ldiriladi
 }
 
 async function saveKv() {
