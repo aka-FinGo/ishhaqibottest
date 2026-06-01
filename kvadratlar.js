@@ -169,6 +169,7 @@ async function initKvadratTab() {
         if (cached) {
             kvFullRecords = cached;
             if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
+            populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
             applyKvFilters();
         }
     } catch (e) { console.warn('Cache read error:', e); }
@@ -190,6 +191,7 @@ async function initKvadratTab() {
             kvFullRecords = data.data || [];
             if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = kvFullRecords;
             AppCache.set(AppCache.KEYS.KV_RECORDS, kvFullRecords);
+            populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
             applyKvFilters();
         } else {
             if (!kvFullRecords || kvFullRecords.length === 0) {
@@ -630,6 +632,15 @@ function updateStaffFilterByProcess(selectedProcess) {
     } else {
         staffFilter.value = 'all';
     }
+}
+
+function toggleKvFilterPanel() {
+    const filterCard = document.querySelector('.kv-filter-card');
+    const toggleBtn = document.getElementById('kvFilterToggleBtn');
+    if (!filterCard || !toggleBtn) return;
+    filterCard.classList.toggle('collapsed');
+    const isCollapsed = filterCard.classList.contains('collapsed');
+    toggleBtn.textContent = isCollapsed ? 'Filtrlarni ko‘rsatish' : 'Filtrlarni yashirish';
 }
 
 function resetKvFilters() {
