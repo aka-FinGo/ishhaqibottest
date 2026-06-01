@@ -635,7 +635,8 @@ function updateStaffFilterByProcess(selectedProcess) {
 }
 
 function toggleKvFilterPanel() {
-    const filterCard = document.querySelector('.kv-filter-card');
+    // support both new `.kv-filter-card` and legacy `.premium-filter-card`
+    const filterCard = document.querySelector('.kv-filter-card') || document.querySelector('.premium-filter-card');
     const toggleBtn = document.getElementById('kvFilterToggleBtn');
     if (!filterCard || !toggleBtn) return;
     filterCard.classList.toggle('collapsed');

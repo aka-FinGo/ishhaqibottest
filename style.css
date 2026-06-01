@@ -30,8 +30,11 @@ textarea,
 .kv-filter-summary{font-size:13px; color:var(--text-muted); margin-top:10px; display:block;}
 .kv-filter-card-header{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px;}
 .kv-filter-toggle-btn{white-space:nowrap;}
-.kv-filter-card.collapsed #kvFilterPanelContent{display:none;}
-.kv-filter-card.collapsed .kv-filter-summary{display:none;}
+.kv-filter-card.collapsed #kvFilterPanelContent,
+.kv-filter-card.collapsed .filter-row,
+.kv-filter-card.collapsed .kv-filter-summary,
+.premium-filter-card.collapsed .filter-row,
+.premium-filter-card.collapsed .kv-filter-summary { display: none; }
 .kv-reset-btn{width:100%; padding:12px 14px; text-align:center; border-radius:12px; border:1.5px solid var(--border); background:var(--bg); color:var(--text); font-weight:700; cursor:pointer; transition:background .2s, border-color .2s;}
 .kv-reset-btn:hover{background:rgba(16,185,129,0.08); border-color:var(--green);}
 /* FINAL STYLE MATCH FOR SCREENSHOT */
