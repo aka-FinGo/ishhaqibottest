@@ -43,7 +43,7 @@ function doPost(e) {
     var result;
 
     // Yozish amallari uchun LockService
-    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report'];
+    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'kvadrat_revert', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report'];
     var lock = null;
     if (writeActions.indexOf(action) !== -1) {
       lock = LockService.getScriptLock();
@@ -207,6 +207,11 @@ function doPost(e) {
       case "kvadrat_claim":
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
         result = processWorkflowStep(data.rowId, auth, tgId, data.targetStepIndex);
+        break;
+
+      case "kvadrat_revert":
+        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
+        result = revertWorkflowStep(data.rowId, auth, tgId, data.targetStepIndex, data.reason);
         break;
 
       case "workflow_get_config":

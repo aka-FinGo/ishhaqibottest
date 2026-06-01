@@ -81,3 +81,4 @@ project/
 old_style.css
 *.local.json
 .claude/*
+Dockerfile

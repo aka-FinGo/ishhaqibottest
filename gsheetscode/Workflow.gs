@@ -160,6 +160,99 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
   });
 }
 
+/**
+ * Reverts the last workflow step (or reverts to a target step index).
+ * Allows the actor to undo their own last action within a short window,
+ * or allows SuperAdmin to revert at any time.
+ */
+function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
+  return withWriteLock_(function() {
+    var UNDO_WINDOW_MINUTES = 15; // how long the actor can undo their own action
+    var sh = getKvadratSheet();
+    var row = parseInt(rowId, 10);
+    if (!row || row <= 1 || row > sh.getLastRow()) return { success: false, error: 'Buyurtma topilmadi' };
+
+    var values = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
+    var rawLogs = values[KV_COL.STEP_LOGS] || '[]';
+    var logs = [];
+    try { logs = JSON.parse(rawLogs || '[]'); } catch(e) { logs = []; }
+    if (!logs.length) return { success: false, error: 'Tarixda hech qanday bosqich topilmadi' };
+
+    // Decide which steps to remove
+    var stepsToRemove = [];
+    if (targetStepIndex) {
+      targetStepIndex = Number(targetStepIndex);
+      // remove all logs with step >= targetStepIndex
+      stepsToRemove = logs.filter(function(l) { return Number(l.step) >= targetStepIndex; }).map(function(l) { return Number(l.step); });
+    } else {
+      // remove only the last logged numeric step
+      var last = logs[logs.length - 1];
+      var lastStepNum = Number(last.step) || null;
+      if (!lastStepNum) return { success:false, error: 'Oxirgi yozuvni bekor qilib bo`lmaydi' };
+      stepsToRemove = [ lastStepNum ];
+    }
+
+    if (!stepsToRemove.length) return { success:false, error: 'Bekor qilinadigan bosqich topilmadi' };
+
+    // Permission: allow if SuperAdmin, otherwise allow only if actor is the one who did the last step and within UNDO_WINDOW
+    var lastLog = logs[logs.length - 1];
+    var actorIsLast = String(lastLog.uid || lastLog.id || lastLog.uid) === String(actorTgId);
+    if (!auth.isSuperAdmin && !actorIsLast) {
+      return { success:false, error: 'Faqat SuperAdmin yoki oxirgi amalga oshirgan xodim bekor qila oladi' };
+    }
+    if (!auth.isSuperAdmin && actorIsLast) {
+      var ts = new Date(lastLog.d || '').getTime();
+      if (!ts || (new Date().getTime() - ts) > UNDO_WINDOW_MINUTES * 60000) {
+        return { success:false, error: 'Bekor qilish muddati o'tib ketgan' };
+      }
+    }
+
+    // Keep a copy for audit
+    var beforeObj = { stepIndex: Number(values[KV_COL.STEP_INDEX]) || 1, status: String(values[KV_COL.STATUS] || ''), logs: logs.slice() };
+
+    // Remove logs with the steps in stepsToRemove
+    var remaining = logs.filter(function(l) { return stepsToRemove.indexOf(Number(l.step)) === -1; });
+
+    // Recompute max done step
+    var maxStepDone = remaining.reduce(function(max, l) { return Math.max(max, Number(l.step) || 0); }, 0);
+    if (maxStepDone > 0) {
+      var cfg = getWorkflowConfig();
+      var latestStepCfg = cfg.find(function(s) { return s.index === maxStepDone; });
+      if (latestStepCfg) {
+        sh.getRange(row, KV_COL.STEP_INDEX + 1).setValue(latestStepCfg.index);
+        sh.getRange(row, KV_COL.STATUS     + 1).setValue(latestStepCfg.status);
+      }
+    } else {
+      // Reset to start
+      sh.getRange(row, KV_COL.STEP_INDEX + 1).setValue(1);
+      sh.getRange(row, KV_COL.STATUS     + 1).setValue('yangi');
+    }
+
+    // Clear dynamic columns for removed steps (only for steps > 1)
+    var uniqueSteps = Array.from(new Set(stepsToRemove)).sort(function(a,b){return a-b;});
+    uniqueSteps.forEach(function(step) {
+      if (step > 1) {
+        var startColIdx = 12 + (step - 2) * 4; // 0-based in Workflow.gs logic
+        // startColIdx + 1 since sheet API is 1-indexed
+        try {
+          if (sh.getLastColumn() >= startColIdx + 4) {
+            sh.getRange(row, startColIdx + 1, 1, 4).clearContent();
+          }
+        } catch(e) { /* ignore clearing errors */ }
+      }
+    });
+
+    // Update logs cell
+    sh.getRange(row, KV_COL.STEP_LOGS + 1).setValue(JSON.stringify(remaining));
+
+    var afterObj = { stepIndex: Number(sh.getRange(row, KV_COL.STEP_INDEX + 1).getValue()) || 1, status: String(sh.getRange(row, KV_COL.STATUS + 1).getValue() || ''), logs: remaining };
+    var note = 'Reverted steps: ' + uniqueSteps.join(', ');
+    addAuditLog_(actorTgId, 'kvadrat_revert', row, beforeObj, afterObj, note);
+
+    return { success: true };
+  });
+}
+
 function normalizePos_(pos) {
   if (!pos) return '';
   return String(pos).toLowerCase().trim();
