@@ -165,7 +165,7 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
  * Allows the actor to undo their own last action within a short window,
  * or allows SuperAdmin to revert at any time.
  */
-function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
+function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex, reason) {
   return withWriteLock_(function() {
     var UNDO_WINDOW_MINUTES = 15; // how long the actor can undo their own action
     var sh = getKvadratSheet();
@@ -247,6 +247,7 @@ function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
 
     var afterObj = { stepIndex: Number(sh.getRange(row, KV_COL.STEP_INDEX + 1).getValue()) || 1, status: String(sh.getRange(row, KV_COL.STATUS + 1).getValue() || ''), logs: remaining };
     var note = 'Reverted steps: ' + uniqueSteps.join(', ');
+    if (reason) note += ' | reason: ' + String(reason).slice(0, 300);
     addAuditLog_(actorTgId, 'kvadrat_revert', row, beforeObj, afterObj, note);
 
     return { success: true };

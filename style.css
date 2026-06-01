@@ -345,3 +345,27 @@ input:checked + .toggle-slider:before {
     transform: translateX(22px);
     box-shadow: 0 0 5px rgba(0,0,0,0.2);
 }
+
+/* Undo toast for Kvadrat actions */
+.kv-undo-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    background: linear-gradient(180deg, #064E3B, #065F46);
+    color: #ffffff;
+    padding: 12px 14px;
+    border-radius: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 11000;
+    box-shadow: 0 10px 30px rgba(2,6,23,0.45);
+    font-weight: 700;
+}
+.kv-undo-toast button { font-weight:700; cursor:pointer; }
+.kv-undo-toast button:active { transform:scale(0.98); }
+.kv-undo-toast .kv-undo-timer { font-family: monospace; margin-left:6px; }
+
+@media (max-width: 420px) {
+    .kv-undo-toast { right: 8px; left: 8px; bottom: 12px; padding:10px; }
+}

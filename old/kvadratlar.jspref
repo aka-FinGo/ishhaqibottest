@@ -391,10 +391,12 @@ function showKvDetailModal(idx) {
         const canEdit = canEditGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
         const canDelete = canDeleteGlobal || isOwner || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
 
-        const buttonsRow = (canEdit || canDelete) ? `
+        const canRevert = isAdmin || isOwner;
+        const buttonsRow = (canEdit || canDelete || canRevert) ? `
             <div style="display:flex; gap:8px; margin-bottom:16px;">
                 ${canEdit ? `<button onclick="closeKvDetailModal();openKvModal(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; font-weight:700; font-size:13px;">✏️ Tahrirlash</button>` : ''}
                 ${canDelete ? `<button onclick="closeKvDetailModal();deleteKv(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#FEE2E2; color:#991B1B; border:1px solid #FECACA; font-weight:700; font-size:13px;">🗑 O'chirish</button>` : ''}
+                ${canRevert ? `<button onclick="closeKvDetailModal();revertKv(${rec.rowId})" style="flex:1; padding:10px; border-radius:10px; background:#E9F7EF; color:#065F46; border:1px solid #BBF7D0; font-weight:700; font-size:13px;">↩️ Bekor qilish</button>` : ''}
             </div>` : '';
 
         document.getElementById('kvDetailModalBody').innerHTML = `
@@ -659,3 +661,10 @@ async function claimKvWork(rowId, targetStepIndex = null) {
         kvHideProc(false, 'Tarmoq xatosi');
     }
 }
+
+        if (data.success) {
+            kvHideProc(true, 'Bajarildi!');
+            initKvadratTab();
+        } else {
+            kvHideProc(false, data.error || 'Xato');
+        }

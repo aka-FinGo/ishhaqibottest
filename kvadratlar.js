@@ -775,10 +775,102 @@ async function claimKvWork(rowId, targetStepIndex = null) {
         if (data.success) {
             kvHideProc(true, 'Bajarildi!');
             initKvadratTab();
+            try { createUndoToast(rowId, 15 * 60); } catch (e) { /* ignore */ }
         } else {
             kvHideProc(false, data.error || 'Xato');
         }
     } catch (e) {
         kvHideProc(false, 'Tarmoq xatosi');
     }
+}
+
+async function revertKv(rowId, targetStepIndex = null) {
+    const isOk = await askConfirmDialog("Bekor qilish", "Oxirgi bosqichni bekor qilmoqchimisiz?");
+    if (!isOk) return;
+    const reason = await askActionReason("Bekor qilish sababini kiriting (ixtiyoriy)");
+    kvShowProc('Bekor qilinmoqda...');
+    try {
+        const data = await apiRequest({ action: 'kvadrat_revert', rowId, targetStepIndex, reason });
+        if (data.success) {
+            kvHideProc(true, 'Bekor qilindi');
+            clearUndoToast(rowId);
+            initKvadratTab();
+        } else {
+            kvHideProc(false, data.error || 'Xato');
+        }
+    } catch (e) {
+        kvHideProc(false, 'Tarmoq xatosi');
+    }
+}
+
+async function revertKvQuick(rowId) {
+    kvShowProc('Bekor qilinmoqda...');
+    try {
+        const data = await apiRequest({ action: 'kvadrat_revert', rowId, reason: 'undo_quick' });
+        if (data.success) {
+            kvHideProc(true, 'Bekor qilindi');
+            clearUndoToast(rowId);
+            initKvadratTab();
+        } else {
+            kvHideProc(false, data.error || 'Xato');
+        }
+    } catch (e) {
+        kvHideProc(false, 'Tarmoq xatosi');
+    }
+}
+
+function createUndoToast(rowId, ttlSeconds) {
+    if (!window._kvUndoMap) window._kvUndoMap = {};
+    clearUndoToast(rowId);
+    const id = 'kv-undo-' + rowId;
+    const wrap = document.createElement('div');
+    wrap.id = id;
+    wrap.className = 'kv-undo-toast';
+    wrap.style.cssText = 'position:fixed; right:16px; bottom:16px; background:#0f766e; color:white; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(2,6,23,0.5); display:flex; gap:12px; align-items:center; z-index:9999;';
+    const label = document.createElement('div');
+    label.style.minWidth = '180px';
+    label.innerText = 'Undo uchun: ';
+    const timer = document.createElement('span');
+    timer.style.fontWeight = '800';
+    timer.innerText = formatTime(ttlSeconds);
+    label.appendChild(timer);
+    const btn = document.createElement('button');
+    btn.innerText = '↩️ Bekor qilish';
+    btn.style.cssText = 'background:white; color:#065F46; border:none; padding:8px 10px; border-radius:8px; font-weight:700; cursor:pointer;';
+    btn.onclick = function() { revertKvQuick(rowId); };
+    const close = document.createElement('button');
+    close.innerText = '✕';
+    close.style.cssText = 'background:transparent; color:white; border:none; margin-left:8px; font-size:14px; cursor:pointer;';
+    close.onclick = function() { clearUndoToast(rowId); };
+    wrap.appendChild(label);
+    wrap.appendChild(btn);
+    wrap.appendChild(close);
+    document.body.appendChild(wrap);
+
+    var remaining = ttlSeconds;
+    var iv = setInterval(function() {
+        remaining -= 1;
+        if (remaining <= 0) {
+            clearUndoToast(rowId);
+            return;
+        }
+        timer.innerText = formatTime(remaining);
+    }, 1000);
+    window._kvUndoMap[rowId] = { iv: iv, el: wrap };
+}
+
+function clearUndoToast(rowId) {
+    if (!window._kvUndoMap) return;
+    var entry = window._kvUndoMap[rowId];
+    if (entry) {
+        try { clearInterval(entry.iv); } catch(e) {}
+        try { entry.el.remove(); } catch(e) {}
+        delete window._kvUndoMap[rowId];
+    }
+}
+
+function formatTime(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 }
