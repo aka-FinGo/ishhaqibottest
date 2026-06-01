@@ -583,8 +583,9 @@ function updateStaffFilterByProcess(selectedProcess) {
 
     if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
         kvFullRecords.forEach(rec => {
+            const currentStep = rec.currentStep || rec.stepIndex || rec.step || rec.current_step;
             // Faqat tanlangan jarayondagi buyurtmalarni tekshirish
-            if (!rec.currentStep || String(rec.currentStep) !== String(selectedProcess)) return;
+            if (!currentStep || String(currentStep) !== String(selectedProcess)) return;
 
             // Buyurtma egasi
             if (rec.staffName) {
@@ -632,7 +633,7 @@ function updateStaffFilterByProcess(selectedProcess) {
 }
 
 function resetKvFilters() {
-    const resetSelects = ['kvFilterMonth', 'kvFilterYear', 'kvFilterStaff', 'kvFilterProcess', 'kvFilterStatus'];
+    const resetSelects = ['kvFilterMonth', 'kvFilterYear', 'kvFilterStaff', 'kvFilterProcess'];
     resetSelects.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = 'all';
@@ -647,7 +648,6 @@ function applyKvFilters() {
     const year = document.getElementById('kvFilterYear')?.value || 'all';
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
-    const status = document.getElementById('kvFilterStatus')?.value || 'all';
     const searchQuery = document.getElementById('kvFilterSearch')?.value || '';
 
     if (process !== 'all') {
@@ -662,9 +662,6 @@ function applyKvFilters() {
         }
         if (year !== 'all') {
             if (!String(rec.date || '').endsWith(String(year))) return false;
-        }
-        if (status !== 'all') {
-            if (!String(rec.status || '').toLowerCase().includes(String(status).toLowerCase())) return false;
         }
         if (staff !== 'all') {
             let staffMatch = (rec.staffName === staff);
@@ -687,7 +684,8 @@ function applyKvFilters() {
             return false;
         }
         if (process !== 'all') {
-            if (!rec.currentStep || String(rec.currentStep) !== String(process)) return false;
+            const currentStep = rec.currentStep || rec.stepIndex || rec.step || rec.current_step;
+            if (!currentStep || String(currentStep) !== String(process)) return false;
         }
         return true;
     });
