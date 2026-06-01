@@ -156,6 +156,9 @@ function processWorkflowStep(rowId, auth, actorTgId, targetStepIndex) {
        }
     }
 
+    // Invalidate cache so fresh data is fetched
+    try { CacheService.getScriptCache().remove("kv_data_all"); } catch(e) { /* ignore */ }
+
     return { success: true };
   });
 }
@@ -250,6 +253,9 @@ function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex, reason) {
     if (reason) note += ' | reason: ' + String(reason).slice(0, 300);
     addAuditLog_(actorTgId, 'kvadrat_revert', row, beforeObj, afterObj, note);
 
+    // Invalidate cache so fresh data is fetched
+    try { CacheService.getScriptCache().remove("kv_data_all"); } catch(e) { /* ignore */ }
+
     return { success: true };
   });
 }
@@ -257,4 +263,83 @@ function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex, reason) {
 function normalizePos_(pos) {
   if (!pos) return '';
   return String(pos).toLowerCase().trim();
+}
+
+/**
+ * Force reassign a specific step to a different user (SuperAdmin only).
+ * Appends an admin log entry, updates dynamic columns and STEP_INDEX/STATUS, and records an audit log.
+ */
+function forceReassignStep(rowId, auth, targetStepIndex, newUid, newName, note) {
+  return withWriteLock_(function() {
+    if (!auth || !auth.isSuperAdmin) return { success:false, error: 'Ruxsat yo\'q' };
+    var row = parseInt(rowId, 10);
+    if (!row || row <= 1) return { success:false, error: 'Buyurtma topilmadi' };
+
+    var sh = getKvadratSheet();
+    if (row > sh.getLastRow()) return { success:false, error: 'Buyurtma topilmadi' };
+
+    var values = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
+    var rawLogs = values[KV_COL.STEP_LOGS] || '[]';
+    var logs = [];
+    try { logs = JSON.parse(rawLogs || '[]'); } catch(e) { logs = []; }
+
+    targetStepIndex = Number(targetStepIndex) || null;
+    if (!targetStepIndex) return { success:false, error: 'Noto\'g\'ri bosqich indeksi' };
+
+    var beforeObj = { stepIndex: Number(values[KV_COL.STEP_INDEX]) || 1, status: String(values[KV_COL.STATUS] || ''), logs: logs.slice() };
+
+    // Append an admin log entry for this reassignment
+    var adminLog = {
+      step: targetStepIndex,
+      uid: String(newUid || ''),
+      u: String(newName || 'Admin'),
+      d: new Date().toISOString(),
+      admin: true,
+      note: String(note || '')
+    };
+    logs.push(adminLog);
+
+    // Ensure logs are sorted by step
+    logs.sort(function(a,b){ return (Number(a.step)||0) - (Number(b.step)||0); });
+
+    // Recompute max done step and update STEP_INDEX/STATUS accordingly
+    var maxStepDone = logs.reduce(function(max, l) { return Math.max(max, Number(l.step) || 0); }, 0);
+    var cfg = getWorkflowConfig();
+    if (maxStepDone > 0) {
+      var latestCfg = cfg.find(function(s){ return s.index === maxStepDone; });
+      if (latestCfg) {
+        sh.getRange(row, KV_COL.STEP_INDEX + 1).setValue(latestCfg.index);
+        sh.getRange(row, KV_COL.STATUS     + 1).setValue(latestCfg.status);
+      }
+    }
+
+    // Update dynamic columns for the target step (if >1)
+    if (targetStepIndex > 1) {
+      try {
+        var startColIdx = 12 + (targetStepIndex - 2) * 4; // 0-based in earlier logic
+        var userName = String(newName || 'Admin');
+        var uidStr = String(newUid || '');
+        var totalM2 = Number(values[KV_COL.TOTAL_M2]) || 0;
+        if (sh.getLastColumn() >= startColIdx + 4) {
+          sh.getRange(row, startColIdx + 1).setValue(userName);
+          sh.getRange(row, startColIdx + 2).setValue(uidStr);
+          sh.getRange(row, startColIdx + 3).setValue(totalM2);
+          sh.getRange(row, startColIdx + 4).setValue(new Date());
+        }
+      } catch(e) { /* ignore write errors */ }
+    }
+
+    // Save updated logs
+    sh.getRange(row, KV_COL.STEP_LOGS + 1).setValue(JSON.stringify(logs));
+
+    var afterObj = { stepIndex: Number(sh.getRange(row, KV_COL.STEP_INDEX + 1).getValue()) || 1, status: String(sh.getRange(row, KV_COL.STATUS + 1).getValue() || ''), logs: logs };
+    var auditNote = 'forceReassignStep: step=' + targetStepIndex + ' -> ' + (String(newName || '') + ' (' + String(newUid || '') + ')');
+    if (note) auditNote += ' | ' + String(note).slice(0,300);
+    addAuditLog_(auth.telegramId || auth.tgId || '', 'forceReassignStep', row, beforeObj, afterObj, auditNote);
+
+    // Invalidate cache immediately so fresh data is fetched next time
+    try { CacheService.getScriptCache().remove("kv_data_all"); } catch(e) { /* ignore */ }
+
+    return { success:true };
+  });
 }
