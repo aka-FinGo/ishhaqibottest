@@ -188,7 +188,7 @@ function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex, reason) {
       // remove only the last logged numeric step
       var last = logs[logs.length - 1];
       var lastStepNum = Number(last.step) || null;
-      if (!lastStepNum) return { success:false, error: 'Oxirgi yozuvni bekor qilib bo`lmaydi' };
+      if (!lastStepNum) return { success:false, error: "Oxirgi yozuvni bekor qilib bo'lmaydi" };
       stepsToRemove = [ lastStepNum ];
     }
 
@@ -203,7 +203,7 @@ function revertWorkflowStep(rowId, auth, actorTgId, targetStepIndex, reason) {
     if (!auth.isSuperAdmin && actorIsLast) {
       var ts = new Date(lastLog.d || '').getTime();
       if (!ts || (new Date().getTime() - ts) > UNDO_WINDOW_MINUTES * 60000) {
-        return { success:false, error: 'Bekor qilish muddati o'tib ketgan' };
+        return { success:false, error: "Bekor qilish muddati o'tib ketgan" };
       }
     }
 

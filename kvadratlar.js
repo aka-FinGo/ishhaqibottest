@@ -227,7 +227,9 @@ function renderKvList() {
     const totalDisplay = document.getElementById('kvTotalM2');
     if (!container) return;
 
+    const summaryEl = document.getElementById('kvFilterSummary');
     if (!kvFilteredRecords || !kvFilteredRecords.length) {
+        if (summaryEl) summaryEl.innerText = '0 ta buyurtma';
         container.innerHTML = `
             <div class="empty-state" style="background:var(--surface); border:2px dashed var(--border); border-radius:24px; padding:60px 20px;">
                 <div class="empty-icon" style="font-size:48px; margin-bottom:16px;">📏</div>
@@ -241,6 +243,9 @@ function renderKvList() {
     try {
         const totalM2ForFiltered = kvFilteredRecords.reduce((sum, rec) => sum + (Number(rec.totalM2) || 0), 0);
         if (totalDisplay) totalDisplay.innerText = totalM2ForFiltered.toLocaleString('uz-UZ', { maximumFractionDigits: 1 });
+        if (summaryEl) {
+            summaryEl.innerText = `${kvFilteredRecords.length} ta buyurtma • jami ${totalM2ForFiltered.toLocaleString('uz-UZ', { maximumFractionDigits: 1 })} m²`;
+        }
 
         let lastDavr = null;
         const sortedKvData = [...kvFilteredRecords].sort((a, b) => {
@@ -499,13 +504,77 @@ function closeKvDetailModal() {
     document.getElementById('kvDetailModal').classList.add('hidden');
 }
 
+function normalizeKvSearch(value) {
+    return String(value || '').toLowerCase().trim();
+}
+
+function applySearchToRecord(rec, query) {
+    if (!query) return true;
+    const needle = normalizeKvSearch(query);
+    const fields = [rec.no, rec.orderName, rec.staffName, rec.status, rec.currentStep, rec.date, rec.month];
+    let haystack = fields.map(normalizeKvSearch).join(' ');
+
+    if (Array.isArray(rec.logs)) {
+        const logNames = rec.logs.map(log => {
+            if (!log || !log.uid) return '';
+            if (String(log.uid) === String(rec.ownerTgId)) return rec.staffName || '';
+            if (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)]) {
+                return window._kvEmpMap[String(log.uid)];
+            }
+            if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
+                const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                if (emp) return emp.username || emp.firstName || '';
+            }
+            return String(log.uid || '');
+        }).join(' ');
+        haystack += ' ' + normalizeKvSearch(logNames);
+    }
+    return haystack.includes(needle);
+}
+
 function updateStaffFilterByProcess(selectedProcess) {
     const staffFilter = document.getElementById('kvFilterStaff');
     if (!staffFilter) return;
 
     // Agar "Barcha jarayonlar" tanlangan bo'lsa, barcha xodimlarni ko'rsatish
     if (selectedProcess === 'all') {
-        populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
+        const allEmployees = new Set();
+        if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
+            kvFullRecords.forEach(rec => {
+                if (rec.staffName) allEmployees.add(rec.staffName);
+                if (Array.isArray(rec.logs)) {
+                    rec.logs.forEach(log => {
+                        if (!log || !log.uid) return;
+                        if (String(log.uid) === String(rec.ownerTgId)) {
+                            if (rec.staffName) allEmployees.add(rec.staffName);
+                            return;
+                        }
+                        if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
+                            const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                            if (emp) {
+                                const name = emp.username || emp.firstName || '';
+                                if (name) allEmployees.add(name);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        const employeesArray = Array.from(allEmployees).sort();
+        const currentValue = staffFilter.value;
+        staffFilter.innerHTML = '<option value="all">Barcha xodimlar</option>';
+        employeesArray.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            staffFilter.appendChild(opt);
+        });
+        if (currentValue !== 'all' && employeesArray.includes(currentValue)) {
+            staffFilter.value = currentValue;
+        } else {
+            staffFilter.value = 'all';
+        }
         return;
     }
 
@@ -562,13 +631,25 @@ function updateStaffFilterByProcess(selectedProcess) {
     }
 }
 
+function resetKvFilters() {
+    const resetSelects = ['kvFilterMonth', 'kvFilterYear', 'kvFilterStaff', 'kvFilterProcess', 'kvFilterStatus'];
+    resetSelects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = 'all';
+    });
+    const searchInput = document.getElementById('kvFilterSearch');
+    if (searchInput) searchInput.value = '';
+    applyKvFilters();
+}
+
 function applyKvFilters() {
     const month = document.getElementById('kvFilterMonth')?.value || 'all';
     const year = document.getElementById('kvFilterYear')?.value || 'all';
     const staff = document.getElementById('kvFilterStaff')?.value || 'all';
     const process = document.getElementById('kvFilterProcess')?.value || 'all';
+    const status = document.getElementById('kvFilterStatus')?.value || 'all';
+    const searchQuery = document.getElementById('kvFilterSearch')?.value || '';
 
-    // Jarayon tanlangan bo'lsa, xodim filterini yangilash
     if (process !== 'all') {
         updateStaffFilterByProcess(process);
     }
@@ -581,6 +662,9 @@ function applyKvFilters() {
         }
         if (year !== 'all') {
             if (!String(rec.date || '').endsWith(String(year))) return false;
+        }
+        if (status !== 'all') {
+            if (!String(rec.status || '').toLowerCase().includes(String(status).toLowerCase())) return false;
         }
         if (staff !== 'all') {
             let staffMatch = (rec.staffName === staff);
@@ -598,6 +682,9 @@ function applyKvFilters() {
                 staffMatch = logNames.some(name => name === staff);
             }
             if (!staffMatch) return false;
+        }
+        if (searchQuery && !applySearchToRecord(rec, searchQuery)) {
+            return false;
         }
         if (process !== 'all') {
             if (!rec.currentStep || String(rec.currentStep) !== String(process)) return false;

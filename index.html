@@ -667,7 +667,23 @@
                 <div
                     style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
                     Saralash va Filtrlar</div>
-                <div class="filter-row" style="margin-bottom:10px;">
+                <div class="filter-row" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+                    <div class="filter-col" style="flex:2; min-width:220px;">
+                        <label>Qidiruv</label>
+                        <input id="kvFilterSearch" type="text" placeholder="Buyurtma №, nomi yoki xodim..." oninput="applyKvFilters()">
+                    </div>
+                    <div class="filter-col" style="min-width:180px;">
+                        <label>Status</label>
+                        <select id="kvFilterStatus" onchange="applyKvFilters()">
+                            <option value="all">Barcha statuslar</option>
+                            <option value="yangi">Yangi</option>
+                            <option value="bajarilmoqda">Bajarilmoqda</option>
+                            <option value="tayyor">Tayyor</option>
+                            <option value="qaytarildi">Qaytarildi</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
                     <div class="filter-col">
                         <label>Oy</label>
                         <select id="kvFilterMonth" onchange="applyKvFilters()">
@@ -693,7 +709,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="filter-row">
+                <div class="filter-row" style="margin-bottom:10px; gap:10px; flex-wrap:wrap; align-items:flex-end;">
                     <div class="filter-col">
                         <label>Mas'ul xodim:</label>
                         <select id="kvFilterStaff" onchange="applyKvFilters()">
@@ -706,7 +722,11 @@
                             <option value="all">Barcha jarayonlar</option>
                         </select>
                     </div>
+                    <div class="filter-col" style="flex:1; min-width:180px; align-self:flex-end;">
+                        <button type="button" class="btn-secondary kv-reset-btn" onclick="resetKvFilters()">Filtrlarni tozalash</button>
+                    </div>
                 </div>
+                <div id="kvFilterSummary" class="kv-filter-summary">0 ta buyurtma</div>
             </div>
 
             <div id="kvWorkerStatsBar" style="margin-bottom:10px;"></div>
