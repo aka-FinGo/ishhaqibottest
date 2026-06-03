@@ -230,8 +230,10 @@ function renderKvList() {
     if (!container) return;
 
     const summaryEl = document.getElementById('kvFilterSummary');
+    const totalOrdersEl = document.getElementById('kvTotalOrders');
     if (!kvFilteredRecords || !kvFilteredRecords.length) {
         if (summaryEl) summaryEl.innerText = '0 ta buyurtma';
+        if (totalOrdersEl) totalOrdersEl.innerText = '0 ta buyurtma';
         container.innerHTML = `
             <div class="empty-state" style="background:var(--surface); border:2px dashed var(--border); border-radius:24px; padding:60px 20px;">
                 <div class="empty-icon" style="font-size:48px; margin-bottom:16px;">📏</div>
@@ -247,6 +249,9 @@ function renderKvList() {
         if (totalDisplay) totalDisplay.innerText = totalM2ForFiltered.toLocaleString('uz-UZ', { maximumFractionDigits: 1 });
         if (summaryEl) {
             summaryEl.innerText = `${kvFilteredRecords.length} ta buyurtma • jami ${totalM2ForFiltered.toLocaleString('uz-UZ', { maximumFractionDigits: 1 })} m²`;
+        }
+        if (totalOrdersEl) {
+            totalOrdersEl.innerText = `${kvFilteredRecords.length} ta buyurtma`;
         }
 
         let lastDavr = null;

@@ -660,10 +660,15 @@
             </div>
 
             <div class="premium-hero-card" style="margin-bottom:24px;">
-                <div class="premium-hero-content">
-                    <div class="premium-hero-label">JAMI M2 (TANLANGAN DAVR)</div>
-                    <div class="premium-hero-value" id="kvTotalM2">0</div>
-                    <div class="premium-hero-unit">m² (metr kvadrat)</div>
+                <div class="premium-hero-content" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div class="premium-hero-label">JAMI M2 (TANLANGAN DAVR)</div>
+                        <div class="premium-hero-value" id="kvTotalM2">0</div>
+                        <div class="premium-hero-unit">m² (metr kvadrat)</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding:8px 16px; border-radius:12px; backdrop-filter:blur(8px); min-width:110px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                        <div id="kvTotalOrders" style="font-size:16px; font-weight:800; color:#ffffff; font-family:'SFMono-Regular', Consolas, monospace;">0 ta buyurtma</div>
+                    </div>
                 </div>
             </div>
 
@@ -739,8 +744,6 @@
                             <button type="button" class="btn-secondary kv-reset-btn" onclick="resetKvFilters()" style="width:100%; padding:12px; font-weight:700; border-radius:var(--radius-sm);">Filtrlarni tozalash</button>
                         </div>
                     </div>
-
-                    <div id="kvFilterSummary" class="kv-filter-summary" style="text-align:center; font-size:12px; font-weight:700; color:var(--text-muted); margin-top:8px;">0 ta buyurtma</div>
                 </div>
             </div>
 
