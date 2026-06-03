@@ -677,13 +677,12 @@
                     </button>
                 </div>
                 <div id="kvFilterPanelContent">
-                    <div class="filter-row" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
-                        <div class="filter-col" style="flex:2; min-width:220px;">
-                            <label>Qidiruv</label>
-                            <input id="kvFilterSearch" type="text" placeholder="Buyurtma №, nomi yoki xodim..." oninput="applyKvFilters()">
+                    <!-- Qidiruv inputi -->
+                    <div class="filter-row" style="margin-bottom:12px;">
+                        <div class="filter-col" style="flex:1;">
+                            <input id="kvFilterSearch" type="text" placeholder="🔍 Buyurtma №, nomi yoki xodim..." oninput="applyKvFilters()">
                         </div>
-                        <div class="filter-col" style="min-width:180px; display:none;">
-                            <label>Status</label>
+                        <div class="filter-col" style="display:none;">
                             <select id="kvFilterStatus" onchange="applyKvFilters()">
                                 <option value="all">Barcha statuslar</option>
                                 <option value="yangi">Yangi</option>
@@ -693,11 +692,12 @@
                             </select>
                         </div>
                     </div>
-                    <div class="filter-row" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
-                        <div class="filter-col">
-                            <label>Oy</label>
+
+                    <!-- Oy va Yil -->
+                    <div class="filter-row" style="margin-bottom:12px; gap:10px; display:flex;">
+                        <div class="filter-col" style="flex:1;">
                             <select id="kvFilterMonth" onchange="applyKvFilters()">
-                                <option value="all">Barcha oylar</option>
+                                <option value="all">📅 Barcha oylar</option>
                                 <option value="01">Yanvar</option>
                                 <option value="02">Fevral</option>
                                 <option value="03">Mart</option>
@@ -712,31 +712,35 @@
                                 <option value="12">Dekabr</option>
                             </select>
                         </div>
-                        <div class="filter-col">
-                            <label>Yil</label>
+                        <div class="filter-col" style="flex:1;">
                             <select id="kvFilterYear" onchange="applyKvFilters()">
-                                <option value="all">Yillar</option>
+                                <option value="all">📅 Yillar</option>
                             </select>
                         </div>
                     </div>
-                    <div class="filter-row" style="margin-bottom:10px; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-                        <div class="filter-col">
-                            <label>Mas'ul xodim:</label>
+
+                    <!-- Mas'ul xodim va Ish bosqichi -->
+                    <div class="filter-row" style="margin-bottom:12px; gap:10px; display:flex;">
+                        <div class="filter-col" style="flex:1;">
                             <select id="kvFilterStaff" onchange="applyKvFilters()">
-                                <option value="all">Barcha xodimlar</option>
+                                <option value="all">👤 Barcha xodimlar</option>
                             </select>
                         </div>
-                        <div class="filter-col">
-                            <label>Ish bosqichi</label>
+                        <div class="filter-col" style="flex:1;">
                             <select id="kvFilterProcess" onchange="applyKvFilters()">
-                                <option value="all">Barcha jarayonlar</option>
+                                <option value="all">⚙️ Barcha jarayonlar</option>
                             </select>
-                        </div>
-                        <div class="filter-col" style="flex:1; min-width:180px; align-self:flex-end;">
-                            <button type="button" class="btn-secondary kv-reset-btn" onclick="resetKvFilters()">Filtrlarni tozalash</button>
                         </div>
                     </div>
-                    <div id="kvFilterSummary" class="kv-filter-summary">0 ta buyurtma</div>
+
+                    <!-- Filtrlarni tozalash tugmasi -->
+                    <div class="filter-row" style="margin-bottom:8px;">
+                        <div class="filter-col" style="flex:1;">
+                            <button type="button" class="btn-secondary kv-reset-btn" onclick="resetKvFilters()" style="width:100%; padding:12px; font-weight:700; border-radius:var(--radius-sm);">Filtrlarni tozalash</button>
+                        </div>
+                    </div>
+
+                    <div id="kvFilterSummary" class="kv-filter-summary" style="text-align:center; font-size:12px; font-weight:700; color:var(--text-muted); margin-top:8px;">0 ta buyurtma</div>
                 </div>
             </div>
 

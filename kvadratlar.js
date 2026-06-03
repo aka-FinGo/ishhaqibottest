@@ -100,7 +100,7 @@ function populateKvadratMeta(staffList) {
     const involvedEmployeesArray = Array.from(involvedEmployees).sort();
     
     if (staffFilter) {
-        staffFilter.innerHTML = '<option value="all">Barcha hodimlar</option>';
+        staffFilter.innerHTML = '<option value="all">👤 Barcha xodimlar</option>';
         involvedEmployeesArray.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name; opt.textContent = name;
@@ -118,7 +118,7 @@ function populateKvadratMeta(staffList) {
     const yearSel = document.getElementById('kvFilterYear');
     if (yearSel) {
         const currentYear = new Date().getFullYear();
-        yearSel.innerHTML = '<option value="all">Yillar</option>';
+        yearSel.innerHTML = '<option value="all">📅 Yillar</option>';
         for (let y = currentYear; y >= 2024; y--) {
             const opt = document.createElement('option');
             opt.value = y; opt.textContent = y;
@@ -128,7 +128,7 @@ function populateKvadratMeta(staffList) {
     const processSelect = document.getElementById('kvFilterProcess');
     if (processSelect) {
         const workflowConfig = (typeof myPermissions !== 'undefined' && Array.isArray(myPermissions.workflowConfig)) ? myPermissions.workflowConfig : [];
-        processSelect.innerHTML = '<option value="all">Barcha jarayonlar</option>';
+        processSelect.innerHTML = '<option value="all">⚙️ Barcha jarayonlar</option>';
         workflowConfig.forEach((step, idx) => {
             const opt = document.createElement('option');
             opt.value = String(step.index || idx + 1);
