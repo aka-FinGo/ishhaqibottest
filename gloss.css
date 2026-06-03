@@ -91,7 +91,15 @@ div.detail-card,
 div.hodim-card,
 div.page-switcher-btn,
 div.premium-filter-card,
-div.role-item {
+div.role-item,
+div.kv-worker-list-card,
+div.kv-stat-card,
+div.kv-chart-card,
+div.kv-staff-section,
+div.kv-records-section,
+div.kv-staff-item,
+div.kv-record-item,
+div.kv-table-wrap {
     background: rgba(10, 18, 32, 0.55) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
@@ -107,7 +115,14 @@ div.card:hover,
 div.stat-card:hover,
 div.history-item:hover,
 div.hodim-card:hover,
-div.compact-item:hover {
+div.compact-item:hover,
+div.kv-worker-list-card:hover,
+div.kv-stat-card:hover,
+div.kv-chart-card:hover,
+div.kv-staff-section:hover,
+div.kv-records-section:hover,
+div.kv-staff-item:hover,
+div.kv-record-item:hover {
     border-color: rgba(255, 140, 0, 0.4) !important; /* Kelviq Orange glow */
     box-shadow: 0 0 20px rgba(255, 140, 0, 0.2) !important;
     transform: translateY(-2px);
@@ -179,14 +194,14 @@ div.bottom-nav {
 }
 
 /* Inputs / Dropdowns (Clean dark style) */
-input, select, textarea {
+input, select, textarea, .kv-filter-select {
     background: rgba(0, 0, 0, 0.5) !important;
     border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: var(--radius-sm) !important;
     color: #ffffff !important;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus, select:focus, textarea:focus, .kv-filter-select:focus {
     border-color: #00f2ff !important;
     box-shadow: 0 0 10px rgba(0, 242, 255, 0.2) !important;
     background: rgba(0, 0, 0, 0.7) !important;
@@ -290,3 +305,102 @@ div.modal-content {
     background: rgba(10, 18, 32, 0.95) !important;
     border-top: 2px solid rgba(0, 242, 255, 0.25) !important;
 }
+
+/* ============================================================
+   KV WORKER & KV TABLE GRAPHICS OVERRIDES (Gloss Mode)
+   ============================================================ */
+.kv-worker-list-title {
+    color: #00f2ff !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3) !important;
+}
+
+.kv-worker-row-name {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.kv-worker-row-val {
+    color: #00f2ff !important;
+    font-weight: 700 !important;
+}
+
+.kv-worker-row-orders {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.kv-worker-progress {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    height: 8px !important;
+}
+
+.kv-worker-progress-bar {
+    background: linear-gradient(90deg, #00f2ff, #00ff88) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 0 8px rgba(0, 242, 255, 0.4) !important;
+}
+
+div.kv-worker-card-solo {
+    background: linear-gradient(135deg, rgba(10, 18, 32, 0.75) 0%, rgba(0, 242, 255, 0.15) 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.25) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    border-radius: var(--radius) !important;
+    color: #ffffff !important;
+}
+
+/* KV Table styling */
+.kv-table thead th {
+    background: rgba(6, 11, 20, 0.8) !important;
+    color: #00f2ff !important;
+    border-color: rgba(0, 242, 255, 0.15) !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 6px rgba(0, 242, 255, 0.3) !important;
+}
+
+.kv-table tbody td {
+    background: transparent !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.kv-table tbody tr.kv-date-row td {
+    background: rgba(0, 242, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(0, 242, 255, 0.1) !important;
+    font-weight: 700 !important;
+}
+
+.kv-col-m2 {
+    color: #00ff88 !important; /* Green neon */
+    font-weight: 800 !important;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3) !important;
+}
+
+/* Hover effects for rows in KV table */
+.kv-data-row {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer;
+}
+
+.kv-data-row:hover {
+    background: rgba(0, 242, 255, 0.08) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 242, 255, 0.15) !important;
+}
+
+.kv-data-row:hover td {
+    color: #ffffff !important;
+    border-color: rgba(0, 242, 255, 0.25) !important;
+}
+
+.kv-data-row:hover .kv-col-no b {
+    color: #00f2ff !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.5) !important;
+}
+
+.kv-data-row:hover .kv-col-m2 {
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.6) !important;
+}
+
