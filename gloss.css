@@ -228,6 +228,71 @@ h1, h2, h3, h4, h5, h6, .item-name, .profile-name, .modal-title {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
 }
 
+/* Premium hero card child elements - Gloss Cyber Theme */
+.premium-hero-label {
+    color: #00f2ff !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3) !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.2px !important;
+}
+
+.premium-hero-value {
+    color: #ffffff !important;
+    text-shadow: 0 0 20px rgba(0, 242, 255, 0.3) !important;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace !important;
+}
+
+.premium-hero-unit {
+    color: rgba(0, 242, 255, 0.6) !important;
+    font-weight: 600 !important;
+}
+
+/* kvTotalOrders sub-card inside hero */
+.premium-hero-card #kvTotalOrders {
+    color: #00ff88 !important;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3) !important;
+    font-family: 'SFMono-Regular', Consolas, monospace !important;
+}
+
+/* Dashboard stat & chart cards - Gloss override */
+.dash-stat-card,
+.dash-chart-card {
+    background: rgba(10, 18, 32, 0.55) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    border-radius: var(--radius) !important;
+    color: #ffffff !important;
+}
+
+.dash-stat-card:hover,
+.dash-chart-card:hover {
+    border-color: rgba(255, 140, 0, 0.4) !important;
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.2) !important;
+}
+
+.dash-stat-value {
+    color: #ffffff !important;
+}
+
+.dash-stat-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.dash-stat-sub {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.dash-chart-title {
+    color: #00f2ff !important;
+    text-shadow: 0 0 6px rgba(0, 242, 255, 0.2) !important;
+}
+
+.dash-section-title {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
 /* Sub-tabs / Filters */
 .sub-tabs {
     background: rgba(0, 0, 0, 0.3) !important;

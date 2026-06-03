@@ -5,20 +5,8 @@
 
 let currentWorkflowSteps = [];
 
-function getWorkflowStepColors(idx, total) {
-    const position = total <= 2
-        ? (idx === 0 ? 'start' : 'end')
-        : idx === 0 ? 'start'
-        : idx === total - 1 ? 'end'
-        : 'middle';
-
-    switch (position) {
-        case 'start':  return { bg: 'var(--wf-start-bg)', color: 'var(--wf-start-text)', label: 'Boshlang\'ich' };
-        case 'middle': return { bg: 'var(--wf-mid-bg)', color: 'var(--wf-mid-text)', label: 'O\'rta bosqich' };
-        case 'end':    return { bg: 'var(--wf-end-bg)', color: 'var(--wf-end-text)', label: 'Yakun' };
-        default:       return { bg: 'var(--wf-def-bg)', color: 'var(--wf-def-text)', label: 'Bosqich' };
-    }
-}
+// getWorkflowStepColors — unified version in dashboard_kv.js
+// Handles both (index) and (idx, total) calling conventions
 
 function initWorkflowAdmin() {
     currentWorkflowSteps = JSON.parse(JSON.stringify(myPermissions.workflowConfig || []));

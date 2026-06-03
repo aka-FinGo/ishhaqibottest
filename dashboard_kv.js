@@ -21,9 +21,25 @@ function getPaletteColor(index, palette = KV_PALETTE) {
     return palette[index % palette.length];
 }
 
-function getWorkflowStepColors(positionIndex) {
+function getWorkflowStepColors(positionIndex, total) {
+    if (total !== undefined) {
+        // Called with (idx, total) signature — position-based colors
+        const position = total <= 2
+            ? (positionIndex === 0 ? 'start' : 'end')
+            : positionIndex === 0 ? 'start'
+            : positionIndex === total - 1 ? 'end'
+            : 'middle';
+        switch (position) {
+            case 'start':  return { bg: 'var(--wf-start-bg)', color: 'var(--wf-start-text)', label: "Boshlang'ich" };
+            case 'middle': return { bg: 'var(--wf-mid-bg)', color: 'var(--wf-mid-text)', label: "O'rta bosqich" };
+            case 'end':    return { bg: 'var(--wf-end-bg)', color: 'var(--wf-end-text)', label: 'Yakun' };
+            default:       return { bg: 'var(--wf-def-bg)', color: 'var(--wf-def-text)', label: 'Bosqich' };
+        }
+    }
+    // Called with (index) only — direct palette color for charts
     return {
-        bg: getPaletteColor(positionIndex, KV_STEP_PALETTE)
+        bg: getPaletteColor(positionIndex, KV_STEP_PALETTE),
+        color: '#ffffff'
     };
 }
 
@@ -603,7 +619,8 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
             const stepCfg = config.find(s => s.index === stepNum);
             return stepCfg ? stepCfg.status || `Bosqich ${stepNum}` : `Bosqich ${stepNum}`;
         });
-        const bgColors = stepKeys.map((step, index) => getWorkflowStepColors(index).bg);
+        // Use direct palette colors — NOT getWorkflowStepColors which may return CSS variables
+        const bgColors = stepKeys.map((step, index) => getPaletteColor(index, KV_STEP_PALETTE));
         kvMkDonut('kvDashChartSteps', labels, stepKeys.map(k => stepCounts[k]), bgColors);
     }
     const ctxTrends = document.getElementById('kvDashChartTrends');
