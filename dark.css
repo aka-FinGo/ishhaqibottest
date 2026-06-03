@@ -57,6 +57,17 @@
     --comp-hist-val: #ffffff;
     --comp-uzs-val: #00ff88;
     --comp-usd-val: #60a5fa;
+
+    /* Theme Variables Compatibility */
+    --page-switcher-bg: rgba(255, 255, 255, 0.05);
+    --wf-start-bg: rgba(255, 140, 0, 0.15);
+    --wf-start-text: #ffb347;
+    --wf-mid-bg: rgba(255, 42, 42, 0.15);
+    --wf-mid-text: #ff6b6b;
+    --wf-end-bg: rgba(0, 255, 136, 0.15);
+    --wf-end-text: #00ff88;
+    --wf-def-bg: rgba(255, 255, 255, 0.08);
+    --wf-def-text: #e2e8f0;
 }
 
 /* ============================================================

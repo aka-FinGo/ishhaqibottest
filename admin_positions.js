@@ -19,7 +19,7 @@ function renderPositionsList() {
     let html = '';
     currentPositionsPool.forEach((p, idx) => {
         html += `
-            <div class="card" style="margin-bottom:12px;padding:12px;border:1px solid var(--border);background:#F8FAFC;">
+            <div class="card" style="margin-bottom:12px;padding:12px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <span style="font-weight:700;font-size:12px;color:var(--text-muted);">LAVOZIM #${idx + 1}</span>
                     <button class="remove-pos-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;">&times;</button>

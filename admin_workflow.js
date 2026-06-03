@@ -13,10 +13,10 @@ function getWorkflowStepColors(idx, total) {
         : 'middle';
 
     switch (position) {
-        case 'start':  return { bg: '#FDE68A', color: '#92400E', label: 'Boshlang\'ich' };
-        case 'middle': return { bg: '#FECACA', color: '#991B1B', label: 'O\'rta bosqich' };
-        case 'end':    return { bg: '#DCFCE7', color: '#166534', label: 'Yakun' };
-        default:       return { bg: '#E2E8F0', color: '#475569', label: 'Bosqich' };
+        case 'start':  return { bg: 'var(--wf-start-bg)', color: 'var(--wf-start-text)', label: 'Boshlang\'ich' };
+        case 'middle': return { bg: 'var(--wf-mid-bg)', color: 'var(--wf-mid-text)', label: 'O\'rta bosqich' };
+        case 'end':    return { bg: 'var(--wf-end-bg)', color: 'var(--wf-end-text)', label: 'Yakun' };
+        default:       return { bg: 'var(--wf-def-bg)', color: 'var(--wf-def-text)', label: 'Bosqich' };
     }
 }
 

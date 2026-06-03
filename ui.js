@@ -457,10 +457,16 @@ function setTheme(themeFile) {
 
     const defEl = document.getElementById('theme-default');
     const darkEl = document.getElementById('theme-dark');
+    const glossEl = document.getElementById('theme-gloss');
+    
     if (defEl) defEl.classList.toggle('checked', !themeFile);
     if (darkEl) darkEl.classList.toggle('checked', themeFile === 'dark.css');
+    if (glossEl) glossEl.classList.toggle('checked', themeFile === 'gloss.css');
 
-    showToast(themeFile ? "Mavzu o'zgardi" : "Standart mavzu");
+    let msg = "Standart mavzu";
+    if (themeFile === 'dark.css') msg = "Qorong'u mavzu";
+    else if (themeFile === 'gloss.css') msg = "Gloss mavzu";
+    showToast(msg);
 }
 
 function applyTheme() {

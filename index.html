@@ -218,14 +218,14 @@
     >
     <div id="rateWarning" style="
         display:none;
-        color:#EF4444;
+        color:var(--red);
         font-size:12px;
         font-weight:600;
         margin-top:6px;
         padding:6px 10px;
-        background:#FEE2E2;
+        background:rgba(239, 68, 68, 0.1);
         border-radius:8px;
-        border-left:3px solid #EF4444;
+        border-left:3px solid var(--red);
     ">⚠️ Kurs 11 000 — 13 000 oralig'ida bo'lishi kerak!</div>
 </div>
                     <div id="addConversionPreview"
@@ -290,14 +290,18 @@
 
             <div class="section-title">Ilova Mavzusi</div>
             <div class="card">
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <div class="perm-label" id="theme-default" onclick="setTheme('')"
-                        style="flex:1; justify-content:center;">
+                        style="flex:1; min-width:80px; justify-content:center;">
                         <span>✨ Standart</span>
                     </div>
                     <div class="perm-label" id="theme-dark" onclick="setTheme('dark.css')"
-                        style="flex:1; justify-content:center;">
+                        style="flex:1; min-width:80px; justify-content:center;">
                         <span>🌙 Qorong'u</span>
+                    </div>
+                    <div class="perm-label" id="theme-gloss" onclick="setTheme('gloss.css')"
+                        style="flex:1; min-width:80px; justify-content:center;">
+                        <span>💎 Gloss</span>
                     </div>
                 </div>
             </div>
@@ -647,7 +651,7 @@
             </div>
 
             <div class="page-switcher"
-                style="background:rgba(241,245,249,0.8); padding:5px; border-radius:14px; margin-bottom:24px;">
+                style="background:var(--page-switcher-bg); padding:5px; border-radius:14px; margin-bottom:24px;">
                 <button class="page-switcher-btn" onclick="switchTab('kvDashboardTab','nav-kvadrat')"
                     style="border:none; border-radius:10px;">📈 Dashboard</button>
                 <button class="page-switcher-btn active"
