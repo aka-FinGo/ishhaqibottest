@@ -110,7 +110,7 @@
 
     async function checkAccessAndInit() {
         try {
-            const data = await apiRequest({ action: 'init' });
+            const data = await apiRequest({ action: 'init', telegramId: myTgId });
             if (!data?.success || !(data?.isSuperAdmin || data?.isDirector || data?.isAdmin)) {
                 showNoAccess(); return;
             }
@@ -164,7 +164,8 @@
                 action: 'ai_chat',
                 message: text,
                 history: history.slice(-10),
-                scope: chatScope
+                scope: chatScope,
+                telegramId: myTgId
             }, { timeoutMs: 40000 });
             removeThinking(thinkId);
             if (res.success) {
