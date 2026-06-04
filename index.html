@@ -340,19 +340,66 @@
                 <div class="header-avatar">⚙️</div>
             </div>
 
-            <div class="sub-tabs" id="adminNav">
-                <button class="sub-btn admin-sub-btn active" id="adminNavHodimlar"
-                    onclick="switchAdminSub('adminHodimlarArea',this)">👥 Xodimlar:</button>
-                <button class="sub-btn admin-sub-btn" id="adminNavWorkflow"
-                    onclick="switchAdminSub('adminWorkflowArea',this)">⚙️ Ish Oqimi</button>
-                <button class="sub-btn admin-sub-btn" id="adminNavPositions"
-                    onclick="switchAdminSub('adminPositionsArea',this)">📁 Lavozimlar</button>
-                <button class="sub-btn admin-sub-btn" id="adminNavNotify"
-                    onclick="switchAdminSub('adminNotifyArea',this)">📣 Xabarlar</button>
-                <button class="sub-btn admin-sub-btn" id="adminNavAI" onclick="switchAdminSub('adminAIArea',this)">🤖 AI
-                    Agent</button>
-                <button class="sub-btn admin-sub-btn" id="adminNavService"
-                    onclick="switchAdminSub('adminServiceArea',this)">🧪 Tizim</button>
+            <style>
+                #adminNav {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                    gap: 12px;
+                    padding: 16px 0;
+                    margin-bottom: 20px;
+                    border-bottom: none;
+                }
+                #adminNav .admin-sub-btn {
+                    margin: 0;
+                    width: 100%;
+                    border-radius: 16px;
+                    padding: 16px 8px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    background: var(--surface);
+                    border: 1px solid var(--border);
+                    color: var(--text-muted);
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+                    cursor: pointer;
+                }
+                #adminNav .admin-sub-btn .btn-icon { font-size: 28px; line-height: 1; transition: transform 0.3s ease; }
+                #adminNav .admin-sub-btn .btn-text { font-size: 13px; font-weight: 700; }
+                #adminNav .admin-sub-btn.active {
+                    background: var(--accent-gradient);
+                    color: #ffffff;
+                    border-color: transparent;
+                    box-shadow: 0 10px 25px rgba(0, 242, 255, 0.25);
+                    transform: translateY(-4px);
+                }
+                #adminNav .admin-sub-btn.active .btn-icon { transform: scale(1.1); }
+                #adminNav .admin-sub-btn:hover:not(.active) {
+                    border-color: var(--cyan-neon);
+                    color: var(--cyan-neon);
+                    box-shadow: 0 6px 20px rgba(0, 242, 255, 0.1);
+                }
+            </style>
+            <div id="adminNav">
+                <button class="admin-sub-btn active" id="adminNavHodimlar" onclick="switchAdminSub('adminHodimlarArea',this)">
+                    <span class="btn-icon">👥</span><span class="btn-text">Xodimlar</span>
+                </button>
+                <button class="admin-sub-btn" id="adminNavWorkflow" onclick="switchAdminSub('adminWorkflowArea',this)">
+                    <span class="btn-icon">⚙️</span><span class="btn-text">Ish Oqimi</span>
+                </button>
+                <button class="admin-sub-btn" id="adminNavPositions" onclick="switchAdminSub('adminPositionsArea',this)">
+                    <span class="btn-icon">📁</span><span class="btn-text">Lavozimlar</span>
+                </button>
+                <button class="admin-sub-btn" id="adminNavNotify" onclick="switchAdminSub('adminNotifyArea',this)">
+                    <span class="btn-icon">📣</span><span class="btn-text">Xabarlar</span>
+                </button>
+                <button class="admin-sub-btn" id="adminNavAI" onclick="switchAdminSub('adminAIArea',this)">
+                    <span class="btn-icon">🤖</span><span class="btn-text">AI Agent</span>
+                </button>
+                <button class="admin-sub-btn" id="adminNavService" onclick="switchAdminSub('adminServiceArea',this)">
+                    <span class="btn-icon">🧪</span><span class="btn-text">Tizim</span>
+                </button>
             </div>
 
             <div id="adminHodimlarArea">

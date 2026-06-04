@@ -63,6 +63,11 @@ function renderAIConfigList(providers) {
                 <input type="password" class="ai-key-input" value="${p.apiKey}" placeholder="sk-...">
             </div>
 
+            <div class="input-group">
+                <label style="font-size:11px;">Tizim Ko'rsatmasi (System/Custom Prompt):</label>
+                <textarea class="ai-prompt-input" rows="4" placeholder="Sen kuchli tizim adminisan...">${escapeHtml(p.customPrompt || '')}</textarea>
+            </div>
+
             <div style="display:flex; gap:10px;">
                 <div class="input-group" style="flex:1;">
                     <label style="font-size:11px;">Priority:</label>
@@ -94,7 +99,8 @@ async function saveAIConfigUI() {
             apiKey:   card.querySelector('.ai-key-input').value,
             priority: parseInt(card.querySelector('.ai-priority-input').value) || 99,
             isActive: card.querySelector('.ai-active-check').checked,
-            baseURL:  card.querySelector('.ai-url-input').value
+            baseURL:  card.querySelector('.ai-url-input').value,
+            customPrompt: card.querySelector('.ai-prompt-input').value
         });
     });
 
