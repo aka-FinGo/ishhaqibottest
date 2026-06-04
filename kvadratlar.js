@@ -389,7 +389,7 @@ function showKvDetailModal(idx) {
                     claimBtnsHtml = `
                         <button class="wf-claim-btn"
                             style="--wf-bg:${btnColor}; --wf-shadow:${btnColor}66;"
-                            onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${nextStep.index})">
+                            onclick="closeKvDetailModal();confirmClaimKvWork('${rec.rowId}', ${nextStep.index}, '${escapeHtml(nextStep.action).replace(/'/g, "\\'")}', '${escapeHtml(String(rec.no || '—')).replace(/'/g, "\\'")}')">
                             ✅ ${escapeHtml(nextStep.action)}
                         </button>`;
                 }
@@ -407,7 +407,7 @@ function showKvDetailModal(idx) {
                 claimBtnsHtml += `
                     <button class="wf-claim-btn"
                         style="--wf-bg:${btnColor}; --wf-shadow:${btnColor}66;"
-                        onclick="closeKvDetailModal();claimKvWork(${rec.rowId}, ${s.index})">
+                        onclick="closeKvDetailModal();confirmClaimKvWork('${rec.rowId}', ${s.index}, '${escapeHtml(s.action).replace(/'/g, "\\'")}', '${escapeHtml(String(rec.no || '—')).replace(/'/g, "\\'")}')">
                         ✅ ${escapeHtml(s.action)}
                     </button>`;
             });
@@ -870,6 +870,33 @@ async function deleteKv(rowId) {
     }
 }
 
+function confirmClaimKvWork(rowId, targetStepIndex, actionName, orderNo) {
+    let actionVerb = "bajarildimi";
+    const lower = String(actionName).toLowerCase();
+    if (lower.includes('yig') || lower.includes("yig'")) actionVerb = "yig'dingizmi";
+    else if (lower.includes('qadoq')) actionVerb = "qadoqladingizmi";
+    else if (lower.includes('kesish')) actionVerb = "kesdingizmi";
+    else if (lower.includes('tayyor')) actionVerb = "tayyorladingizmi";
+    
+    const dialog = document.createElement('div');
+    dialog.className = 'modal-overlay';
+    dialog.style.zIndex = '10000';
+    dialog.innerHTML = `
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 20px; padding: 24px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🤔</div>
+            <h3 style="margin-bottom: 12px; color: var(--navy); font-size: 20px;">Tasdiqlash</h3>
+            <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 16px; line-height: 1.5;">
+                Siz haqiqatdan ham <b>${escapeHtml(orderNo)}</b> raqamdagi buyurtmani <b>${escapeHtml(actionName)}</b> bosqichida yakunladingizmi (${actionVerb})?
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" class="btn-secondary" style="flex: 1; padding: 12px; border-radius: 12px; font-weight: 600;" onclick="this.closest('.modal-overlay').remove();">Bekor qilish</button>
+                <button type="button" class="btn-main" style="flex: 1; padding: 12px; border-radius: 12px; font-weight: 600; background: #065f46; color: white; border: none; cursor: pointer;" onclick="this.closest('.modal-overlay').remove(); claimKvWork('${rowId}', ${targetStepIndex});">Ha, tasdiqlayman</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(dialog);
+}
+
 async function claimKvWork(rowId, targetStepIndex = null) {
     kvShowProc('Bajarilmoqda...');
     try {
@@ -1023,22 +1050,38 @@ function createUndoToast(rowId, ttlSeconds) {
     const wrap = document.createElement('div');
     wrap.id = id;
     wrap.className = 'kv-undo-toast';
-    wrap.style.cssText = 'position:fixed; right:16px; bottom:16px; background:#0f766e; color:white; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(2,6,23,0.5); display:flex; gap:12px; align-items:center; z-index:9999;';
+    // bottom: 80px qilingan, sababi bottom-nav dan biroz tepada turishi uchun
+    wrap.style.cssText = 'position:fixed; right:16px; bottom:80px; background:#0f766e; color:white; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(2,6,23,0.5); display:flex; gap:12px; align-items:center; z-index:9999;';
+    
     const label = document.createElement('div');
-    label.style.minWidth = '180px';
-    label.innerText = 'Undo uchun: ';
+    label.style.display = 'flex';
+    label.style.gap = '4px';
+    label.style.alignItems = 'center';
+    
+    const text1 = document.createElement('span');
+    text1.innerText = 'Bekor qilish uchun ';
+    
     const timer = document.createElement('span');
     timer.style.fontWeight = '800';
     timer.innerText = formatTime(ttlSeconds);
+    
+    const text2 = document.createElement('span');
+    text2.innerText = ' qoldi';
+    
+    label.appendChild(text1);
     label.appendChild(timer);
+    label.appendChild(text2);
+    
     const btn = document.createElement('button');
     btn.innerText = '↩️ Bekor qilish';
     btn.style.cssText = 'background:white; color:#065F46; border:none; padding:8px 10px; border-radius:8px; font-weight:700; cursor:pointer;';
     btn.onclick = function() { revertKvQuick(rowId); };
+    
     const close = document.createElement('button');
     close.innerText = '✕';
     close.style.cssText = 'background:transparent; color:white; border:none; margin-left:8px; font-size:14px; cursor:pointer;';
     close.onclick = function() { clearUndoToast(rowId); };
+    
     wrap.appendChild(label);
     wrap.appendChild(btn);
     wrap.appendChild(close);
