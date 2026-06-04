@@ -880,9 +880,9 @@ function confirmClaimKvWork(rowId, targetStepIndex, actionName, orderNo) {
     
     const dialog = document.createElement('div');
     dialog.className = 'modal-overlay';
-    dialog.style.zIndex = '10000';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);';
     dialog.innerHTML = `
-        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 20px; padding: 24px;">
+        <div class="modal-content" style="background: var(--surface, #ffffff); width: 90%; max-width: 400px; text-align: center; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); position: relative; margin: 0 auto;">
             <div style="font-size: 48px; margin-bottom: 16px;">🤔</div>
             <h3 style="margin-bottom: 12px; color: var(--navy); font-size: 20px;">Tasdiqlash</h3>
             <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 16px; line-height: 1.5;">
