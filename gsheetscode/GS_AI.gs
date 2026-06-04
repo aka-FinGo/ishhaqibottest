@@ -27,7 +27,8 @@ function getAIProvidersConfig() {
       apiKey:   String(row[2] || '').trim(),
       priority: Number(row[3]) || 99,
       isActive: Number(row[4]) === 1,
-      baseURL:  String(row[5] || '').trim()
+      baseURL:  String(row[5] || '').trim(),
+      customPrompt: String(row[6] || '').trim()
     });
   }
   
@@ -48,7 +49,7 @@ function saveAIConfig(configList) {
   if (!sh) return { success: false, error: "Jadval topilmadi" };
 
   sh.clear();
-  var headers = ["Provider", "Model", "API_Key", "Priority", "IsActive", "BaseURL"];
+  var headers = ["Provider", "Model", "API_Key", "Priority", "IsActive", "BaseURL", "CustomPrompt"];
   sh.appendRow(headers);
   sh.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#7e22ce").setFontColor("#ffffff");
 
@@ -60,7 +61,8 @@ function saveAIConfig(configList) {
         c.apiKey,
         c.priority,
         c.isActive ? 1 : 0,
-        c.baseURL
+        c.baseURL,
+        c.customPrompt || ""
       ];
     });
     sh.getRange(2, 1, output.length, headers.length).setValues(output);
