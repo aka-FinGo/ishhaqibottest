@@ -111,7 +111,7 @@
     async function checkAccessAndInit() {
         try {
             const data = await apiRequest({ action: 'init' });
-            if (!data?.success || !data?.permissions?.canViewAIChat) {
+            if (!data?.success || !(data?.isSuperAdmin || data?.isDirector || data?.isAdmin)) {
                 showNoAccess(); return;
             }
             myTgId = myTgId || data.tgId;
