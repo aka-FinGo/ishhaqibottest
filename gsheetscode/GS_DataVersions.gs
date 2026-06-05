@@ -20,6 +20,11 @@ function touchDataVersion(key) {
   try {
     PropertiesService.getScriptProperties()
       .setProperty(key, String(Date.now()));
+    
+    // AI keshni ham yangilash (async tarzda, xato bo'lsa o'tkazib yuborish)
+    try { rebuildAiCache(); } catch(cacheErr) {
+      Logger.log('[touchDataVersion] AI cache rebuild xato: ' + cacheErr.message);
+    }
   } catch(e) {
     Logger.log('[touchDataVersion] ' + key + ': ' + e.message);
   }
