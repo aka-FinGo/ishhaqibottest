@@ -556,30 +556,32 @@
 
             <div id="adminAIArea" class="hidden">
                 <div class="card">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                        <div
-                            style="width: 40px; height: 40px; background: var(--blue-neon); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 15px rgba(0,240,255,0.4);">
-                            🤖</div>
-                        <div>
-                            <div class="card-title" style="margin: 0; color:var(--cyan-neon);">AI Agent Sozlamalari
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; cursor: pointer; padding: 5px;" onclick="toggleAiSettings()">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: var(--blue-neon); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 15px rgba(0,240,255,0.4);">
+                                🤖</div>
+                            <div>
+                                <div class="card-title" style="margin: 0; color:var(--cyan-neon);">AI Agent Sozlamalari</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">API kalitlar va modellarni boshqarish</div>
                             </div>
-                            <div style="font-size: 11px; color: var(--text-muted);">API kalitlar va modellarni
-                                boshqarish</div>
                         </div>
+                        <div id="aiSettingsChevron" style="font-size: 20px; transition: transform 0.3s;">🔽</div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn-secondary" style="flex: 1;" onclick="loadAIConfig()">🔄 Yangilash</button>
-                        <button class="btn-main" style="flex: 1; background: var(--accent-gradient);"
-                            onclick="saveAIConfigUI()">💾 Saqlash</button>
-                    </div>
+                    <div id="aiSettingsBlock" class="hidden">
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <button class="btn-secondary" style="flex: 1;" onclick="loadAIConfig()">🔄 Yangilash</button>
+                            <button class="btn-main" style="flex: 1; background: var(--accent-gradient);"
+                                onclick="saveAIConfigUI()">💾 Saqlash</button>
+                        </div>
 
-                    <div id="aiConfigList">
-                        <!-- AI provider form blocks will be generated here -->
-                        <div class="skeleton-container" style="padding:0;">
-                            <div class="js-skeleton-card">
-                                <div class="js-skeleton-line" style="height:18px; width:60%; margin-bottom:8px;"></div>
-                                <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
+                        <div id="aiConfigList">
+                            <!-- AI provider form blocks will be generated here -->
+                            <div class="skeleton-container" style="padding:0;">
+                                <div class="js-skeleton-card">
+                                    <div class="js-skeleton-line" style="height:18px; width:60%; margin-bottom:8px;"></div>
+                                    <div class="js-skeleton-line" style="height:12px; width:30%; margin-bottom:12px;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1015,7 +1017,7 @@
         <script defer src="admin_positions.js?v=1.0.23"></script>
         <script defer src="enhanced_admin_list.js?v=1.0.23"></script>
         <script defer src="admin_notifications.js?v=1.0.23"></script>
-        <script defer src="admin_ai.js?v=1.0.0"></script>
+        <script defer src="admin_ai.js?v=1.0.24"></script>
 </body>
 
 </html>

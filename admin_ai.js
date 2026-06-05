@@ -144,6 +144,22 @@ async function runAIReportTest() {
     }
 }
 
+// AI Agent Sozlamalarini ochish/yopish
+function toggleAiSettings() {
+    const block = document.getElementById('aiSettingsBlock');
+    const chevron = document.getElementById('aiSettingsChevron');
+    if (block.classList.contains('hidden')) {
+        block.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+        // agar hali yuklanmagan bo'lsa
+        if (document.getElementById('aiConfigList').innerHTML.includes('js-skeleton-card')) {
+            loadAIConfig();
+        }
+    } else {
+        block.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
 // AI Chat iframe bilan aloqa
 function toggleAiChatIframe() {
     const container = document.getElementById('aiChatIframeContainer');
