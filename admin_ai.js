@@ -170,8 +170,15 @@ function toggleAiChatIframe() {
         container.classList.remove('hidden');
         btn.innerHTML = '✖ AI Chatni Yopish';
         btn.classList.add('bg-red');
-        if (!iframe.src || iframe.src === window.location.href || iframe.src === '') {
-            iframe.src = 'ai_chat.html';
+        
+        // Agar iframe allaqachon yuklangan bo'lsa, unga yana bir marta INIT yuboramiz
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+                type: 'AI_CHAT_INIT',
+                tgId: typeof telegramId !== 'undefined' ? telegramId : (typeof myTgId !== 'undefined' ? myTgId : ''),
+                scope: 'company',
+                username: typeof userName !== 'undefined' ? userName : ''
+            }, '*');
         }
     } else {
         container.classList.add('hidden');
