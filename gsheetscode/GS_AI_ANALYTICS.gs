@@ -53,6 +53,15 @@ function buildAnalyticsContext(scope, auth, tgId) {
       ctx.myStats = buildMyStats_(tgId, kvData, financeData);
     }
 
+    // ── 9. RAW JSON MA'LUMOTLAR (Q&A uchun) ─────────────────
+    if (scope === 'company') {
+      ctx.rawFinance = financeData.map(function(r) { return { sana: r.date, ism: r.name, uzs: r.amountUZS, usd: r.amountUSD, izoh: r.comment }; });
+      ctx.rawKv = kvData.map(function(r) { return { no: r.no, nom: r.orderName, xodim: r.staffName, m2: r.totalM2, status: r.status, sana: r.date }; });
+    } else {
+      ctx.rawFinance = financeData.filter(function(r) { return String(r.telegramId) === String(tgId); }).map(function(r) { return { sana: r.date, uzs: r.amountUZS, izoh: r.comment }; });
+      ctx.rawKv = kvData.filter(function(r) { return String(r.ownerTgId) === String(tgId); }).map(function(r) { return { no: r.no, nom: r.orderName, m2: r.totalM2, status: r.status }; });
+    }
+
   } catch (e) {
     Logger.log('[buildAnalyticsContext] Xato: ' + e.message);
     ctx.error = e.message;
@@ -518,7 +527,17 @@ function buildAnalyticsSystemPrompt(scope, auth, tgId) {
     p += '- Jami xarajat: ' + _fmt(my.finance_uzs) + ' UZS\n\n';
   }
 
-  p += 'Endi foydalanuvchi savoliga aniq, dalilga asoslangan javob ber.';
+  if (ctx.rawFinance && ctx.rawFinance.length > 0) {
+    p += '📥 MOLIYAVIY YOZUVLAR (JSON formatida oxirgi 200 ta):\n```json\n';
+    p += JSON.stringify(ctx.rawFinance.slice(-200)) + '\n```\n\n';
+  }
+  
+  if (ctx.rawKv && ctx.rawKv.length > 0) {
+    p += '📦 BUYURTMALAR (JSON formatida oxirgi 200 ta):\n```json\n';
+    p += JSON.stringify(ctx.rawKv.slice(-200)) + '\n```\n\n';
+  }
+
+  p += 'Endi foydalanuvchi savoliga aniq, dalilga (va yuqoridagi JSON larga) asoslangan batafsil javob ber.';
   return p;
 }
 
