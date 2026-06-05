@@ -263,6 +263,10 @@ function doPost(e) {
         result = { success:true, message: "AI Hisobot yaratish jarayoni boshlandi. Natija Telegramga yuboriladi." };
         break;
 
+      case "ai_chat":
+        result = handleAIChat(data, auth, tgId);
+        break;
+
       default:
         result = { success: false, error: "Noma'lum: " + action };
     }
