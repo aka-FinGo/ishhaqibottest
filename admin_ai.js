@@ -144,3 +144,42 @@ async function runAIReportTest() {
     }
 }
 
+// AI Chat iframe bilan aloqa
+function toggleAiChatIframe() {
+    const container = document.getElementById('aiChatIframeContainer');
+    const iframe = document.getElementById('adminAiChatIframe');
+    const btn = document.getElementById('openAiChatBtn');
+    
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        btn.innerHTML = '✖ AI Chatni Yopish';
+        btn.classList.add('bg-red');
+        if (!iframe.src || iframe.src === window.location.href || iframe.src === '') {
+            iframe.src = 'ai_chat.html';
+        }
+    } else {
+        container.classList.add('hidden');
+        btn.innerHTML = '💬 AI Chatni Ochish';
+        btn.classList.remove('bg-red');
+    }
+}
+
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'AI_CHAT_READY') {
+        const iframe = document.getElementById('adminAiChatIframe');
+        if (iframe && iframe.contentWindow === e.source) {
+            iframe.contentWindow.postMessage({
+                type: 'AI_CHAT_INIT',
+                tgId: typeof telegramId !== 'undefined' ? telegramId : (typeof myTgId !== 'undefined' ? myTgId : ''),
+                scope: 'company',
+                username: typeof userName !== 'undefined' ? userName : ''
+            }, '*');
+        }
+    } else if (e.data && e.data.type === 'AI_CHAT_BACK') {
+        // Iframe ichida "Orqaga" bosilganda AI tabni yashiramiz
+        const container = document.getElementById('aiChatIframeContainer');
+        if (container && !container.classList.contains('hidden')) {
+            toggleAiChatIframe();
+        }
+    }
+});
