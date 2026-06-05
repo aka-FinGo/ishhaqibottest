@@ -160,49 +160,173 @@ function toggleAiSettings() {
         chevron.style.transform = 'rotate(0deg)';
     }
 }
-// AI Chat iframe bilan aloqa
-function toggleAiChatIframe() {
-    const container = document.getElementById('aiChatIframeContainer');
-    const iframe = document.getElementById('adminAiChatIframe');
-    const btn = document.getElementById('openAiChatBtn');
+// ── YERLIK AI CHAT MANTIG'I ──────────────────────────────────────────
+let aiChatHistory = [];
+let isAiLoading = false;
+
+function openFullAiChat() {
+    // Tabni almashtiramiz
+    switchTab('aiChatTab', 'nav-profile');
     
-    if (container.classList.contains('hidden')) {
-        container.classList.remove('hidden');
-        btn.innerHTML = '✖ AI Chatni Yopish';
-        btn.classList.add('bg-red');
-        
-        // Agar iframe allaqachon yuklangan bo'lsa, unga yana bir marta INIT yuboramiz
-        if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage({
-                type: 'AI_CHAT_INIT',
-                tgId: typeof telegramId !== 'undefined' ? telegramId : (typeof myTgId !== 'undefined' ? myTgId : ''),
-                scope: 'company',
-                username: typeof userName !== 'undefined' ? userName : ''
-            }, '*');
+    // Agar chat bosh bo'lsa, xush kelibsiz xabarni qo'shamiz
+    if (aiChatHistory.length === 0) {
+        // scopeLabel ni sozlash
+        const scopeLabel = document.getElementById('indexAiScopeLabel');
+        const isCompany = typeof currentUser !== 'undefined' && (currentUser.isSuperAdmin || currentUser.isDirector);
+        if (scopeLabel) {
+            scopeLabel.textContent = isCompany ? "📊 Kompaniya ma'lumotlari bilan" : "👤 Faqat o'z ma'lumotlarim";
         }
-    } else {
-        container.classList.add('hidden');
-        btn.innerHTML = '💬 AI Chatni Ochish';
-        btn.classList.remove('bg-red');
+        
+        let welcomeMsg = 'Salom! Men Aristokrat ERP AI yordamchisiman. ';
+        welcomeMsg += isCompany ? 'Kompaniya ma\'lumotlari bo\'yicha savollar bering.' : 'O\'z yozuvlaringiz bo\'yicha savollar bering.';
+        addAiBubble('assistant', welcomeMsg);
+        
+        // Enter bosilganda jo'natish
+        const input = document.getElementById('aiChatInput');
+        if (input) {
+            // FAQAT Bitta event listener qo'shish uchun eski clone qilib olish mumkin, lekin oddiy holatda osonroq yo'li:
+            input.onkeydown = function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { 
+                    e.preventDefault(); 
+                    sendAiMsg(); 
+                }
+            };
+        }
     }
 }
 
-window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'AI_CHAT_READY') {
-        const iframe = document.getElementById('adminAiChatIframe');
-        if (iframe && iframe.contentWindow === e.source) {
-            iframe.contentWindow.postMessage({
-                type: 'AI_CHAT_INIT',
-                tgId: typeof telegramId !== 'undefined' ? telegramId : (typeof myTgId !== 'undefined' ? myTgId : ''),
-                scope: 'company',
-                username: typeof userName !== 'undefined' ? userName : ''
-            }, '*');
+async function sendAiMsg() {
+    if (isAiLoading) return;
+    const input = document.getElementById('aiChatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    addAiBubble('user', text);
+    aiChatHistory.push({ role: 'user', content: text });
+    input.value = ''; 
+    input.style.height = 'auto';
+    
+    const thinkId = addAiThinking();
+    setAiLoading(true);
+    
+    try {
+        const isCompany = typeof currentUser !== 'undefined' && (currentUser.isSuperAdmin || currentUser.isDirector);
+        const chatScope = isCompany ? 'company' : 'own';
+        
+        const res = await apiRequest({
+            action: 'ai_chat',
+            message: text,
+            history: aiChatHistory.slice(-10),
+            scope: chatScope,
+            telegramId: typeof telegramId !== 'undefined' ? telegramId : ''
+        }, { timeoutMs: 40000 });
+        
+        removeAiThinking(thinkId);
+        
+        if (res.success) {
+            addAiBubble('assistant', res.reply);
+            aiChatHistory.push({ role: 'assistant', content: res.reply });
+        } else {
+            addAiError(res.error || 'AI javob bermadi');
         }
-    } else if (e.data && e.data.type === 'AI_CHAT_BACK') {
-        // Iframe ichida "Orqaga" bosilganda AI tabni yashiramiz
-        const container = document.getElementById('aiChatIframeContainer');
-        if (container && !container.classList.contains('hidden')) {
-            toggleAiChatIframe();
-        }
+    } catch(e) {
+        removeAiThinking(thinkId);
+        addAiError(navigator.onLine ? e.message : "📵 Internet yo'q");
+    } finally { 
+        setAiLoading(false); 
     }
-});
+}
+
+function quickAskAi(text) {
+    const input = document.getElementById('aiChatInput');
+    if (input) {
+        input.value = text;
+        sendAiMsg();
+    }
+}
+
+function clearAiChat() {
+    aiChatHistory.length = 0;
+    const msgs = document.getElementById('chatMessages');
+    if (msgs) msgs.innerHTML = '';
+    
+    const isCompany = typeof currentUser !== 'undefined' && (currentUser.isSuperAdmin || currentUser.isDirector);
+    let welcomeMsg = 'Salom! Men Aristokrat ERP AI yordamchisiman. ';
+    welcomeMsg += isCompany ? 'Kompaniya ma\'lumotlari bo\'yicha savollar bering.' : 'O\'z yozuvlaringiz bo\'yicha savollar bering.';
+    addAiBubble('assistant', welcomeMsg);
+}
+
+function addAiBubble(role, text) {
+    const el = document.createElement('div');
+    el.className = role === 'user' ? 'ai-chat-bubble ai-chat-bubble--user' : 'ai-chat-bubble ai-chat-bubble--ai ai-chat-bubble--in';
+    el.innerHTML = role === 'user' ? escapeHtml(text) : formatAI(text);
+    const msgs = document.getElementById('chatMessages');
+    if (msgs) {
+        msgs.appendChild(el);
+        scrollAiDown();
+    }
+}
+
+function addAiThinking() {
+    const id = 'think-' + Date.now();
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = 'ai-chat-bubble ai-chat-bubble--ai ai-chat-bubble--thinking';
+    el.innerHTML = '<span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>';
+    const msgs = document.getElementById('chatMessages');
+    if (msgs) {
+        msgs.appendChild(el);
+        scrollAiDown(); 
+    }
+    return id;
+}
+
+function removeAiThinking(id) { 
+    const el = document.getElementById(id);
+    if (el) el.remove(); 
+}
+
+function addAiError(msg) {
+    const el = document.createElement('div');
+    el.className = 'ai-chat-bubble ai-chat-bubble--error';
+    el.textContent = '❌ ' + msg;
+    const msgs = document.getElementById('chatMessages');
+    if (msgs) {
+        msgs.appendChild(el);
+        scrollAiDown();
+    }
+}
+
+function setAiLoading(v) {
+    isAiLoading = v;
+    const btn = document.getElementById('aiChatSendBtn');
+    const inp = document.getElementById('aiChatInput');
+    if (btn) {
+        btn.disabled = v;
+        btn.innerHTML = v ? '<span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>' : '&#9658;';
+    }
+    if (inp) {
+        inp.disabled = v;
+    }
+}
+
+function scrollAiDown() {
+    const m = document.getElementById('chatMessages');
+    if (m) {
+        requestAnimationFrame(() => { m.scrollTop = m.scrollHeight; });
+    }
+}
+
+function formatAI(text) {
+    let s = escapeHtml(text);
+    s = s.replace(/```([\s\S]*?)```/g, '<pre class="ai-code">$1</pre>');
+    s = s.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+}
+
+function autoResizeAi(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
