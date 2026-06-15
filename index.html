@@ -289,6 +289,20 @@
                 </button>
             </div>
 
+            <div class="section-title">💸 Avans So'rash</div>
+            <div class="card" style="margin-bottom:20px; padding:20px;">
+                <p style="font-size:14px; color:var(--text-muted); margin-bottom:15px; line-height:1.5;">
+                    Avans kerakmi? Summani kiriting va yuboring. So'rov to'g'ridan-to'g'ri bugalterga yuboriladi.
+                </p>
+                <div class="input-group">
+                    <label>Summa (UZS) <span style="color:var(--red);">*</span></label>
+                    <input type="number" id="avansAmount" inputmode="numeric" pattern="[0-9]*" placeholder="0" class="input" style="font-size:18px; font-weight:bold;">
+                </div>
+                <button class="btn-main" onclick="requestAvans()" id="btnAvansRequest" style="margin-top:10px;">
+                    Yuborish
+                </button>
+            </div>
+
             <div class="section-title">Ilova Mavzusi</div>
             <div class="card">
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">

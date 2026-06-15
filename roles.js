@@ -1,9 +1,10 @@
 const ROLE_OPTIONS = [
-    { key: 'PENDING',    label: '⏳ Kutilmoqda' },
-    { key: 'EMPLOYEE',   label: '👤 Xodim:'     },
-    { key: 'ADMIN',      label: '🛡 Admin'       },
-    { key: 'DIRECTOR',   label: '🎯 Direktor'    },
-    { key: 'SUPER_ADMIN',label: '👑 SuperAdmin'  }
+    { key: 'SUPER_ADMIN', label: '👑 SuperAdmin' },
+    { key: 'DIRECTOR',    label: '🎯 Direktor'    },
+    { key: 'ADMIN',       label: '🛡 Admin'       },
+    { key: 'BUGALTER',    label: '🧮 Bugalter'    },
+    { key: 'EMPLOYEE',    label: '👤 Xodim'       },
+    { key: 'PENDING',     label: '⏳ Kutilmoqda'  }
 ];
 
 const ROLE_PERM_FIELDS = ['canAdd','canViewAll','canViewDash','canExport','canEdit','canDelete'];
@@ -21,12 +22,14 @@ function updateTechnicalPositions(allPositions) {
     TECHNICAL_POSITIONS = allPositions;
 }
 
-function normalizeRoleKey(role) {
-    const raw = String(role || '').trim().toUpperCase();
-    if (raw === 'SUPER_ADMIN' || raw === 'SUPERADMIN') return 'SUPER_ADMIN';
-    if (raw === 'DIRECTOR'    || raw === 'DIREKTOR')   return 'DIRECTOR';
-    if (raw === 'ADMIN')    return 'ADMIN';
-    if (raw === 'PENDING')  return 'PENDING';
+function normalizeRoleKey(val) {
+    const r = String(val || '').trim().toUpperCase();
+    if (r === 'SUPER_ADMIN' || r === 'SUPERADMIN') return 'SUPER_ADMIN';
+    if (r === 'DIRECTOR' || r === 'DIREKTOR') return 'DIRECTOR';
+    if (r === 'ADMIN') return 'ADMIN';
+    if (r === 'BUGALTER' || r === 'ACCOUNTANT') return 'BUGALTER';
+    if (r === 'PENDING') return 'PENDING';
+    if (r === 'EMPLOYEE' || r === 'USER') return 'EMPLOYEE';
     return 'EMPLOYEE';
 }
 
@@ -35,6 +38,7 @@ function roleBadgeHtml(roleKey) {
     if (role === 'SUPER_ADMIN') return '<span class="role-badge boss">👑 SuperAdmin</span>';
     if (role === 'DIRECTOR')    return '<span class="role-badge direktor">🎯 Direktor</span>';
     if (role === 'ADMIN')       return '<span class="role-badge admin">🛡 Admin</span>';
+    if (role === 'BUGALTER')    return '<span class="role-badge bugalter">🧮 Bugalter</span>';
     if (role === 'PENDING')     return '<span class="role-badge" style="background:var(--comp-edit-bg);color:var(--comp-edit-text);">⏳ Kutilmoqda</span>';
     return '<span class="role-badge" style="background:var(--bg);color:var(--text-muted);">👤 Xodim:</span>';
 }
@@ -258,6 +262,7 @@ function getRolePreset(roleKey) {
     if (role === 'SUPER_ADMIN') return { canAdd:1, canViewAll:1, canViewDash:1, canExport:1, canEdit:1, canDelete:1 };
     if (role === 'DIRECTOR')    return { canAdd:1, canViewAll:1, canViewDash:1, canExport:1, canEdit:0, canDelete:0 };
     if (role === 'ADMIN')       return { canAdd:1, canViewAll:1, canViewDash:0, canExport:0, canEdit:0, canDelete:0 };
+    if (role === 'BUGALTER')    return { canAdd:1, canViewAll:1, canViewDash:1, canExport:1, canEdit:0, canDelete:0 };
     return                             { canAdd:1, canViewAll:0, canViewDash:0, canExport:0, canEdit:0, canDelete:0 };
 }
 

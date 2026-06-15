@@ -129,3 +129,45 @@ function sendExcelToUser(tgId, base64Data, fileName) {
   var response = UrlFetchApp.fetch(url, options);
   return JSON.parse(response.getContentText());
 }
+
+// Avans so'rash xabarnomasi (Bugalter va SuperAdminga)
+function sendAvansRequestNotification(username, amount) {
+  var msg = "💸 <b>Yangi avans so'rovi!</b>\n" +
+            "👤 Xodim: " + (username || "—") + "\n" +
+            "💰 Summa: " + Number(amount).toLocaleString() + " UZS";
+
+  // SuperAdmin ga doim yuborish
+  if (CONFIG.CHAT_ID) {
+    tgSendMessage_(CONFIG.CHAT_ID, msg, "HTML");
+  }
+
+  // Bugalter rollarini topib yuborish
+  try {
+    var empRows = getEmployeeRows_();
+    if (!empRows || empRows.length < 2) return;
+    
+    var headers = empRows[0];
+    var roleIdx = COL.ROLE; // GS_Auth.gs da aniqlangan COL.ROLE
+    var tgIdIdx = COL.TG_ID;
+
+    // Database orqali getEmployeeRows chaqirilgan bo'lsa COL larni ishlatsak bo'ladi.
+    // Agar COL topilmasa, header orqali topamiz:
+    if (typeof COL === 'undefined') {
+       roleIdx = headers.indexOf('Role');
+       tgIdIdx = headers.indexOf('TelegramId');
+    }
+
+    if (roleIdx < 0 || tgIdIdx < 0) return;
+
+    empRows.slice(1).forEach(function(row) {
+      var role = String(row[roleIdx] || '').trim().toUpperCase();
+      var tgId = String(row[tgIdIdx] || '').trim();
+      
+      if (role === 'BUGALTER' && tgId && tgId !== String(CONFIG.SUPER_ADMIN_ID)) {
+        tgSendMessage_(tgId, msg, "HTML");
+      }
+    });
+  } catch(e) {
+    Logger.log('[sendAvansRequestNotification] ' + e.message);
+  }
+}

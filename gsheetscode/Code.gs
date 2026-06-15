@@ -197,6 +197,16 @@ function doPost(e) {
         result = kvadratEdit(data, auth, tgId);
         break;
 
+      case "request_avans":
+        if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error: "Ruxsat yo'q" });
+        var amount = Number(data.amount) || 0;
+        if (amount <= 0) return sendJSON({ success:false, error: "Noto'g'ri summa" });
+        // Hodim nomini aniqlash
+        var username = auth.username || auth.name || 'Xodim';
+        sendAvansRequestNotification(username, amount);
+        result = { success:true, message: "Avans so'rovi yuborildi" };
+        break;
+
       case "kvadrat_delete":
         if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
           return sendJSON({ success:false, error: "Faqat 'Loyihachi' o'chira oladi" });

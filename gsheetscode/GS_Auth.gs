@@ -137,6 +137,7 @@ function normalizeRole_(value, rowForFallback) {
   if (raw === 'SUPER_ADMIN' || raw === 'SUPERADMIN') return 'SUPER_ADMIN';
   if (raw === 'DIRECTOR' || raw === 'DIREKTOR') return 'DIRECTOR';
   if (raw === 'ADMIN') return 'ADMIN';
+  if (raw === 'BUGALTER' || raw === 'ACCOUNTANT') return 'BUGALTER';
   if (raw === 'PENDING') return 'PENDING';
   if (raw === 'EMPLOYEE' || raw === 'USER') return 'EMPLOYEE';
   return rowForFallback ? deriveLegacyRoleFromRow_(rowForFallback) : 'EMPLOYEE';
@@ -146,6 +147,7 @@ function roleLabelFromKey_(roleKey) {
   if (roleKey === 'SUPER_ADMIN') return 'SuperAdmin';
   if (roleKey === 'DIRECTOR') return 'Direktor';
   if (roleKey === 'ADMIN') return 'Admin';
+  if (roleKey === 'BUGALTER') return 'Bugalter';
   if (roleKey === 'PENDING') return 'Kutilmoqda';
   return 'Xodim:';
 }
@@ -160,6 +162,9 @@ function roleDefaults_(roleKey) {
   }
   if (role === 'ADMIN') {
     return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:false, canViewDash:false } };
+  }
+  if (role === 'BUGALTER') {
+    return { canAdd: true, permissions: { canViewAll:true, canEdit:false, canDelete:false, canExport:true, canViewDash:true } };
   }
   if (role === 'PENDING') {
     return { canAdd: false, permissions: { canViewAll:false, canEdit:false, canDelete:false, canExport:false, canViewDash:false } };

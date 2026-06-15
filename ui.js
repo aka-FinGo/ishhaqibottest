@@ -135,6 +135,7 @@ function processUserData(data) {
     if (data.isSuperAdmin) myRole = 'SuperAdmin';
     else if (data.isAdmin) myRole = 'Admin';
     else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
+    else if (data.roleKey === 'BUGALTER' || data.role === 'Bugalter') myRole = 'Bugalter';
     else myRole = 'User';
 
     myIsSardor = !!data.isSardor;
@@ -485,7 +486,7 @@ function updateProfileUI() {
 
     const adminSection = document.getElementById('profileAdminSection');
     if (adminSection) {
-        const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+        const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor' || myRole === 'Bugalter');
         adminSection.classList.toggle('hidden', !hasAdminAccess);
     }
 
