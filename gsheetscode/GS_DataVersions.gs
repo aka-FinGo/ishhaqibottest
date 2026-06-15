@@ -49,3 +49,24 @@ function getDataVersions() {
     return { kvadratlar: 0, finance: 0, employees: 0, workflow: 0 };
   }
 }
+
+/**
+ * Google Sheets da qolda o'zgartirish kiritilganda ushbu onEdit triggeri ishga tushadi
+ * va keshni yangilaydi (shunda AI tezroq yangi malumotni ko'radi)
+ */
+function onEdit(e) {
+  if (!e || !e.range) return;
+  var sheetName = e.range.getSheet().getName();
+  
+  if (CONFIG) {
+    if (sheetName === CONFIG.DATA_SHEET) {
+      touchDataVersion(DV_KEYS.FINANCE);
+      resetDataCache_();
+    } else if (sheetName === CONFIG.KV_SHEET) {
+      touchDataVersion(DV_KEYS.KVADRATLAR);
+    } else if (sheetName === CONFIG.EMP_SHEET) {
+      touchDataVersion(DV_KEYS.EMPLOYEES);
+      resetEmployeeCache_();
+    }
+  }
+}

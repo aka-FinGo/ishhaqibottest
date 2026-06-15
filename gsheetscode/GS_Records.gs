@@ -30,6 +30,9 @@ function addRecord(data, auth, actorTgId) {
     // OPTIMIZED: Reset data cache after write
     resetDataCache_();
     
+    // AI keshini yangilash uchun versiyani o'zgartirish
+    touchDataVersion(DV_KEYS.FINANCE);
+    
     return { success: true, rowId: row };
   });
   if (!writeResult.success) return writeResult;
@@ -112,6 +115,7 @@ function selfEditRecord(data, actorTgId) {
     addAuditLog_(actorTgId, 'edit_record', rowId, rowToRecordForAudit_(rowData), rowToRecordForAudit_(dataSheet.getRange(rowId, 1, 1, 9).getValues()[0]), reason);
     
     resetDataCache_();
+    touchDataVersion(DV_KEYS.FINANCE);
     return { success: true };
   });
   return writeResult;
@@ -139,6 +143,7 @@ function selfDeleteRecord(rowId, actorTgId, reason) {
     dataSheet.getRange(rowIdNum, DATA_COL.IS_DELETED + 1).setValue(1);
     addAuditLog_(actorTgId, 'delete_record', rowIdNum, rowToRecordForAudit_(rowData), 'deleted', reasonText);
     resetDataCache_();
+    touchDataVersion(DV_KEYS.FINANCE);
     return { success: true };
   });
   return writeResult;
