@@ -540,6 +540,35 @@ function updateProfileUI() {
     }
 }
 
+// --- Avans So'rash ---
+async function requestAvans() {
+    const amountInput = document.getElementById('avansAmount');
+    if (!amountInput) return;
+    
+    const amount = Number(amountInput.value);
+    if (!amount || amount <= 0) {
+        showToastMsg("Iltimos, to'g'ri summa kiriting!", true);
+        return;
+    }
+
+    const btn = document.getElementById('btnAvansRequest');
+    setButtonLoading(btn, true, "Yuborilmoqda...");
+
+    try {
+        const response = await apiRequest({ action: 'request_avans', amount: amount });
+        if (response.success) {
+            showToastMsg("✅ Avans so'rovi yuborildi!");
+            amountInput.value = '';
+        } else {
+            showToastMsg("❌ " + (response.error || "Xatolik yuz berdi"), true);
+        }
+    } catch (e) {
+        showToastMsg("❌ Internet ulanishini tekshiring!", true);
+    } finally {
+        setButtonLoading(btn, false);
+    }
+}
+
 function toggleSetting(type, isEnabled) {
     console.log(`⚙️ Sozlama o'zgardi: ${type} = ${isEnabled}`);
 
