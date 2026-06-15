@@ -131,10 +131,11 @@ function sendExcelToUser(tgId, base64Data, fileName) {
 }
 
 // Avans so'rash xabarnomasi (Bugalter va SuperAdminga)
-function sendAvansRequestNotification(username, amount) {
+function sendAvansRequestNotification(username, amount, reason) {
   var msg = "💸 <b>Yangi avans so'rovi!</b>\n" +
             "👤 Xodim: " + (username || "—") + "\n" +
-            "💰 Summa: " + Number(amount).toLocaleString() + " UZS";
+            "💰 Summa: " + Number(amount).toLocaleString() + " UZS\n" +
+            "📝 Sabab: " + (reason || "Kiritilmagan");
 
   // SuperAdmin ga doim yuborish
   if (CONFIG.CHAT_ID) {

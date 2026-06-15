@@ -543,6 +543,7 @@ function updateProfileUI() {
 // --- Avans So'rash ---
 async function requestAvans() {
     const amountInput = document.getElementById('avansAmount');
+    const reasonInput = document.getElementById('avansReason');
     if (!amountInput) return;
     
     const amount = Number(amountInput.value);
@@ -551,14 +552,21 @@ async function requestAvans() {
         return;
     }
 
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    if (!reason) {
+        showToastMsg("Iltimos, avans sababini yozing!", true);
+        return;
+    }
+
     const btn = document.getElementById('btnAvansRequest');
     setButtonLoading(btn, true, "Yuborilmoqda...");
 
     try {
-        const response = await apiRequest({ action: 'request_avans', amount: amount });
+        const response = await apiRequest({ action: 'request_avans', amount: amount, reason: reason });
         if (response.success) {
             showToastMsg("✅ Avans so'rovi yuborildi!");
             amountInput.value = '';
+            if (reasonInput) reasonInput.value = '';
         } else {
             showToastMsg("❌ " + (response.error || "Xatolik yuz berdi"), true);
         }

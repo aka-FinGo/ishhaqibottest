@@ -201,9 +201,11 @@ function doPost(e) {
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error: "Ruxsat yo'q" });
         var amount = Number(data.amount) || 0;
         if (amount <= 0) return sendJSON({ success:false, error: "Noto'g'ri summa" });
+        var reason = String(data.reason || '').trim();
+        if (!reason) return sendJSON({ success:false, error: "Izoh kiritilmagan" });
         // Hodim nomini aniqlash
         var username = auth.username || auth.name || 'Xodim';
-        sendAvansRequestNotification(username, amount);
+        sendAvansRequestNotification(username, amount, reason);
         result = { success:true, message: "Avans so'rovi yuborildi" };
         break;
 
