@@ -490,25 +490,67 @@ function updateProfileUI() {
         adminSection.classList.toggle('hidden', !hasAdminAccess);
     }
 
-    // --- Joriy oy statistikasi ---
+    // --- Profil statistikasi (oxirgi amal davri bo'yicha) ---
     try {
         const now = new Date();
         const curYear = now.getFullYear();
         const curMonth = now.getMonth() + 1;
         const curPeriod = `${curYear}-${String(curMonth).padStart(2, '0')}`;
 
-        // 1. Ish haqi (So'mda)
+        // Eng oxirgi amal qo'shilgan davrni topish
+        let latestPeriod = '';
+        if (typeof myFullRecords !== 'undefined' && Array.isArray(myFullRecords) && myFullRecords.length > 0) {
+            const sortedByDate = [...myFullRecords].sort((a, b) => {
+                const dateA = new Date(a.dateISO || '1970-01-01');
+                const dateB = new Date(b.dateISO || '1970-01-01');
+                return dateB - dateA;
+            });
+            latestPeriod = getDavrSortKey(sortedByDate[0].actionPeriod, sortedByDate[0].date, sortedByDate[0].dateISO);
+        }
+        
+        // Statistika davri: oxirgi amal davri (agar mavjud va joriy oydan oldin bo'lsa) yoki joriy oy
+        // Mantiq: oylik/avans odatda keyingi oyda oldingi oy uchun beriladi,
+        // shuning uchun oy boshida oldingi oy statistikasi ko'rsatiladi
+        let targetPeriod = curPeriod;
+        if (latestPeriod && latestPeriod < curPeriod) {
+            targetPeriod = latestPeriod;
+        }
+        const targetParts = targetPeriod.split('-');
+        const tYear = targetParts[0];
+        const tMonth = parseInt(targetParts[1], 10);
+
+        // Label'larni dinamik ravishda yangilash
+        const uzsLabelEl = document.getElementById('profileCurrentMonthUzsLabel');
+        const m2LabelEl = document.getElementById('profileCurrentMonthM2Label');
+        if (uzsLabelEl || m2LabelEl) {
+            let periodLabel = 'Joriy oy';
+            if (targetPeriod && targetPeriod !== curPeriod) {
+                const parts = targetPeriod.split('-');
+                if (parts.length === 2) {
+                    const y = parts[0];
+                    const m = parseInt(parts[1], 10);
+                    if (m >= 1 && m <= 12) {
+                        periodLabel = `${UZ_MONTHS[m - 1]} ${y}`;
+                    }
+                }
+            }
+            if (uzsLabelEl) uzsLabelEl.textContent = `${periodLabel} (So'm)`;
+            if (m2LabelEl) m2LabelEl.textContent = `${periodLabel} (m²)`;
+        }
+
+        // 1. Ish haqi (So'mda) — targetPeriod bo'yicha
         let monthlyUzs = 0;
         if (typeof myFullRecords !== 'undefined' && Array.isArray(myFullRecords)) {
             monthlyUzs = myFullRecords.reduce((sum, r) => {
-                if (r.actionPeriod === curPeriod) return sum + (Number(r.amountUZS) || 0);
+                const rPeriod = getDavrSortKey(r.actionPeriod, r.date, r.dateISO);
+                if (rPeriod === targetPeriod) return sum + (Number(r.amountUZS) || 0);
                 return sum;
             }, 0);
         }
         const uzsEl = document.getElementById('profileCurrentMonthUzs');
         if (uzsEl) uzsEl.textContent = monthlyUzs.toLocaleString();
 
-        // 2. Kvadratlar (m²)
+        // 2. Kvadratlar (m²) — targetPeriod bo'yicha
         let monthlyM2 = 0;
         if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
             const myName = myUsername || (typeof employeeName !== 'undefined' ? employeeName : '');
@@ -516,7 +558,7 @@ function updateProfileUI() {
                 const rYear = Number(r.year);
                 const rMonth = Number(String(r.month || '').replace('_', '').replace("'", ""));
                 const rStaff = r.staffName || '';
-                if (rYear === curYear && rMonth === curMonth && rStaff === myName) {
+                if (rYear === Number(tYear) && rMonth === tMonth && rStaff === myName) {
                     return sum + (Number(r.totalM2) || 0);
                 }
                 return sum;
