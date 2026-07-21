@@ -495,7 +495,6 @@ function updateProfileUI() {
         const hideAvans = (myRole === 'Direktor' || myRole === 'Bugalter');
         avansSection.classList.toggle('hidden', hideAvans);
     }
-
     // --- Profil statistikasi (oxirgi amal davri bo'yicha) ---
     try {
         const now = new Date();
