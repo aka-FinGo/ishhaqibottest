@@ -439,7 +439,7 @@ function showKvDetailModal(idx) {
         });
 
         /* ---- Tahrirlash / O'chirish tugmalari ---- */
-        const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor');
+        const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor' || myRole === 'Bugalter');
         const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
         const canEdit = (isAdmin && hasPerms && myPermissions.canEdit) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
         const canDelete = (isAdmin && hasPerms && myPermissions.canDelete) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
@@ -799,7 +799,7 @@ async function saveKv() {
 
     if (rowId) {
         const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
-        const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+        const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
         const canEditAll = isAdmin && myPermissions.canEdit;
         const isOwner = rec && String(rec.ownerTgId) === String(telegramId);
         if (!canEditAll && !isOwner && myRole !== 'SuperAdmin') {
@@ -845,7 +845,7 @@ async function saveKv() {
 async function deleteKv(rowId) {
     const rec = kvFullRecords.find(r => String(r.rowId) === String(rowId));
     if (!rec) return;
-    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
     const canDeleteAll = isAdmin && myPermissions.canDelete;
     const isOwner = String(rec.ownerTgId) === String(telegramId);
     if (!canDeleteAll && !isOwner && myRole !== 'SuperAdmin') {

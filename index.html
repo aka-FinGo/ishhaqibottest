@@ -195,7 +195,7 @@
                     </div>
                     <div class="input-group">
                         <label>Summa</label>
-                        <input type="number" id="amount" required placeholder="0" inputmode="numeric" oninput="updateAddCurrencyView()">
+                        <input type="text" id="amount" required placeholder="0" inputmode="numeric" oninput="formatSpaceNumberInput(this); updateAddCurrencyView();">
                     </div>
                     <div class="input-group">
                         <label>Valyuta</label>
@@ -266,14 +266,14 @@
             <div class="card"
                 style="padding:15px; margin-bottom:20px; display:grid; grid-template-columns:1fr 1fr; gap:15px; background:var(--bg); border:1px solid var(--border);">
                 <div style="text-align:center; border-right:1px solid var(--border);">
-                    <div
+                    <div id="profileCurrentMonthUzsLabel"
                         style="font-size:10px; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
                         Joriy oy (So'm)</div>
                     <div id="profileCurrentMonthUzs" style="font-size:18px; font-weight:800; color:var(--green-dark);">0
                     </div>
                 </div>
                 <div style="text-align:center;">
-                    <div
+                    <div id="profileCurrentMonthM2Label"
                         style="font-size:10px; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
                         Joriy oy (m²)</div>
                     <div id="profileCurrentMonthM2" style="font-size:18px; font-weight:800; color:var(--blue);">0</div>
@@ -289,22 +289,27 @@
                 </button>
             </div>
 
-            <div class="section-title">💸 Avans So'rash</div>
-            <div class="card" style="margin-bottom:20px; padding:20px;">
-                <p style="font-size:14px; color:var(--text-muted); margin-bottom:15px; line-height:1.5;">
-                    Avans kerakmi? Summa va sababini yozib yuboring. So'rov bugalterga yuboriladi.
-                </p>
-                <div class="input-group">
-                    <label>Summa (UZS) <span style="color:var(--red);">*</span></label>
-                    <input type="number" id="avansAmount" inputmode="numeric" pattern="[0-9]*" placeholder="0" class="input" style="font-size:18px; font-weight:bold;">
+            <div id="avansSection" class="avans-section">
+                <div class="section-title" onclick="toggleAvansForm()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;">
+                    <span>💸 Avans So'rash</span>
+                    <span id="avansToggleIcon" style="font-size:14px; font-weight:bold;">▼</span>
                 </div>
-                <div class="input-group" style="margin-top:15px;">
-                    <label>Izoh (nima uchun) <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="avansReason" placeholder="Masalan: yo'lkira uchun" class="input" style="font-size:16px;">
+                <div id="avansFormCard" class="card hidden" style="margin-bottom:20px; padding:20px;">
+                    <p style="font-size:14px; color:var(--text-muted); margin-bottom:15px; line-height:1.5;">
+                        Avans kerakmi? Summa va sababini yozib yuboring. So'rov bugalterga yuboriladi.
+                    </p>
+                    <div class="input-group">
+                        <label>Summa (UZS) <span style="color:var(--red);">*</span></label>
+                        <input type="text" id="avansAmount" inputmode="numeric" placeholder="0" class="input" style="font-size:18px; font-weight:bold;" oninput="formatSpaceNumberInput(this)">
+                    </div>
+                    <div class="input-group" style="margin-top:15px;">
+                        <label>Izoh (nima uchun) <span style="color:var(--red);">*</span></label>
+                        <input type="text" id="avansReason" placeholder="Masalan: yo'lkira uchun" class="input" style="font-size:16px;">
+                    </div>
+                    <button class="btn-main" onclick="requestAvans()" id="btnAvansRequest" style="margin-top:15px;">
+                        Yuborish
+                    </button>
                 </div>
-                <button class="btn-main" onclick="requestAvans()" id="btnAvansRequest" style="margin-top:15px;">
-                    Yuborish
-                </button>
             </div>
 
             <div class="section-title">Ilova Mavzusi</div>
@@ -918,13 +923,13 @@
                     
                     <div class="input-group">
                         <label>💰 Summa (UZS)</label>
-                        <input type="number" id="editAmountUZS" placeholder="So'mda" oninput="updateEditCurrencyView('UZS')"
+                        <input type="text" id="editAmountUZS" placeholder="So'mda" oninput="formatSpaceNumberInput(this); updateEditCurrencyView('UZS')"
                             inputmode="numeric">
                     </div>
                     <div class="input-group" id="editUsdRow">
                         <label>💵 Summa (USD)</label>
-                        <input type="number" id="editAmountUSD" placeholder="Dollarda"
-                            oninput="updateEditCurrencyView('USD')" inputmode="numeric">
+                        <input type="text" id="editAmountUSD" placeholder="Dollarda"
+                            oninput="formatSpaceNumberInput(this); updateEditCurrencyView('USD')" inputmode="numeric">
                     </div>
                     <div class="input-group" id="editRateRow">
                         <label>📈 Valyuta kursi (1 USD = ? UZS)</label>

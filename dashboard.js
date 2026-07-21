@@ -312,7 +312,7 @@ function loadDashboard() {
     
     try {
         if      (myRole === 'SuperAdmin') renderSuperAdminDashboard(el);
-        else if (myRole === 'Direktor')   renderDirektorDashboard(el);
+        else if (myRole === 'Direktor' || myRole === 'Bugalter') renderDirektorDashboard(el);
         else if (myRole === 'Admin')      renderAdminDashboard(el);
         else                              renderUserDashboard(el);
     } catch (error) {

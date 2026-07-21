@@ -327,8 +327,8 @@ function closeEditModal() {
 async function loadAdminData() {
     const adminListEl = document.getElementById('adminList');
 
-    // 1. Rol tekshiruvi — Admin/Direktor/SuperAdmin emas bo'lsa butunlay bloklash
-    if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor') {
+    // 1. Rol tekshiruvi — Admin/Direktor/SuperAdmin/Bugalter emas bo'lsa butunlay bloklash
+    if (myRole !== 'SuperAdmin' && myRole !== 'Admin' && myRole !== 'Direktor' && myRole !== 'Bugalter') {
         if (adminListEl) {
             adminListEl.innerHTML = `
                 <div class="empty-state">

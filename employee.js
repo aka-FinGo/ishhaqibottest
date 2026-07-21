@@ -209,7 +209,7 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
     const actionYear = document.getElementById('actionYear') ? document.getElementById('actionYear').value : '';
     const actionPeriod = actionYear && actionMonth ? `${actionYear}-${actionMonth}` : '';
 
-    const amount = parseFloat(document.getElementById('amount').value);
+    const amount = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(document.getElementById('amount').value) : parseFloat(String(document.getElementById('amount').value || '').replace(/\s+/g, '')) || 0;
     const currency = document.getElementById('currency').value;
     const rate = parseFloat(document.getElementById('rate').value) || 0;
     const comment = document.getElementById('comment').value || "Izoh yo'q";

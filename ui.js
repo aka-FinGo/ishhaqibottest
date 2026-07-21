@@ -135,7 +135,7 @@ function processUserData(data) {
     if (data.isSuperAdmin) myRole = 'SuperAdmin';
     else if (data.isAdmin) myRole = 'Admin';
     else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
-    else if (data.roleKey === 'BUGALTER' || data.role === 'Bugalter') myRole = 'Bugalter';
+    else if (data.roleKey === 'BUGALTER' || data.role === 'Bugalter' || data.isBugalter) myRole = 'Bugalter';
     else myRole = 'User';
 
     myIsSardor = !!data.isSardor;
@@ -157,8 +157,8 @@ function processUserData(data) {
         };
     }
     if (typeof updateTechnicalPositions === 'function') updateTechnicalPositions(data.allPositions || []);
-    canViewCompanyActions = myRole === 'SuperAdmin' || myPermissions.canViewAll;
-    canExportCompanyData = myRole === 'SuperAdmin' || (myPermissions.canViewAll && myPermissions.canExport);
+    canViewCompanyActions = myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter' || myPermissions.canViewAll;
+    canExportCompanyData = myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter' || (myPermissions.canViewAll && myPermissions.canExport);
 
     applyRoleBasedUI();
     applyTheme();
@@ -486,29 +486,77 @@ function updateProfileUI() {
 
     const adminSection = document.getElementById('profileAdminSection');
     if (adminSection) {
-        const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor' || myRole === 'Bugalter');
+        const hasAdminAccess = (myRole === 'SuperAdmin' || myRole === 'Admin') && (myRole !== 'Direktor' && myRole !== 'Bugalter');
         adminSection.classList.toggle('hidden', !hasAdminAccess);
     }
 
-    // --- Joriy oy statistikasi ---
+    const avansSection = document.getElementById('avansSection');
+    if (avansSection) {
+        const hideAvans = (myRole === 'Direktor' || myRole === 'Bugalter');
+        avansSection.classList.toggle('hidden', hideAvans);
+    }
+
+    // --- Profil statistikasi (oxirgi amal davri bo'yicha) ---
     try {
         const now = new Date();
         const curYear = now.getFullYear();
         const curMonth = now.getMonth() + 1;
         const curPeriod = `${curYear}-${String(curMonth).padStart(2, '0')}`;
 
-        // 1. Ish haqi (So'mda)
+        // Eng oxirgi amal qo'shilgan davrni topish
+        let latestPeriod = '';
+        if (typeof myFullRecords !== 'undefined' && Array.isArray(myFullRecords) && myFullRecords.length > 0) {
+            const sortedByDate = [...myFullRecords].sort((a, b) => {
+                const dateA = new Date(a.dateISO || '1970-01-01');
+                const dateB = new Date(b.dateISO || '1970-01-01');
+                return dateB - dateA;
+            });
+            latestPeriod = getDavrSortKey(sortedByDate[0].actionPeriod, sortedByDate[0].date, sortedByDate[0].dateISO);
+        }
+        
+        // Statistika davri: oxirgi amal davri (agar mavjud va joriy oydan oldin bo'lsa) yoki joriy oy
+        // Mantiq: oylik/avans odatda keyingi oyda oldingi oy uchun beriladi,
+        // shuning uchun oy boshida oldingi oy statistikasi ko'rsatiladi
+        let targetPeriod = curPeriod;
+        if (latestPeriod && latestPeriod < curPeriod) {
+            targetPeriod = latestPeriod;
+        }
+        const targetParts = targetPeriod.split('-');
+        const tYear = targetParts[0];
+        const tMonth = parseInt(targetParts[1], 10);
+
+        // Label'larni dinamik ravishda yangilash
+        const uzsLabelEl = document.getElementById('profileCurrentMonthUzsLabel');
+        const m2LabelEl = document.getElementById('profileCurrentMonthM2Label');
+        if (uzsLabelEl || m2LabelEl) {
+            let periodLabel = 'Joriy oy';
+            if (targetPeriod && targetPeriod !== curPeriod) {
+                const parts = targetPeriod.split('-');
+                if (parts.length === 2) {
+                    const y = parts[0];
+                    const m = parseInt(parts[1], 10);
+                    if (m >= 1 && m <= 12) {
+                        periodLabel = `${UZ_MONTHS[m - 1]} ${y}`;
+                    }
+                }
+            }
+            if (uzsLabelEl) uzsLabelEl.textContent = `${periodLabel} (So'm)`;
+            if (m2LabelEl) m2LabelEl.textContent = `${periodLabel} (m²)`;
+        }
+
+        // 1. Ish haqi (So'mda) — targetPeriod bo'yicha
         let monthlyUzs = 0;
         if (typeof myFullRecords !== 'undefined' && Array.isArray(myFullRecords)) {
             monthlyUzs = myFullRecords.reduce((sum, r) => {
-                if (r.actionPeriod === curPeriod) return sum + (Number(r.amountUZS) || 0);
+                const rPeriod = getDavrSortKey(r.actionPeriod, r.date, r.dateISO);
+                if (rPeriod === targetPeriod) return sum + (Number(r.amountUZS) || 0);
                 return sum;
             }, 0);
         }
         const uzsEl = document.getElementById('profileCurrentMonthUzs');
         if (uzsEl) uzsEl.textContent = monthlyUzs.toLocaleString();
 
-        // 2. Kvadratlar (m²)
+        // 2. Kvadratlar (m²) — targetPeriod bo'yicha
         let monthlyM2 = 0;
         if (typeof kvFullRecords !== 'undefined' && Array.isArray(kvFullRecords)) {
             const myName = myUsername || (typeof employeeName !== 'undefined' ? employeeName : '');
@@ -516,7 +564,7 @@ function updateProfileUI() {
                 const rYear = Number(r.year);
                 const rMonth = Number(String(r.month || '').replace('_', '').replace("'", ""));
                 const rStaff = r.staffName || '';
-                if (rYear === curYear && rMonth === curMonth && rStaff === myName) {
+                if (rYear === Number(tYear) && rMonth === tMonth && rStaff === myName) {
                     return sum + (Number(r.totalM2) || 0);
                 }
                 return sum;
@@ -540,13 +588,53 @@ function updateProfileUI() {
     }
 }
 
+// --- Raqamlar oralig'iga bo'shliq qo'shish va pars qilish yordamchilari ---
+function formatSpaceNumberInput(el) {
+    if (!el) return;
+    const start = el.selectionStart;
+    const oldLen = el.value.length;
+    let raw = el.value.replace(/[^\d]/g, '');
+    if (!raw) {
+        el.value = '';
+        return;
+    }
+    raw = raw.replace(/^0+(?=\d)/, '');
+    const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    el.value = formatted;
+    
+    const newLen = formatted.length;
+    let newPos = start + (newLen - oldLen);
+    if (newPos < 0) newPos = 0;
+    try { el.setSelectionRange(newPos, newPos); } catch(e) {}
+}
+
+function parseFormattedNumber(val) {
+    if (typeof val === 'number') return val;
+    const raw = String(val || '').replace(/\s+/g, '');
+    return parseFloat(raw) || 0;
+}
+
+function toggleAvansForm() {
+    const card = document.getElementById('avansFormCard');
+    const icon = document.getElementById('avansToggleIcon');
+    if (!card) return;
+    const isHidden = card.classList.contains('hidden');
+    if (isHidden) {
+        card.classList.remove('hidden');
+        if (icon) icon.textContent = '▲';
+    } else {
+        card.classList.add('hidden');
+        if (icon) icon.textContent = '▼';
+    }
+}
+
 // --- Avans So'rash ---
 async function requestAvans() {
     const amountInput = document.getElementById('avansAmount');
     const reasonInput = document.getElementById('avansReason');
     if (!amountInput) return;
     
-    const amount = Number(amountInput.value);
+    const amount = parseFormattedNumber(amountInput.value);
     if (!amount || amount <= 0) {
         showToastMsg("Iltimos, to'g'ri summa kiriting!", true);
         return;
@@ -627,7 +715,7 @@ function contactAdmin() {
 
 function initAdminTab() {
     const isSuperAdmin = myRole === 'SuperAdmin';
-    if (myRole !== 'SuperAdmin' && myRole !== 'Admin') {
+    if (myRole === 'Direktor' || myRole === 'Bugalter' || (myRole !== 'SuperAdmin' && myRole !== 'Admin')) {
         showToastMsg('❌ Admin panel ruxsati yo\'q', true);
         switchTab('kvadratTab', 'nav-kvadrat'); return;
     }
@@ -641,7 +729,7 @@ function initAdminTab() {
 function handleDashboardNav() {
     // Admin, SuperAdmin, Direktor → kompaniya budjeti (dashboardTab)
     // Oddiy hodim → faqat o'z amallari (reportTab)
-    if (canViewCompanyActions || myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor') {
+    if (canViewCompanyActions || myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter') {
         switchTab('dashboardTab', 'nav-dashboard');
     } else {
         switchTab('reportTab', 'nav-dashboard');
@@ -741,6 +829,9 @@ async function ensureAdminDataLoaded(force = false) {
 }
 
 async function switchAdminSub(areaId, btn) {
+    if (myRole === 'Direktor' || myRole === 'Bugalter' || (myRole !== 'SuperAdmin' && myRole !== 'Admin')) {
+        showToastMsg('❌ Admin panel ruxsati yo\'q', true); return;
+    }
     if ((areaId === 'adminHodimlarArea' || areaId === 'adminWorkflowArea' || areaId === 'adminPositionsArea' || areaId === 'adminAIArea') && myRole !== 'SuperAdmin') {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
@@ -804,15 +895,15 @@ function onRateInput(input) {
     updateAddCurrencyView();
 }
 function updateAddCurrencyView() {
-    const amountVal = parseFloat(document.getElementById('amount').value) || 0;
-    const rateVal = parseFloat(document.getElementById('rate').value) || 0;
+    const amountVal = parseFormattedNumber(document.getElementById('amount').value);
+    const rateVal = parseFormattedNumber(document.getElementById('rate').value);
     const currency = document.getElementById('currency').value;
     const preview = document.getElementById('addConversionPreview');
     if (!preview) return;
 
     if (currency === 'USD' && amountVal > 0 && rateVal > 0) {
         const calc = (amountVal * rateVal).toLocaleString();
-        preview.innerHTML = `<span style="color:var(--green-dark);font-size:13px;font-weight:600;">= ${calc} UZS (${amountVal} x ${rateVal.toLocaleString()})</span>`;
+        preview.innerHTML = `<span style="color:var(--green-dark);font-size:13px;font-weight:600;">= ${calc} UZS (${amountVal.toLocaleString()} x ${rateVal.toLocaleString()})</span>`;
         preview.style.display = '';
     } else {
         preview.style.display = 'none';

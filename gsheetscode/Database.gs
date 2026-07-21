@@ -287,6 +287,9 @@ function initUser(tgId, auth, data) {
     success: true,
     inList: auth.inList,
     username: auth.username,
+    roleKey: auth.roleKey,
+    role: auth.role,
+    isBugalter: !!auth.isBugalter || auth.roleKey === 'BUGALTER',
     canAdd: auth.canAdd,
     isAdmin: auth.isAdmin,
     isSuperAdmin: auth.isSuperAdmin,
@@ -323,10 +326,10 @@ function setWorkflowStrictMode(isStrict) {
  */
 function getAdminInitData(actorTgId) {
   var auth = checkUserRoles(actorTgId);
-  var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+  var isAllowed = (auth.isSuperAdmin || auth.isAdmin) && !auth.isDirector && !auth.isBugalter && auth.roleKey !== 'DIRECTOR' && auth.roleKey !== 'BUGALTER';
   
-  if (!isAdmin) {
-    return { success: false, error: "Admin ruxsati yo'q" };
+  if (!isAllowed) {
+    return { success: false, error: "Admin ruxsati yo'q!" };
   }
 
   return {

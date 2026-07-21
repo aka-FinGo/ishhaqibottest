@@ -112,9 +112,9 @@ function updateEditCurrencyView(source) {
 
     if (!uzsEl || !usdEl || !rateEl) return;
 
-    let uzsVal = parseFloat(uzsEl.value) || 0;
-    let usdVal = parseFloat(usdEl.value) || 0;
-    let rateVal = parseFloat(rateEl.value) || 0;
+    let uzsVal = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(uzsEl.value) : (parseFloat(String(uzsEl.value || '').replace(/\s+/g, '')) || 0);
+    let usdVal = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(usdEl.value) : (parseFloat(String(usdEl.value || '').replace(/\s+/g, '')) || 0);
+    let rateVal = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(rateEl.value) : (parseFloat(String(rateEl.value || '').replace(/\s+/g, '')) || 0);
     let isRateValid = true;
 
     if (rateEl.value.trim() !== '') {
@@ -125,10 +125,12 @@ function updateEditCurrencyView(source) {
 
     if (source === 'UZS' && rateVal > 0) {
         usdVal = uzsVal / rateVal;
-        usdEl.value = (usdVal % 1 === 0) ? usdVal : usdVal.toFixed(2);
+        const formattedUsd = (usdVal % 1 === 0) ? usdVal.toString() : usdVal.toFixed(2);
+        usdEl.value = (typeof formatSpaceNumberInput === 'function') ? formattedUsd.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : formattedUsd;
     } else if ((source === 'USD' || source === 'RATE') && rateVal > 0 && usdVal > 0 && isRateValid) {
         uzsVal = Math.round(usdVal * rateVal);
-        uzsEl.value = uzsVal;
+        const formattedUzs = uzsVal.toString();
+        uzsEl.value = (typeof formatSpaceNumberInput === 'function') ? formattedUzs.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : formattedUzs;
     }
 
     if (submitBtn) {
@@ -186,7 +188,7 @@ async function saveEdit(){
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
     const canEditAll = isAdmin && myPermissions.canEdit;
     const isOwner = String(r.telegramId) === String(telegramId);
 
@@ -195,8 +197,8 @@ async function saveEdit(){
         return;
     }
 
-    const amountUSD = parseFloat(document.getElementById('editAmountUSD').value) || 0;
-    const rate = parseFloat(document.getElementById('editRate').value) || 0;
+    const amountUSD = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(document.getElementById('editAmountUSD').value) : (parseFloat(String(document.getElementById('editAmountUSD').value || '').replace(/\s+/g, '')) || 0);
+    const rate = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(document.getElementById('editRate').value) : (parseFloat(String(document.getElementById('editRate').value || '').replace(/\s+/g, '')) || 0);
     
     const usdVal = parseFloat(amountUSD) || 0;
     const rateVal = parseFloat(rate) || 0;
@@ -239,7 +241,7 @@ async function saveEdit(){
     if (amountUSD > 0 && rate > 0) {
         amountUZS = amountUSD * rate;
     } else {
-        amountUZS = parseFloat(document.getElementById('editAmountUZS').value) || 0;
+        amountUZS = (typeof parseFormattedNumber === 'function') ? parseFormattedNumber(document.getElementById('editAmountUZS').value) : (parseFloat(String(document.getElementById('editAmountUZS').value || '').replace(/\s+/g, '')) || 0);
     }
 
     const saveBtn = document.querySelector('#editForm .btn-main[type="submit"]');
@@ -298,7 +300,7 @@ async function deleteRecord(rowId) {
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor';
+    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
     const canDeleteAll = isAdmin && myPermissions.canDelete;
     const isOwner = String(r.telegramId) === String(telegramId);
 

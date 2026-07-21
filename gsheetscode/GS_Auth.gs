@@ -42,6 +42,7 @@ function checkUserRoles(tgId) {
   auth.isSuperAdmin = emp.isSuperAdmin;
   auth.isDirector = emp.isDirektor;
   auth.isAdmin    = emp.isAdmin;
+  auth.isBugalter = emp.roleKey === 'BUGALTER' || emp.role === 'Bugalter';
   auth.isBoss     = emp.isSuperAdmin;
   auth.permissions = emp.permissions;
   auth.positions  = emp.positions || [];
@@ -69,6 +70,7 @@ function resolveEmployeeAccessFromRow_(row) {
   var isSuperAdmin = role === 'SUPER_ADMIN';
   var isDirektor = role === 'DIRECTOR';
   var isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+  var isBugalter = role === 'BUGALTER';
   
   return {
     roleKey: role,
@@ -77,6 +79,7 @@ function resolveEmployeeAccessFromRow_(row) {
     isSuperAdmin: isSuperAdmin,
     isDirektor: isDirektor,
     isAdmin: isAdmin,
+    isBugalter: isBugalter,
     permissions: perms,
     overrides: deriveOverridesForEffective_(role, canAdd, perms)
   };
@@ -113,6 +116,7 @@ function buildModelFromRoleAndOverrides_(roleKey, overrides) {
     isSuperAdmin: role === 'SUPER_ADMIN',
     isDirektor: role === 'DIRECTOR',
     isAdmin: role === 'ADMIN' || role === 'SUPER_ADMIN',
+    isBugalter: role === 'BUGALTER',
     permissions: perms,
     overrides: overrides || {
       canAdd: null, canViewAll: null, canEdit: null, canDelete: null, canExport: null, canViewDash: null

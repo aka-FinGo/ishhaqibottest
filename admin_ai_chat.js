@@ -17,14 +17,14 @@ const AiChat = {
 
 function initAIChatArea() {
     // Ruxsat tekshirish
-    const canUse = (myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Admin');
+    const canUse = (myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Admin' || myRole === 'Bugalter');
     if (!canUse) {
         showToastMsg('❌ AI Chat ruxsati yo\'q', true);
         return;
     }
 
-    // Kontekst doirasi: SuperAdmin/Direktor kompaniya ma'lumotlarini ko'ra oladi
-    AiChat.contextScope = (myRole === 'SuperAdmin' || myRole === 'Direktor') ? 'company' : 'own';
+    // Kontekst doirasi: SuperAdmin/Direktor/Bugalter kompaniya ma'lumotlarini ko'ra oladi
+    AiChat.contextScope = (myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter') ? 'company' : 'own';
 
     // Agar allaqachon render qilingan bo'lsa qayta render qilmaymiz
     const container = document.getElementById('aiChatMessages');
