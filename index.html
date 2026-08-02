@@ -15,11 +15,10 @@
     <title>Aristokrat Ish Haqi (v1.0.23.1)</title>
 
     <!-- Asosiy stillar -->
-    <link rel="stylesheet" href="src/styles/style.css?v=1.0.23">
+    <link rel="stylesheet" href="style.css?v=1.0.23">
     <!-- Komponent stillar (JS fayllaridan ajratilgan) -->
-    <link rel="stylesheet" href="src/styles/components.css?v=1.0.23">
-    <link rel="stylesheet" href="src/styles/ai_chat.css?v=1.0.23">
-    <link rel="stylesheet" href="src/styles/module_fl.css?v=1.0.23">
+    <link rel="stylesheet" href="components.css?v=1.0.23">
+    <link rel="stylesheet" href="ai_chat.css?v=1.0.23">
     <!-- Dinamik mavzu (standart = bo'sh, dark = dark.css) -->
     <link id="dynamic-theme" rel="stylesheet" href="">
 
@@ -134,6 +133,21 @@
                         <p>Yuklanmoqda...</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- TAB: MODUL -->
+        <div id="moduleTab" class="tab-content" style="padding:0; margin:0;">
+            <button onclick="switchTab('kvadratTab','nav-kvadrat')" class="back-btn-top-right">
+                ← Qaytish
+            </button>
+
+
+            <div style="position:fixed; top:0; left:0; right:0; bottom:0; z-index:10000; background:#000;">
+                <iframe id="moduleIframe" src="https://aka-fingo.github.io/module_fl/"
+                    style="width:100%; height:100%; border:none;"
+                    allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb">
+                </iframe>
             </div>
         </div>
 
@@ -1023,6 +1037,9 @@
             <div class="nav-item active" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
                 <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
             </div>
+            <div class="nav-item" id="nav-module" onclick="switchTab('moduleTab','nav-module')">
+                <span class="nav-icon">🧩</span><span>Modul</span>
+            </div>
             <div class="nav-fab-container">
                 <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>
             </div>
@@ -1035,7 +1052,24 @@
             <div class="nav-item hidden" id="nav-admin"></div>
         </div>
 
-        <script type="module" src="./src/main.js"></script>
+        <script defer src="cache.js?v=1.0.23"></script>
+        <script defer src="config.js?v=1.0.23"></script>
+        <script defer src="ui.js?v=1.0.23"></script>
+        <script defer src="employee.js?v=1.0.23"></script>
+        <script defer src="admin.js?v=1.0.23"></script>
+        <script defer src="export.js?v=1.0.23"></script>
+        <script defer src="actions.js?v=1.0.23"></script>
+        <script defer src="dashboard.js?v=1.0.23"></script>
+        <script defer src="detail_modal.js?v=1.0.23"></script>
+        <script defer src="kvadratlar.js?v=1.0.23"></script>
+        <script defer src="dashboard_kv.js?v=1.0.23"></script>
+        <script defer src="dashboard_charts.js?v=1.0.0"></script>
+        <script defer src="roles.js?v=1.0.23"></script>
+        <script defer src="admin_workflow.js?v=1.0.23"></script>
+        <script defer src="admin_positions.js?v=1.0.23"></script>
+        <script defer src="enhanced_admin_list.js?v=1.0.23"></script>
+        <script defer src="admin_notifications.js?v=1.0.23"></script>
+        <script defer src="admin_ai.js?v=1.0.25"></script>
 </body>
 
 </html>
