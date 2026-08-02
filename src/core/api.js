@@ -4,10 +4,18 @@
 import { API_URL, telegramId, tgInitData } from './config.js';
 
 export async function apiRequest(action, extraParams = {}) {
+  const currentTgId = (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id)
+    ? String(window.Telegram.WebApp.initDataUnsafe.user.id)
+    : (localStorage.getItem('saved_telegram_id') || (typeof window !== 'undefined' && window.telegramId) || telegramId || '0');
+
+  const currentInitData = (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData)
+    ? window.Telegram.WebApp.initData
+    : ((typeof window !== 'undefined' && window.tgInitData) || tgInitData || '');
+
   const payload = {
     action,
-    telegramId,
-    tgInitData,
+    telegramId: currentTgId,
+    tgInitData: currentInitData,
     ...extraParams
   };
 
