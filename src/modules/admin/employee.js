@@ -198,10 +198,11 @@ function resetAddForm() {
     toggleRate();
 }
 
-// ---- Yangi amal ----
-document.getElementById('financeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!checkAddPermission()) return;
+const financeFormEl = document.getElementById('financeForm');
+if (financeFormEl) {
+    financeFormEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!checkAddPermission()) return;
 
     const btn = document.getElementById('submitBtn');
     const status = document.getElementById('status');
@@ -253,6 +254,7 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
         executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod);
     }
 });
+}
 
 async function executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod) {
     const today = getTodayDdMmYyyy();

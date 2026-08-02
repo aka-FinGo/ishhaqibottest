@@ -1115,33 +1115,15 @@ function formatTime(seconds) {
     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 }
 
-function kvRefreshAll() {
-    if (typeof initKvadratTab === 'function') initKvadratTab(true);
-}
-
-function toggleKvFilterPanel() {
-    const panel = document.getElementById('kvFilterPanel');
-    if (panel) panel.classList.toggle('hidden');
-}
-
-function applyKvFilters() {
-    if (typeof filterKvList === 'function') filterKvList();
-}
-
-function closeKvModal() {
-    const modal = document.getElementById('kvAddModal');
-    if (modal) modal.classList.add('hidden');
-}
-
-function populateKvadratMeta() {}
-
 window.initKvadratTab = initKvadratTab;
 window.updateKvFabVisibility = updateKvFabVisibility;
 window.renderKvList = renderKvList;
-window.filterKvList = filterKvList;
+window.filterKvList = applyKvFilters;
 window.resetKvFilters = resetKvFilters;
-if (typeof saveKvadratUI === 'function') window.saveKvadratUI = saveKvadratUI; else window.saveKvadratUI = saveKv;
-if (typeof claimKvadratUI === 'function') window.claimKvadratUI = claimKvadratUI; else window.claimKvadratUI = claimKvWork;
+window.saveKv = saveKv;
+window.claimKvWork = claimKvWork;
+window.saveKvadratUI = saveKv;
+window.claimKvadratUI = claimKvWork;
 window.kvRefreshAll = kvRefreshAll;
 window.toggleKvFilterPanel = toggleKvFilterPanel;
 window.applyKvFilters = applyKvFilters;
