@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/ui_utils.js — Reusable UI Helpers & Modals
+// src/components/ui_utils.js — Global Tab Switching & UI Utilities
 // ============================================================
 
 export const UZ_MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
@@ -51,11 +51,38 @@ export function showToastMsg(message, isError = false) {
     document.body.appendChild(toast);
   }
   toast.style.background = isError ? '#ef4444' : '#1e293b';
-  toast.innerHTML = message;
+  toast.innerHTML = isError ? `❌ ${message}` : `✅ ${message}`;
   toast.style.display = 'flex';
-  toast.style.opacity = '1';
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => { toast.style.display = 'none'; }, 300);
-  }, 3000);
+  setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
+
+// Global Tab Switcher
+export function switchTab(tabId, navId) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const tab = document.getElementById(tabId);
+  if (tab) tab.classList.add('active');
+
+  const nav = document.getElementById(navId);
+  if (nav) nav.classList.add('active');
+
+  if (tabId === 'moduleTab' && typeof window.initModuleFl === 'function') {
+    window.initModuleFl();
+  }
+}
+
+// Admin Sub-Tab Switcher
+export function switchAdminSub(areaId, btnEl) {
+  document.querySelectorAll('#adminTab > div[id$="Area"]').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('#adminNav .admin-sub-btn').forEach(btn => btn.classList.remove('active'));
+
+  const area = document.getElementById(areaId);
+  if (area) area.classList.remove('hidden');
+
+  if (btnEl) btnEl.classList.add('active');
+}
+
+window.switchTab = switchTab;
+window.switchAdminSub = switchAdminSub;
+window.showToastMsg = showToastMsg;
