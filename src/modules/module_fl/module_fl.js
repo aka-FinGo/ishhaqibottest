@@ -1,16 +1,56 @@
 // ============================================================
-// module_fl.js — Native Integrated Module Logic
-// User View (Bosh Sahifa) & Admin View (Modullar Admin Paneli)
+// src/modules/module_fl/module_fl.js — Native Module Integration
+// No black screens, no CORS errors, 0% iframe
 // ============================================================
 const MODULE_API = 'https://script.google.com/macros/s/AKfycbxlNd85TBCBhMXUx-dWQ3dfGqLvIK-njvwXE0Nltt07My5uFvIQh90R_VZLL34ZjZacLQ/exec';
 
-let PWD = '', allModules = [], userModules = [];
-let selFiles = { pdf: null, video: null };
-let currentFilter = 'all';
+let PWD = localStorage.getItem('cx_pw') || '';
+let allModules = [], userModules = [];
 
-// USER VIEW (Bosh Sahifa / Modul Katalogi)
-async function initModuleFl() {
-  await loadUserModules();
+// Entry point when clicking "Modul" tab
+export async function initModuleFl() {
+  const savedPw = localStorage.getItem('cx_pw');
+  if (savedPw) {
+    PWD = savedPw;
+    const loginCard = document.getElementById('moduleFlLoginCard');
+    const appArea = document.getElementById('moduleFlAppArea');
+    if (loginCard) loginCard.style.display = 'none';
+    if (appArea) appArea.style.display = 'block';
+    await loadUserModules();
+  } else {
+    const loginCard = document.getElementById('moduleFlLoginCard');
+    const appArea = document.getElementById('moduleFlAppArea');
+    if (loginCard) loginCard.style.display = 'block';
+    if (appArea) appArea.style.display = 'none';
+  }
+}
+
+export async function initModuleFlWithPass() {
+  const inp = document.getElementById('moduleFlPassInput');
+  const err = document.getElementById('moduleFlPassErr');
+  if (err) err.style.display = 'none';
+  
+  const pass = (inp?.value || '').trim();
+  if (!pass) {
+    if (err) { err.textContent = '❌ Parolni kiriting'; err.style.display = 'block'; }
+    return;
+  }
+
+  PWD = pass;
+  try {
+    const r = await fetch(`${MODULE_API}?action=ping&password=${encodeURIComponent(PWD)}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    localStorage.setItem('cx_pw', PWD);
+    const loginCard = document.getElementById('moduleFlLoginCard');
+    const appArea = document.getElementById('moduleFlAppArea');
+    if (loginCard) loginCard.style.display = 'none';
+    if (appArea) appArea.style.display = 'block';
+    await loadUserModules();
+  } catch (e) {
+    if (err) { err.textContent = '❌ ' + (e.message || 'Noto\'g\'ri parol'); err.style.display = 'block'; }
+  }
 }
 
 async function loadUserModules() {
@@ -18,17 +58,21 @@ async function loadUserModules() {
   if (grid) grid.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">⏳ Modullar yuklanmoqda...</div>';
 
   try {
-    const r = await fetch(`${MODULE_API}?action=modules`);
+    const r = await fetch(`${MODULE_API}?action=modules&password=${encodeURIComponent(PWD)}`);
     const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
     userModules = Array.isArray(d) ? d : [];
     renderUserModules(userModules);
   } catch (e) {
     console.error('Error loading user modules:', e);
-    if (grid) grid.innerHTML = '<div style="color:var(--mf-red,#ef4444); font-size:13px;">❌ Modullarni yuklashda xatolik yuz berdi.</div>';
+    if (grid) grid.innerHTML = `<div style="color:#ef4444; font-size:13px; padding:15px; background:rgba(239,68,68,0.1); border-radius:10px;">
+      ❌ Modullarni yuklashda xatolik: ${esc(e.message)}
+    </div>`;
   }
 }
 
-function filterUserModules() {
+export function filterUserModules() {
   const q = (document.getElementById('userModuleSearch')?.value || '').toLowerCase();
   let list = [...userModules];
   if (q) {
@@ -54,13 +98,14 @@ function renderUserModules(list) {
   grid.innerHTML = list.map(m => {
     const furCount = Object.values(m.furnituralar || {}).reduce((s, v) => s + v.length, 0);
     const pdfBtn = m.pdfUrl 
-      ? `<a href="${esc(m.pdfUrl)}" target="_blank" class="btn-secondary" style="font-size:11px; padding:4px 8px; text-decoration:none;">📄 Chizma PDF</a>`
-      : '';
+      ? `<a href="${esc(m.pdfUrl)}" target="_blank" class="btn-secondary" style="font-size:11px; padding:4px 10px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">📄 Chizma PDF</a>`
+      : (m.tgPdfId ? `<span class="btn-secondary" style="font-size:11px; padding:4px 8px; opacity:0.8;">📄 TG PDF ID</span>` : '');
+      
     const videoBtn = m.videoUrl 
-      ? `<a href="${esc(m.videoUrl)}" target="_blank" class="btn-secondary" style="font-size:11px; padding:4px 8px; text-decoration:none;">🎬 Video</a>`
-      : '';
+      ? `<a href="${esc(m.videoUrl)}" target="_blank" class="btn-secondary" style="font-size:11px; padding:4px 10px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">🎬 Video</a>`
+      : (m.tgVideoId ? `<span class="btn-secondary" style="font-size:11px; padding:4px 8px; opacity:0.8;">🎬 TG Video ID</span>` : '');
 
-    return `<div class="card" style="margin:0; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px;">
+    return `<div class="card" style="margin:0; padding:14px; background:var(--surface,#16181d); border:1px solid var(--border,#262930); border-radius:12px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
           <div style="font-size:16px; font-weight:700; color:var(--cyan-neon, #00f2ff);">${esc(m.artikul)}</div>
@@ -72,17 +117,17 @@ function renderUserModules(list) {
       <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
         ${pdfBtn}
         ${videoBtn}
-        <button class="btn-secondary" onclick="toggleFurView('${esc(m.artikul)}')" style="font-size:11px; padding:4px 8px;">🔧 Furnituralar</button>
+        <button class="btn-secondary" onclick="toggleFurView('${esc(m.artikul)}')" style="font-size:11px; padding:4px 10px;">🔧 Furnituralar</button>
       </div>
 
-      <div id="fur_list_${esc(m.artikul)}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:12px;">
+      <div id="fur_list_${esc(m.artikul)}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border,#262930); font-size:12px;">
         ${renderFurListHTML(m.furnituralar)}
       </div>
     </div>`;
   }).join('');
 }
 
-function toggleFurView(artikul) {
+export function toggleFurView(artikul) {
   const el = document.getElementById(`fur_list_${artikul}`);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
@@ -95,7 +140,7 @@ function renderFurListHTML(furnituralar) {
 
   return Object.entries(furnituralar).map(([catName, items]) => `
     <div style="margin-bottom:8px;">
-      <strong style="color:var(--cyan-neon); font-size:11px;">${esc(catName)}:</strong>
+      <strong style="color:var(--cyan-neon,#00f2ff); font-size:11px;">${esc(catName)}:</strong>
       <ul style="margin:4px 0 0 16px; padding:0; list-style-type:disc;">
         ${items.map(it => `<li>${esc(it.nomi)} ${it.ulchov ? `(${esc(it.ulchov)})` : ''} — <b>${esc(it.soni)} ta</b></li>`).join('')}
       </ul>
@@ -103,258 +148,13 @@ function renderFurListHTML(furnituralar) {
   `).join('');
 }
 
-// ADMIN VIEW (Modullar Admin Paneli)
-async function doLogin() {
-  const passEl = document.getElementById('inp-pass');
-  if (!passEl) return;
-  const pass = passEl.value.trim();
-  const errEl = document.getElementById('login-err');
-  if (errEl) errEl.style.display = 'none';
-  if (!pass) { showErr('Parol kiriting'); return; }
-
-  const btn = document.getElementById('login-btn');
-  if (btn) { btn.disabled = true; btn.innerHTML = 'Ulanmoqda...'; }
-  PWD = pass;
-
-  try {
-    const d = await apiGet({ action: 'ping' });
-    if (d.error) throw new Error(d.error);
-  } catch(e) {
-    showErr(e.message);
-    if (btn) { btn.disabled = false; btn.innerHTML = 'Kirish'; }
-    PWD = ''; return;
-  }
-
-  localStorage.setItem('cx_pw', pass);
-  const loginScreen = document.getElementById('admin-login-screen');
-  const appScreen = document.getElementById('admin-app');
-  if (loginScreen) loginScreen.style.display = 'none';
-  if (appScreen) appScreen.style.display = 'block';
-  if (btn) { btn.disabled = false; btn.innerHTML = 'Kirish'; }
-  loadModules();
-}
-
-function showErr(m) {
-  const el = document.getElementById('login-err');
-  if (el) { el.textContent = '❌ ' + m; el.style.display = 'block'; }
-}
-
-function logout() {
-  localStorage.removeItem('cx_pw');
-  const loginScreen = document.getElementById('admin-login-screen');
-  const appScreen = document.getElementById('admin-app');
-  if (loginScreen) loginScreen.style.display = 'block';
-  if (appScreen) appScreen.style.display = 'none';
-}
-
-async function apiGet(p) {
-  const r = await fetch(`${MODULE_API}?${new URLSearchParams({password:PWD,...p})}`);
-  const t = await r.text();
-  try { return JSON.parse(t); } catch { throw new Error(t.slice(0,120)); }
-}
-
-async function apiPost(b) {
-  const r = await fetch(MODULE_API, { method:'POST', body:JSON.stringify({...b,password:PWD}) });
-  const t = await r.text();
-  try { return JSON.parse(t); } catch { throw new Error(t.slice(0,120)); }
-}
-
-async function loadModules() {
-  try {
-    const d = await apiGet({ action:'modules' });
-    if (d.error) { toast(d.error,'err'); return; }
-    allModules = Array.isArray(d) ? d : [];
-    updateStats();
-    filterModules();
-  } catch(e) { toast(e.message,'err'); }
-}
-
-function updateStats() {
-  const n = allModules.length;
-  const tgPdf   = allModules.filter(m => m.tgPdfId).length;
-  const tgVideo = allModules.filter(m => m.tgVideoId).length;
-  const furTotal = allModules.reduce((s,m) =>
-    s + Object.values(m.furnituralar||{}).reduce((a,v) => a+v.length, 0), 0);
-
-  if (g('s-total')) g('s-total').textContent  = n;
-  if (g('s-pdf')) g('s-pdf').textContent    = tgPdf;
-  if (g('s-video')) g('s-video').textContent  = tgVideo;
-  if (g('s-fur')) g('s-fur').textContent    = furTotal;
-}
-
-function filterModules() {
-  const q = (g('search')?.value || '').toLowerCase();
-  let list = [...allModules];
-  if (q) list = list.filter(m => m.artikul.toLowerCase().includes(q) || (m.nomi||'').toLowerCase().includes(q));
-  renderAdminGrid(list);
-}
-
-function renderAdminGrid(list) {
-  const grid = g('mod-grid');
-  if (!grid) return;
-  if (!list.length) {
-    grid.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Modullar topilmadi</div>';
-    return;
-  }
-
-  grid.innerHTML = list.map(m => `
-    <div class="card" style="margin:0; padding:10px; background:var(--surface); border:1px solid var(--border);" onclick="openModal('${esc(m.artikul)}')">
-      <div style="font-weight:700; color:var(--cyan-neon);">${esc(m.artikul)}</div>
-      <div style="font-size:12px; color:var(--text-muted);">${esc(m.nomi||'—')}</div>
-      <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">✏️ Tahrirlash</div>
-    </div>
-  `).join('');
-}
-
-function openModal(artikul=null) {
-  editing = artikul;
-  if (artikul) {
-    const m = allModules.find(x => x.artikul===artikul);
-    if (!m) return;
-    if (g('modal-title')) g('modal-title').textContent = 'Modulni tahrirlash';
-    if (g('modal-sub')) g('modal-sub').textContent   = m.artikul;
-    if (g('btn-del')) g('btn-del').style.display   = 'inline-flex';
-    sv('f-art',    m.artikul);
-    sv('f-nom',    m.nomi      || '');
-    sv('f-tgPdf',  m.tgPdfId  || '');
-    sv('f-tgVideo',m.tgVideoId|| '');
-    sv('f-pdfUrl', m.pdfUrl   || '');
-    sv('f-videoUrl',m.videoUrl|| '');
-    renderFurEditor(m.furnituralar||{});
-  } else {
-    if (g('modal-title')) g('modal-title').textContent = 'Yangi modul';
-    if (g('modal-sub')) g('modal-sub').textContent   = 'Yangi yozuv qo\'shish';
-    if (g('btn-del')) g('btn-del').style.display   = 'none';
-    ['f-art','f-nom','f-tgPdf','f-tgVideo','f-pdfUrl','f-videoUrl'].forEach(id=>sv(id,''));
-    renderFurEditor({});
-  }
-
-  const modal = g('mod-modal');
-  if (modal) modal.classList.add('active');
-}
-
-function closeModal() {
-  const modal = g('mod-modal');
-  if (modal) modal.classList.remove('active');
-}
-
-function sv(id,v){ if(g(id)) g(id).value=v; }
-
-async function saveModule() {
-  const artEl = g('f-art');
-  if (!artEl) return;
-  const artikul = artEl.value.trim();
-  if (!artikul) { toast('Artikul kiritilmagan!','err'); return; }
-
-  const module = {
-    artikul,
-    nomi:       g('f-nom')?.value.trim()||'',
-    tgPdfId:    g('f-tgPdf')?.value.trim()||'',
-    tgVideoId:  g('f-tgVideo')?.value.trim()||'',
-    pdfUrl:     g('f-pdfUrl')?.value.trim()||'',
-    videoUrl:   g('f-videoUrl')?.value.trim()||'',
-    furnituralar: collectFur(),
-  };
-
-  const btn = g('btn-save');
-  if (btn) { btn.disabled = true; btn.innerHTML = 'Saqlanmoqda...'; }
-
-  try {
-    const r = await apiPost({action:'save_module',module});
-    if (r.ok) {
-      toast(`"${artikul}" saqlandi ✅`,'ok');
-      closeModal(); loadModules(); loadUserModules();
-    } else toast(r.error||'Saqlashda xato','err');
-  } catch(e) { toast(e.message,'err'); }
-  finally { if(btn) { btn.disabled=false; btn.innerHTML='💾 Saqlash'; } }
-}
-
-async function delModule() {
-  if (!editing) return;
-  if (!confirm(`"${editing}" modulini o'chirishni tasdiqlaysizmi?`)) return;
-
-  try {
-    const r = await apiPost({action:'delete_module',artikul:editing});
-    if (r.ok) { toast(`"${editing}" o'chirildi`,'ok'); closeModal(); loadModules(); loadUserModules(); }
-    else toast(r.error,'err');
-  } catch(e) { toast(e.message,'err'); }
-}
-
-function renderFurEditor(data) {
-  const el = g('fur-editor');
-  if (!el) return;
-  el.innerHTML = '';
-  const entries = Object.entries(data);
-  if (entries.length === 0) {
-    el.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Hali kategoriya yo\'q. "+ Kategoriya" tugmasini bosing.</div>';
-  } else {
-    entries.forEach(([k,v]) => addCat(k,v));
-  }
-}
-
-function addCat(name='', items=[]) {
-  const el  = g('fur-editor');
-  if (!el) return;
-
-  const cid = 'c' + Date.now() + '_' + Math.random().toString(36).slice(2);
-  const div = document.createElement('div');
-  div.className = 'fur-cat'; div.id = cid;
-  div.style.marginBottom = '12px';
-  div.innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input value="${esc(name)}" placeholder="Kategoriya..." class="cat-nm" style="flex:1;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-      <button class="btn-secondary" onclick="addRow('${cid}')">+ Qo'shish</button>
-      <button class="btn-danger" onclick="document.getElementById('${cid}').remove()">✕</button>
-    </div>
-    <div id="i_${cid}"></div>`;
-  el.appendChild(div);
-  (items||[]).forEach(it => addRow(cid, it.nomi, it.ulchov, it.soni));
-  if (!items.length) addRow(cid);
-}
-
-function addRow(cid, nomi='', ulchov='', soni='') {
-  const c = g('i_'+cid); if (!c) return;
-  const r = document.createElement('div');
-  r.className = 'fur-row';
-  r.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
-  r.innerHTML = `
-    <input value="${esc(nomi)}" placeholder="Nomi" style="flex:2;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-    <input value="${esc(ulchov)}" placeholder="O'lchov" style="flex:1;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-    <input value="${esc(soni)}" placeholder="Soni" style="width:60px;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-    <button class="btn-secondary" style="font-size:12px; padding:4px 8px;" onclick="this.parentElement.remove()">✕</button>`;
-  c.appendChild(r);
-}
-
-function collectFur() {
-  const res = {};
-  document.querySelectorAll('.fur-cat').forEach(cat => {
-    const nm = cat.querySelector('.cat-nm')?.value.trim(); if (!nm) return;
-    const items = [];
-    cat.querySelectorAll('.fur-row').forEach(row => {
-      const inp = row.querySelectorAll('input');
-      const n = inp[0]?.value.trim();
-      if (n) items.push({nomi:n, ulchov:inp[1]?.value.trim()||'', soni:inp[2]?.value.trim()||''});
-    });
-    res[nm] = items;
-  });
-  return res;
-}
-
-function toast(msg, type='ok') {
-  if (typeof showToastMsg === 'function') {
-    showToastMsg(msg, type === 'err');
-  } else {
-    alert(msg);
-  }
-}
-
-function g(id) { return document.getElementById(id); }
 function esc(s) {
   return String(s||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initModuleFl();
-});
+window.initModuleFl = initModuleFl;
+window.initModuleFlWithPass = initModuleFlWithPass;
+window.filterUserModules = filterUserModules;
+window.toggleFurView = toggleFurView;
