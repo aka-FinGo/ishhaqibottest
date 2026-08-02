@@ -434,16 +434,31 @@ function switchTab(tabId, navId) {
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
     if (tabId === 'addTab') checkAddPermission();
     if (tabId === 'moduleTab') {
-        if (typeof updateModuleIframe === 'function') updateModuleIframe();
+        if (typeof loadFlutterModuleNative === 'function') loadFlutterModuleNative();
     }
     if (typeof updateKvFabVisibility === 'function') updateKvFabVisibility();
 }
 
-function updateModuleIframe() {
-    const iframe = document.getElementById('moduleIframe');
-    if (iframe && typeof tgInitData !== 'undefined' && tgInitData) {
-        const baseUrl = "https://aka-fingo.github.io/module_fl/";
-        iframe.src = baseUrl + "#tgWebAppData=" + encodeURIComponent(tgInitData);
+function loadFlutterModuleNative() {
+    const target = document.getElementById('flutter_target');
+    if (!target) return;
+
+    if (window._flutter && window._flutter.loader) {
+        window._flutter.loader.loadEntrypoint({
+            onEntrypointLoaded: async function(engineInitializer) {
+                let app = await engineInitializer.initializeEngine({
+                    hostElement: target
+                });
+                await app.runApp();
+            }
+        });
+    } else {
+        if (!document.getElementById('flutter_bootstrap_script')) {
+            const script = document.createElement('script');
+            script.id = 'flutter_bootstrap_script';
+            script.src = 'https://aka-fingo.github.io/module_fl/flutter_bootstrap.js';
+            document.head.appendChild(script);
+        }
     }
 }
 
