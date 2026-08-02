@@ -441,10 +441,18 @@ function switchTab(tabId, navId) {
 
 function updateModuleIframe() {
     const iframe = document.getElementById('moduleIframe');
-    if (iframe && typeof tgInitData !== 'undefined' && tgInitData) {
-        // Mahalliy repo ichidagi module_fl ga yo'naltirish (offline/local birga ishlashi uchun)
-        const baseUrl = "./module_fl/web/index.html";
-        iframe.src = baseUrl + "#tgWebAppData=" + encodeURIComponent(tgInitData);
+    if (iframe) {
+        const initDataParam = (typeof tgInitData !== 'undefined' && tgInitData) ? "#tgWebAppData=" + encodeURIComponent(tgInitData) : "";
+        const onlineUrl = "https://aka-fingo.github.io/module_fl/" + initDataParam;
+        const localAdminUrl = "./module_fl/web/admin.html" + initDataParam;
+        
+        // Kompilyatsiya qilingan Flutter Web URL (GitHub Pages) ni yuklaymiz
+        iframe.src = onlineUrl;
+
+        // Agar online URL ishlamasa, mahalliy admin.html ga zaxira sifatida o'tadi
+        iframe.onerror = function() {
+            iframe.src = localAdminUrl;
+        };
     }
 }
 
