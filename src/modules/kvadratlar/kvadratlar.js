@@ -195,7 +195,18 @@ async function initKvadratTab() {
             applyKvFilters();
         } else {
             if (!kvFullRecords || kvFullRecords.length === 0) {
-                listContainer.innerHTML = `<div class="empty-state"><p style="color:var(--red);">❌ Xato: ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
+                const isAuthError = data.error && data.error.includes('Telegram auth');
+                listContainer.innerHTML = isAuthError ? `
+                    <div class="card" style="padding:24px; text-align:center; margin:20px 0; background:var(--card-bg, #1e293b); border-radius:16px;">
+                        <div style="font-size:48px; margin-bottom:12px;">📱</div>
+                        <h3 style="margin-bottom:8px; font-size:18px; color:var(--text, #fff);">Telegram Mini App Orqali Kiring</h3>
+                        <p style="color:var(--text-muted, #94a3b8); font-size:13px; line-height:1.6; margin-bottom:16px;">
+                            Standart veb-brauzerda Telegram autentifikatsiya kaliti bo'lmaydi. Buyurtmalar va kvadratlar ro'yxatini to'liq ko'rish uchun ilovani Telegram Bot ichida oching.
+                        </p>
+                        <button onclick="switchTab('moduleTab','nav-module')" class="btn-main" style="width:auto; padding:10px 20px;">
+                            🧩 Modullar Bolimiga O'tish
+                        </button>
+                    </div>` : `<div class="empty-state"><p style="color:var(--red);">❌ Xato: ${escapeHtml(data.error || 'Yuklashda xato')}</p></div>`;
             }
         }
     } catch (e) {

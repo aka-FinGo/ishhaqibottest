@@ -334,10 +334,22 @@ function loadGlobalDataThen(callback) {
                 filteredData    = [...globalAdminData];
                 callback();
             } else {
-                el.innerHTML = `<div class="dash-empty"><p style="color:var(--red);">❌ Yuklanmadi. Admin paneliga o'ting.</p></div>`;
+                const isAuth = data.error && data.error.includes('Telegram auth');
+                el.innerHTML = isAuth ? `
+                    <div class="card" style="padding:24px; text-align:center; margin:20px 0; background:var(--card-bg, #1e293b); border-radius:16px;">
+                        <div style="font-size:48px; margin-bottom:12px;">📊</div>
+                        <h3 style="margin-bottom:8px; font-size:18px; color:var(--text, #fff);">Telegram Mini App Orqali Kiring</h3>
+                        <p style="color:var(--text-muted, #94a3b8); font-size:13px; line-height:1.6; margin-bottom:16px;">
+                            Dashboard va grafiklar statistikasi Telegram xavfsizlik kaliti bilan himoyalangan. Ilovani Telegram Bot ichida oching.
+                        </p>
+                        <button onclick="switchTab('moduleTab','nav-module')" class="btn-main" style="width:auto; padding:10px 20px;">
+                            🧩 Modullar Bo'limiga O'tish
+                        </button>
+                    </div>` : `<div class="dash-empty"><p style="color:var(--red);">❌ ${escapeHtml(data.error || 'Yuklanmadi. Admin paneliga o\'ting.')}</p></div>`;
             }
         })
-        .catch(() => {
+        .catch((err) => {
+            console.error('Dashboard load error:', err);
             el.innerHTML = `<div class="dash-empty"><p style="color:var(--red);">❌ Internet ulanishini tekshiring.</p></div>`;
         });
 }
