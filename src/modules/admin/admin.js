@@ -305,7 +305,7 @@ function resetAdminFilters() {
 }
 
 window.addHodim = addHodim;
-window.loadAdminData = loadAdminData;
+if (typeof loadAdminData === 'function') window.loadAdminData = loadAdminData;
 window.deleteUser = deleteUser;
 window.editUser = editUser;
 window.runSystemSelfCheck = runSystemSelfCheck;

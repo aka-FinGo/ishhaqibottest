@@ -589,3 +589,4 @@ function populateMonthFilter() {
 }
 
 /* ⚠️ style injeksiyasi OLIB TASHLANDI — barcha stillar components.css da */
+window.loadAdminData = loadAdminData;
