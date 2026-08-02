@@ -1,0 +1,471 @@
+/* gloss.css — Premium Dark Glassmorphism & Cyber-Chalk Theme */
+/* Inspired by Kelviq UI (IMG_20260603_002018.jpg) & 2.html */
+
+:root {
+    /* Base Surfaces */
+    --bg: #060b14;
+    --surface: rgba(10, 18, 32, 0.45);
+    --border: rgba(0, 242, 255, 0.15);
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.6);
+    --text-light: rgba(255, 255, 255, 0.35);
+    
+    /* Navigation & Core UI Overrides */
+    --navy: #00f2ff;
+    --navy-mid: #0a1220;
+    --navy-light: rgba(0, 242, 255, 0.2);
+
+    /* Cyber/Kelviq Accents */
+    --green: #00ff88;
+    --green-dark: #00b35f;
+    --green-glow: rgba(0, 255, 136, 0.2);
+    --amber: #ff8c00; /* Kelviq Orange */
+    --red: #ff2a2a;
+    --blue: #00f2ff; /* Cyan */
+    --purple: #8b5cf6;
+
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --radius: 16px;
+    --radius-sm: 12px;
+
+    /* Theme Variables Compatibility */
+    --page-switcher-bg: rgba(0, 0, 0, 0.35);
+    --wf-start-bg: rgba(255, 140, 0, 0.15);
+    --wf-start-text: #ff8c00;
+    --wf-mid-bg: rgba(255, 42, 42, 0.15);
+    --wf-mid-text: #ff2a2a;
+    --wf-end-bg: rgba(0, 255, 136, 0.15);
+    --wf-end-text: #00ff88;
+    --wf-def-bg: rgba(0, 242, 255, 0.12);
+    --wf-def-text: #00f2ff;
+    --chart-text: #ffffff;
+    --chart-grid: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================
+   TIZIM FONI VA SETKASI (Inspired by 2.html)
+   ============================================================ */
+body {
+    background-color: #060b14 !important;
+    color: #ffffff !important;
+    font-family: var(--font) !important;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Setka foni */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background: 
+        linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+}
+
+/* Radial yorug'lik glow effekti */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle at center, rgba(0, 242, 255, 0.07) 0%, rgba(255, 140, 0, 0.02) 50%, transparent 80%);
+    pointer-events: none;
+}
+
+/* ============================================================
+   KARTALAR (Glassmorphism & Outline style)
+   ============================================================ */
+div.card,
+div.stat-card,
+div.filter-box,
+div.history-item,
+div.modal-content,
+div.compact-item,
+div.mini-stat,
+div.sub-tabs,
+div.detail-card,
+div.hodim-card,
+div.page-switcher-btn,
+div.premium-filter-card,
+div.role-item,
+div.kv-worker-list-card,
+div.kv-stat-card,
+div.kv-chart-card,
+div.kv-staff-section,
+div.kv-records-section,
+div.kv-staff-item,
+div.kv-record-item,
+div.kv-table-wrap {
+    background: rgba(10, 18, 32, 0.55) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    border-radius: var(--radius) !important;
+    color: #ffffff !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Karta elementlariga urg'u hover */
+div.card:hover,
+div.stat-card:hover,
+div.history-item:hover,
+div.hodim-card:hover,
+div.compact-item:hover,
+div.kv-worker-list-card:hover,
+div.kv-stat-card:hover,
+div.kv-chart-card:hover,
+div.kv-staff-section:hover,
+div.kv-records-section:hover,
+div.kv-staff-item:hover,
+div.kv-record-item:hover {
+    border-color: rgba(255, 140, 0, 0.4) !important; /* Kelviq Orange glow */
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.2) !important;
+    transform: translateY(-2px);
+}
+
+/* ============================================================
+   NAVBAR & BUTTONS
+   ============================================================ */
+/* Pastki navigatsiya bari */
+div.bottom-nav {
+    background: rgba(6, 11, 20, 0.85) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-top: 1px solid rgba(0, 242, 255, 0.2) !important;
+    border-radius: 24px 24px 0 0 !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Active element pastki navbar */
+.nav-item.active {
+    color: #00f2ff !important;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+}
+
+/* Markaziy FAB tugmasi */
+.nav-fab {
+    background: linear-gradient(135deg, #00f2ff, #0066ff) !important;
+    border: 4px solid #060b14 !important;
+    box-shadow: 0 6px 20px rgba(0, 242, 255, 0.4) !important;
+}
+
+.nav-fab:active {
+    transform: scale(0.9) !important;
+}
+
+/* ============================================================
+   TUGMALAR VA INPUTLAR
+   ============================================================ */
+/* Asosiy tugmalar gradienti */
+.btn-main {
+    background: linear-gradient(135deg, #00f2ff, #0066ff) !important;
+    box-shadow: 0 4px 15px rgba(0, 242, 255, 0.25) !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.btn-main:hover {
+    background: linear-gradient(135deg, #00f2ff, #ff8c00) !important; /* Kelviq Orange transitions */
+    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.3) !important;
+}
+
+.btn-secondary {
+    border: 1.5px solid rgba(0, 242, 255, 0.3) !important;
+    background: transparent !important;
+    color: #00f2ff !important;
+}
+
+.btn-secondary:hover {
+    border-color: #ff8c00 !important;
+    color: #ff8c00 !important;
+}
+
+/* Active page switchers */
+.page-switcher-btn.active {
+    background: linear-gradient(135deg, #00f2ff, #ff8c00) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2) !important;
+}
+
+/* Inputs / Dropdowns (Clean dark style) */
+input, select, textarea, .kv-filter-select {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--radius-sm) !important;
+    color: #ffffff !important;
+}
+
+input:focus, select:focus, textarea:focus, .kv-filter-select:focus {
+    border-color: #00f2ff !important;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2) !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ============================================================
+   CHIPS, BADGES & TEXTS
+   ============================================================ */
+/* Xodimlar va oylik kartalaridagi matnlar */
+h1, h2, h3, h4, h5, h6, .item-name, .profile-name, .modal-title {
+    color: #ffffff !important;
+}
+
+/* Davr / Stats - Monospace (Inspired by Kelviq UI text styling) */
+.stat-value, .budget-amount, .detail-val, .amount-chip, .rate-tag, .card-date, .premium-hero-value {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace !important;
+    letter-spacing: -0.5px;
+}
+
+/* Budget Card & Premium Hero Card (Top dashboard box) */
+.budget-card, .premium-hero-card {
+    background: linear-gradient(135deg, rgba(10, 18, 32, 0.8) 0%, rgba(0, 242, 255, 0.15) 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.25) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Premium hero card child elements - Gloss Cyber Theme */
+.premium-hero-label {
+    color: #00f2ff !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3) !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.2px !important;
+}
+
+.premium-hero-value {
+    color: #ffffff !important;
+    text-shadow: 0 0 20px rgba(0, 242, 255, 0.3) !important;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace !important;
+}
+
+.premium-hero-unit {
+    color: rgba(0, 242, 255, 0.6) !important;
+    font-weight: 600 !important;
+}
+
+/* kvTotalOrders sub-card inside hero */
+.premium-hero-card #kvTotalOrders {
+    color: #00ff88 !important;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3) !important;
+    font-family: 'SFMono-Regular', Consolas, monospace !important;
+}
+
+/* Dashboard stat & chart cards - Gloss override */
+.dash-stat-card,
+.dash-chart-card {
+    background: rgba(10, 18, 32, 0.55) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(0, 242, 255, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    border-radius: var(--radius) !important;
+    color: #ffffff !important;
+}
+
+.dash-stat-card:hover,
+.dash-chart-card:hover {
+    border-color: rgba(255, 140, 0, 0.4) !important;
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.2) !important;
+}
+
+.dash-stat-value {
+    color: #ffffff !important;
+}
+
+.dash-stat-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.dash-stat-sub {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.dash-chart-title {
+    color: #00f2ff !important;
+    text-shadow: 0 0 6px rgba(0, 242, 255, 0.2) !important;
+}
+
+.dash-section-title {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Sub-tabs / Filters */
+.sub-tabs {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(0, 242, 255, 0.1) !important;
+}
+
+.sub-btn.active {
+    background: rgba(0, 242, 255, 0.15) !important;
+    color: #00f2ff !important;
+    box-shadow: 0 2px 8px rgba(0, 242, 255, 0.2) !important;
+}
+
+/* Badges */
+.amount-chip.uzs, .badge.uzs, .detail-badge.uzs, .dm-badge--uzs {
+    background: rgba(0, 255, 136, 0.1) !important;
+    border: 1px solid rgba(0, 255, 136, 0.2) !important;
+    color: #00ff88 !important;
+}
+
+.amount-chip.usd, .badge.usd, .detail-badge.usd, .dm-badge--usd {
+    background: rgba(255, 140, 0, 0.1) !important;
+    border: 1px solid rgba(255, 140, 0, 0.2) !important;
+    color: #ff8c00 !important;
+}
+
+/* Role Badges */
+.role-badge.boss, .dash-role-badge.boss {
+    background: rgba(255, 42, 42, 0.12) !important;
+    color: #ff5555 !important;
+}
+
+.role-badge.admin, .dash-role-badge.admin {
+    background: rgba(0, 242, 255, 0.12) !important;
+    color: #00f2ff !important;
+}
+
+.role-badge.direktor, .dash-role-badge.direktor {
+    background: rgba(255, 140, 0, 0.12) !important;
+    color: #ff8c00 !important;
+}
+
+/* Checked Switchers / Theme Button Selection */
+.perm-label.checked {
+    background: rgba(0, 242, 255, 0.08) !important;
+    border-color: #00f2ff !important;
+    color: #00f2ff !important;
+    font-weight: 700 !important;
+}
+
+/* ============================================================
+   SCROLLBAR & UTILITIES
+   ============================================================ */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(6, 11, 20, 0.5);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 242, 255, 0.25);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 140, 0, 0.4);
+}
+
+/* Modal styling */
+div.modal {
+    background: rgba(6, 11, 20, 0.75) !important;
+    backdrop-filter: blur(6px) !important;
+}
+
+div.modal-content {
+    background: rgba(10, 18, 32, 0.95) !important;
+    border-top: 2px solid rgba(0, 242, 255, 0.25) !important;
+}
+
+/* ============================================================
+   KV WORKER & KV TABLE GRAPHICS OVERRIDES (Gloss Mode)
+   ============================================================ */
+.kv-worker-list-title {
+    color: #00f2ff !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3) !important;
+}
+
+.kv-worker-row-name {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.kv-worker-row-val {
+    color: #00f2ff !important;
+    font-weight: 700 !important;
+}
+
+.kv-worker-row-orders {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.kv-worker-progress {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    height: 8px !important;
+}
+
+.kv-worker-progress-bar {
+    background: linear-gradient(90deg, #00f2ff, #00ff88) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 0 8px rgba(0, 242, 255, 0.4) !important;
+}
+
+div.kv-worker-card-solo {
+    background: linear-gradient(135deg, rgba(10, 18, 32, 0.75) 0%, rgba(0, 242, 255, 0.15) 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.25) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    border-radius: var(--radius) !important;
+    color: #ffffff !important;
+}
+
+/* KV Table styling */
+.kv-table thead th {
+    background: rgba(6, 11, 20, 0.8) !important;
+    color: #00f2ff !important;
+    border-color: rgba(0, 242, 255, 0.15) !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 6px rgba(0, 242, 255, 0.3) !important;
+}
+
+.kv-table tbody td {
+    background: transparent !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.kv-table tbody tr.kv-date-row td {
+    background: rgba(0, 242, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(0, 242, 255, 0.1) !important;
+    font-weight: 700 !important;
+}
+
+.kv-col-m2 {
+    color: #00ff88 !important; /* Green neon */
+    font-weight: 800 !important;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3) !important;
+}
+
+/* Hover effects for rows in KV table */
+.kv-data-row {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer;
+}
+
+.kv-data-row:hover {
+    background: rgba(0, 242, 255, 0.08) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 242, 255, 0.15) !important;
+}
+
+.kv-data-row:hover td {
+    color: #ffffff !important;
+    border-color: rgba(0, 242, 255, 0.25) !important;
+}
+
+.kv-data-row:hover .kv-col-no b {
+    color: #00f2ff !important;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.5) !important;
+}
+
+.kv-data-row:hover .kv-col-m2 {
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.6) !important;
+}
+
