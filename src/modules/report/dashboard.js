@@ -535,6 +535,9 @@ function switchReportSub(subId, btnEl) {
 }
 
 function handleDashboardNav() {
+    if (typeof window.switchTab === 'function') {
+        window.switchTab('reportTab', 'nav-dashboard');
+    }
     switchReportSub('reportDashArea');
 }
 

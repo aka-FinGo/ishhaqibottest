@@ -66,6 +66,12 @@ export function switchTab(tabId, navId) {
   const nav = document.getElementById(navId);
   if (nav) nav.classList.add('active');
 
+  if (tabId === 'kvadratTab' && typeof window.initKvadratTab === 'function') {
+    window.initKvadratTab();
+  }
+  if (tabId === 'reportTab' && typeof window.loadAdminData === 'function') {
+    window.loadAdminData();
+  }
   if (tabId === 'moduleTab' && typeof window.initModuleFl === 'function') {
     window.initModuleFl();
   }
@@ -74,6 +80,23 @@ export function switchTab(tabId, navId) {
   }
   if (tabId === 'kvDashboardTab' && typeof window.renderKvDashboardPage === 'function') {
     window.renderKvDashboardPage();
+  }
+}
+
+export function updateProfileUI() {
+  const nameEl = document.getElementById('profileUserName');
+  const roleEl = document.getElementById('profileUserRole');
+  const adminSec = document.getElementById('profileAdminSection');
+
+  if (nameEl) nameEl.textContent = (typeof window.employeeName !== 'undefined' && window.employeeName) ? window.employeeName : 'Foydalanuvchi';
+  if (roleEl) roleEl.textContent = (typeof window.myRole !== 'undefined' && window.myRole) ? window.myRole : 'Hodim';
+
+  if (adminSec) {
+    if (typeof window.myRole !== 'undefined' && (window.myRole === 'SuperAdmin' || window.myRole === 'Admin' || window.myRole === 'Direktor')) {
+      adminSec.classList.remove('hidden');
+    } else {
+      adminSec.classList.add('hidden');
+    }
   }
 }
 
@@ -118,7 +141,9 @@ export function resetMyFilters() {
   applyMyFilters();
 }
 
+window.showToastMsg = showToastMsg;
 window.switchTab = switchTab;
+window.updateProfileUI = updateProfileUI;
 window.switchAdminSub = switchAdminSub;
 window.showToastMsg = showToastMsg;
 window.setTheme = setTheme;
