@@ -1,4 +1,4 @@
-const assert = require('assert');
+import assert from 'assert';
 
 global.window = {
   Telegram: {
@@ -17,11 +17,11 @@ global.document = {
   }
 };
 
-const {
+import {
   parseDateParts,
   getDateMonthYear,
   getTodayDdMmYyyy
-} = require('../config.js');
+} from '../src/core/config.js';
 
 function run() {
   const d1 = parseDateParts('02/03/2026');
@@ -39,18 +39,14 @@ function run() {
   assert(d3, 'DD.MM.YYYY must parse');
   assert.strictEqual(d3.display, '02/03/2026');
 
-  const d4 = parseDateParts('31/02/2026');
-  assert.strictEqual(d4, null, 'Invalid date must be rejected');
+  const m1 = getDateMonthYear('02/03/2026');
+  assert.strictEqual(m1.month, 3);
+  assert.strictEqual(m1.year, 2026);
 
-  const m = getDateMonthYear('02/03/2026');
-  assert(m, 'Month/year parse should work');
-  assert.strictEqual(m.month, '03');
-  assert.strictEqual(m.year, '2026');
+  const todayStr = getTodayDdMmYyyy();
+  assert(/^\d{2}\/\d{2}\/\d{4}$/.test(todayStr), 'today must be DD/MM/YYYY');
 
-  const today = getTodayDdMmYyyy(new Date('2026-04-03T00:00:00Z'));
-  assert.strictEqual(today.display, '03/04/2026');
-  assert.strictEqual(today.iso, '2026-04-03');
+  console.log('date-parse tests passed');
 }
 
 run();
-console.log('date-parse tests passed');

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Chat — Aristokrat</title>
+    <link rel="stylesheet" href="style.css?v=1.0.24">
+    <link rel="stylesheet" href="components.css?v=1.0.24">
+    <link rel="stylesheet" href="ai_chat.css?v=1.0.24">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bg, #0f172a); }
+        #chatWrap { display: flex; flex-direction: column; height: 100vh; max-width: 720px; margin: 0 auto; width: 100%; }
+        #chatHeader { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: var(--surface); }
+        #chatMessages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        #chatInputRow { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; background: var(--surface); }
+        #chatInput { flex: 1; resize: none; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; line-height: 1.4; max-height: 120px; overflow-y: auto; font-family: inherit; }
+        #chatInput:focus { border-color: var(--cyan-neon); box-shadow: 0 0 0 2px rgba(0,242,255,0.15); }
+        #sendBtn { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-gradient); border: none; color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: opacity .15s; }
+        #sendBtn:disabled { opacity: .5; cursor: not-allowed; }
+        #quickWrap { padding: 8px 12px 4px; display: flex; flex-wrap: wrap; gap: 6px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+        .quick-btn { font-size: 11px; padding: 5px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; }
+        .quick-btn:hover { border-color: var(--cyan-neon); color: var(--cyan-neon); }
+        #noAccess { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 16px; color: var(--text-muted); text-align: center; padding: 24px; }
+        #noAccess .icon { font-size: 48px; }
+        #loadingMsg { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--text-muted); font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div id="loadingMsg">⏳ Yuklanmoqda...</div>
+    <div id="noAccess" style="display:none;">
+        <div class="icon">🔒</div>
+        <div style="font-size:15px; font-weight:500; color:var(--text);">Ruxsat yo'q</div>
+        <div style="font-size:13px;">AI Chat faqat ruxsat berilgan foydalanuvchilar uchun. SuperAdminga murojaat qiling.</div>
+    </div>
+    <div id="chatWrap" style="display:none;">
+        <div id="chatHeader">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="window.history.back()" style="background:none; border:none; font-size:24px; cursor:pointer; padding:0 10px 0 0; color:var(--text-muted);">🔙</button>
+                <div style="width:34px;height:34px;background:var(--accent-gradient);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">🤖</div>
+                <div>
+                    <div style="font-weight:600;font-size:14px;color:var(--cyan-neon);">AI Yordamchi</div>
+                    <div id="scopeLabel" style="font-size:10px;color:var(--text-muted);">Yuklanmoqda...</div>
+                </div>
+            </div>
+            <button onclick="clearChat()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--text-muted);cursor:pointer;">🗑 Tozalash</button>
+        </div>
+        <div id="chatMessages"></div>
+        <div id="quickWrap">
+            <button class="quick-btn" onclick="quickAsk('Bu oy umumiy xarajatlar qancha?')">Bu oy xarajatlar</button>
+            <button class="quick-btn" onclick="quickAsk('Eng ko\'p ish qilgan 3 xodim kim?')">Top 3 xodim</button>
+            <button class="quick-btn" onclick="quickAsk('Buyurtma raqamlarida bo\'shliq bormi?')">Raqam bo'shliqlari</button>
+            <button class="quick-btn" onclick="quickAsk('Qisqa moliyaviy hisobot tayyorla')">Moliyaviy hisobot</button>
+        </div>
+        <div id="chatInputRow">
+            <textarea id="chatInput" rows="1" placeholder="Savol bering... (Enter — yuborish, Shift+Enter — yangi qator)" oninput="autoResize(this)"></textarea>
+            <button id="sendBtn" onclick="sendMsg()">&#9658;</button>
+        </div>
+    </div>
+
+    <script src="config.js?v=1.0.24"></script>
+    <script src="cache.js?v=1.0.24"></script>
+    <script>
+    // ── Holat ──────────────────────────────────────────────
+    const history = [];
+    let isLoading = false;
+    let myTgId = null;
+    let chatScope = 'own';
+
+    // ── Init ───────────────────────────────────────────────
+    window.addEventListener('load', async () => {
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            // Tema ota sahifadan yoki TG dan
+            if (tg.colorScheme === 'light') document.body.classList.add('light-mode');
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => {
+                window.parent?.postMessage({ type: 'AI_CHAT_BACK' }, '*');
+                history.back();
+            });
+        }
+
+        // postMessage orqali ota sahifadan tgId va scope olish
+        window.addEventListener('message', (e) => {
+            if (e.data?.type === 'AI_CHAT_INIT') {
+                myTgId = e.data.tgId;
+                chatScope = e.data.scope || 'own';
+                startChat(e.data.username);
+            }
+        });
+
+        // Agar to'g'ridan URL orqali kirilsa — URL param dan olamiz
+        const params = new URLSearchParams(window.location.search);
+        const urlTgId = params.get('tgId');
+        if (urlTgId) {
+            myTgId = urlTgId;
+            await checkAccessAndInit();
+        } else {
+            // Ota sahifaga tayyor ekanini bildirish
+            window.parent?.postMessage({ type: 'AI_CHAT_READY' }, '*');
+            // 3 soniya kutib javob kelmasa xato ko'rsatamiz
+            setTimeout(() => {
+                if (!myTgId) showNoAccess();
+            }, 3000);
+        }
+    });
+
+    async function checkAccessAndInit() {
+        try {
+            const data = await apiRequest({ action: 'init', telegramId: myTgId });
+            if (!data?.success || !(data?.isSuperAdmin || data?.isDirector || data?.isAdmin)) {
+                showNoAccess(); return;
+            }
+            myTgId = myTgId || data.tgId;
+            const isCompany = data.isSuperAdmin || data.isDirector;
+            chatScope = isCompany ? 'company' : 'own';
+            startChat(data.username);
+        } catch(e) {
+            showNoAccess();
+        }
+    }
+
+    function startChat(username) {
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('chatWrap').style.display = 'flex';
+        const scopeLabel = document.getElementById('scopeLabel');
+        if (scopeLabel) scopeLabel.textContent = chatScope === 'company'
+            ? '📊 Kompaniya ma\'lumotlari bilan'
+            : '👤 Faqat o\'z ma\'lumotlarim';
+
+        addBubble('assistant',
+            'Salom' + (username ? ', ' + username : '') + '! Men Aristokrat ERP AI yordamchisiman. ' +
+            (chatScope === 'company'
+                ? 'Kompaniya ma\'lumotlari bo\'yicha savollar bering.'
+                : 'O\'z yozuvlaringiz bo\'yicha savollar bering.')
+        );
+
+        document.getElementById('chatInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+        });
+    }
+
+    function showNoAccess() {
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('noAccess').style.display = 'flex';
+    }
+
+    // ── Xabar yuborish ─────────────────────────────────────
+    async function sendMsg() {
+        if (isLoading) return;
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+        addBubble('user', text);
+        history.push({ role: 'user', content: text });
+        input.value = ''; input.style.height = 'auto';
+        const thinkId = addThinking();
+        setLoading(true);
+        try {
+            const res = await apiRequest({
+                action: 'ai_chat',
+                message: text,
+                history: history.slice(-10),
+                scope: chatScope,
+                telegramId: myTgId
+            }, { timeoutMs: 40000 });
+            removeThinking(thinkId);
+            if (res.success) {
+                addBubble('assistant', res.reply);
+                history.push({ role: 'assistant', content: res.reply });
+            } else {
+                addError(res.error || 'AI javob bermadi');
+            }
+        } catch(e) {
+            removeThinking(thinkId);
+            addError(navigator.onLine ? e.message : '📵 Internet yo\'q');
+        } finally { setLoading(false); }
+    }
+
+    function quickAsk(text) {
+        document.getElementById('chatInput').value = text;
+        sendMsg();
+    }
+
+    function clearChat() {
+        history.length = 0;
+        document.getElementById('chatMessages').innerHTML = '';
+        startChat();
+    }
+
+    // ── UI ─────────────────────────────────────────────────
+    function addBubble(role, text) {
+        const el = document.createElement('div');
+        el.className = role === 'user' ? 'ai-chat-bubble ai-chat-bubble--user' : 'ai-chat-bubble ai-chat-bubble--ai ai-chat-bubble--in';
+        el.innerHTML = role === 'user' ? escapeHtml(text) : formatAI(text);
+        document.getElementById('chatMessages').appendChild(el);
+        scrollDown();
+    }
+
+    function addThinking() {
+        const id = 'think-' + Date.now();
+        const el = document.createElement('div');
+        el.id = id;
+        el.className = 'ai-chat-bubble ai-chat-bubble--ai ai-chat-bubble--thinking';
+        el.innerHTML = '<span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>';
+        document.getElementById('chatMessages').appendChild(el);
+        scrollDown(); return id;
+    }
+
+    function removeThinking(id) { document.getElementById(id)?.remove(); }
+
+    function addError(msg) {
+        const el = document.createElement('div');
+        el.className = 'ai-chat-bubble ai-chat-bubble--error';
+        el.textContent = '❌ ' + msg;
+        document.getElementById('chatMessages').appendChild(el);
+        scrollDown();
+    }
+
+    function setLoading(v) {
+        isLoading = v;
+        const btn = document.getElementById('sendBtn');
+        const inp = document.getElementById('chatInput');
+        btn.disabled = v;
+        btn.innerHTML = v ? '<span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>' : '&#9658;';
+        inp.disabled = v;
+    }
+
+    function scrollDown() {
+        const m = document.getElementById('chatMessages');
+        requestAnimationFrame(() => { m.scrollTop = m.scrollHeight; });
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    function formatAI(text) {
+        let s = escapeHtml(text);
+        s = s.replace(/```([\s\S]*?)```/g, '<pre class="ai-code">$1</pre>');
+        s = s.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
+        s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/\n/g, '<br>');
+        return s;
+    }
+    </script>
+</body>
+</html>
