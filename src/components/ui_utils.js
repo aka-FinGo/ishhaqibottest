@@ -90,7 +90,11 @@ export function switchAdminSub(areaId, btnEl) {
 export function setTheme(themeFile) {
   const link = document.getElementById('dynamic-theme');
   if (!link) return;
-  link.href = themeFile ? themeFile : '';
+  let finalPath = '';
+  if (themeFile) {
+    finalPath = themeFile.startsWith('src/styles/') ? themeFile : `src/styles/${themeFile}`;
+  }
+  link.href = finalPath;
   localStorage.setItem('user_theme', themeFile || '');
   showToastMsg(themeFile ? `Mavzu o'zgardi: ${themeFile}` : 'Boshlang\'ich mavzu o\'rnatildi');
 }
