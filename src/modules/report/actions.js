@@ -388,9 +388,6 @@ function toggleAvansForm() {}
 function requestAvans() {}
 function saveActionUI() {}
 
-function updateEditCurrencyView() {}
-function onEditRateInput() {}
-
 window.openEdit = openEdit;
 window.openSelfEdit = openSelfEdit;
 window.closeModal = closeModal;
