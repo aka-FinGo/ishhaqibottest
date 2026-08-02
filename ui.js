@@ -442,9 +442,8 @@ function switchTab(tabId, navId) {
 function updateModuleIframe() {
     const iframe = document.getElementById('moduleIframe');
     if (iframe && typeof tgInitData !== 'undefined' && tgInitData) {
-        // GitHub Pages uchun URL. tgInitData ni hash orqali uzatamiz 
-        // shunda ichki modul ham xuddi Telegram ichida ochilgandek ishlaydi
-        const baseUrl = "https://aka-fingo.github.io/module_fl/";
+        // Mahalliy repo ichidagi module_fl ga yo'naltirish (offline/local birga ishlashi uchun)
+        const baseUrl = "./module_fl/web/index.html";
         iframe.src = baseUrl + "#tgWebAppData=" + encodeURIComponent(tgInitData);
     }
 }

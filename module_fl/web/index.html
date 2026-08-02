@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Cabix Konveyer ERP tizimi - Flutter Web">
+
+  <!-- PWA meta tags -->
+  <meta name="theme-color" content="#2C3E50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Cabix">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <title>Cabix Konveyer</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+
+  <!-- pdfx web xizmatlari uchun -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script type="text/javascript">
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    pdfRenderOptions = {
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+      cMapPacked: true,
+    }
+  </script>
+  <style>
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    img {
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+
+</html>
