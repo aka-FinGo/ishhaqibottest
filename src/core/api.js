@@ -4,20 +4,21 @@
 import { API_URL, telegramId, tgInitData } from './config.js';
 
 export async function apiRequest(action, extraParams = {}) {
-  const currentTgId = (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id)
-    ? String(window.Telegram.WebApp.initDataUnsafe.user.id)
-    : (localStorage.getItem('saved_telegram_id') || (typeof window !== 'undefined' && window.telegramId) || telegramId || '0');
-
-  const currentInitData = (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData)
-    ? window.Telegram.WebApp.initData
-    : ((typeof window !== 'undefined' && window.tgInitData) || tgInitData || '');
+  const isTgWebApp = (typeof window !== 'undefined' && Boolean(window.Telegram?.WebApp?.initData));
 
   const payload = {
     action,
-    telegramId: currentTgId,
-    tgInitData: currentInitData,
+    telegramId: isTgWebApp 
+      ? String(window.Telegram.WebApp.initDataUnsafe?.user?.id || telegramId) 
+      : ((typeof window !== 'undefined' && window.telegramId) || telegramId || '0'),
     ...extraParams
   };
+
+  // CRITICAL FIX: Only send tgInitData property when running inside Telegram WebApp with valid initData.
+  // Omitting empty tgInitData enables Google Apps Script Web Fallback mode for standard browsers.
+  if (isTgWebApp && window.Telegram.WebApp.initData) {
+    payload.tgInitData = window.Telegram.WebApp.initData;
+  }
 
   try {
     const response = await fetch(API_URL, {
@@ -33,6 +34,16 @@ export async function apiRequest(action, extraParams = {}) {
     }
 
     const data = await response.json();
+
+    // Dynamically update global myRole, myPermissions & Profile UI when returned
+    if (data && data.success) {
+      if (data.myRole) window.myRole = data.myRole;
+      if (data.myPermissions) window.myPermissions = data.myPermissions;
+      if (typeof window.updateProfileUI === 'function') {
+        window.updateProfileUI();
+      }
+    }
+
     return data;
   } catch (error) {
     console.error(`❌ API error (${action}):`, error);

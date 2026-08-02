@@ -439,11 +439,22 @@ async function loadAdminData() {
     } catch (error) {
         console.error('Admin data load error:', error);
         if (adminListEl) {
-            adminListEl.innerHTML = `
+            const isAuthError = error.message && error.message.includes('Telegram auth');
+            adminListEl.innerHTML = isAuthError ? `
+                <div class="card" style="padding:24px; text-align:center; margin:20px 0; background:var(--card-bg, #1e293b); border-radius:16px;">
+                    <div style="font-size:48px; margin-bottom:12px;">📱</div>
+                    <h3 style="margin-bottom:8px; font-size:18px; color:var(--text, #fff);">Telegram Mini App Orqali Kiring</h3>
+                    <p style="color:var(--text-muted, #94a3b8); font-size:13px; line-height:1.6; margin-bottom:16px;">
+                        Ish haqi va hisobotlar bo'limi Telegram xavfsizlik protokoli bilan himoyalangan. Ish haqi ma'lumotlarini ko'rish uchun ilovani Telegram Bot ichida oching.
+                    </p>
+                    <button onclick="switchTab('moduleTab','nav-module')" class="btn-main" style="width:auto; padding:10px 20px;">
+                        🧩 Modullar Bo'limiga O'tish
+                    </button>
+                </div>` : `
                 <div class="empty-state">
                     <div style="font-size:60px; margin-bottom:16px;">⚠️</div>
                     <h3>Xatolik yuz berdi</h3>
-                    <p>${error.message || 'Ma\'lumotlarni yuklashda xatolik'}</p>
+                    <p>${escapeHtml(error.message || 'Ma\'lumotlarni yuklashda xatolik')}</p>
                     <button onclick="loadAdminData()" class="btn-main"
                         style="width:auto; padding:8px 16px; margin-top:16px;">
                         Qayta urinib ko'rish
