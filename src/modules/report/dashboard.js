@@ -542,7 +542,8 @@ function switchDashboardSub(subId, btnEl) {
     switchReportSub(subId, btnEl);
 }
 
-window.renderDashboardPage = renderDashboardPage;
+window.loadDashboard = loadDashboard;
+if (typeof renderDashboardPage === 'function') window.renderDashboardPage = renderDashboardPage; else window.renderDashboardPage = loadDashboard;
 window.switchReportSub = switchReportSub;
 window.handleDashboardNav = handleDashboardNav;
 window.switchDashboardSub = switchDashboardSub;

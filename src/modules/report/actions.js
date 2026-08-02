@@ -393,7 +393,8 @@ function onEditRateInput() {}
 
 window.openEdit = openEdit;
 window.openSelfEdit = openSelfEdit;
-window.closeEditModal = closeEditModal;
+window.closeModal = closeModal;
+if (typeof closeEditModal === 'function') window.closeEditModal = closeEditModal; else window.closeEditModal = closeModal;
 window.saveEdit = saveEdit;
 window.deleteRecord = deleteRecord;
 window.deleteOwnRecord = deleteOwnRecord;
