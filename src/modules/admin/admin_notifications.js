@@ -322,3 +322,11 @@ function _applyDirectorNotifyUI(toggle, label, enabled) {
     : '<span style="width:18px;height:18px;border-radius:50%;background:var(--text-muted);display:block;"></span>';
   if (label) label.textContent = enabled ? 'Yoqilgan' : 'O\'chirilgan';
 }
+
+window.toggleDirectorNotify = toggleDirectorNotify;
+window.loadReminderTextSettings = loadReminderTextSettings;
+window.saveReminderTextSettings = saveReminderTextSettings;
+window.prepareReminderSend = prepareReminderSend;
+window.confirmReminderSend = confirmReminderSend;
+window.cancelReminderSend = cancelReminderSend;
+window.loadNotifyTargets = loadNotifyTargets;

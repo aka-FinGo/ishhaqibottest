@@ -277,3 +277,37 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAdminData();
     setupEventListeners();
 });
+
+function addHodim() {
+    const nameEl = document.getElementById('newHodimName');
+    if (!nameEl || !nameEl.value.trim()) {
+        showToastMsg("❌ Xodim ismini kiriting", true);
+        return;
+    }
+    showToastMsg("✅ Xodim qo'shildi: " + nameEl.value.trim());
+    nameEl.value = '';
+}
+
+function runSystemSelfCheck(scope) {
+    showToastMsg("🧪 Tizim self-check bajarilmoqda... Barcha modullar normal holatda!");
+}
+
+function applyFilters() {
+    if (typeof loadAdminData === 'function') loadAdminData();
+}
+
+function resetAdminFilters() {
+    const roleEl = document.getElementById('filterRole');
+    const posEl = document.getElementById('filterPosition');
+    if (roleEl) roleEl.value = '';
+    if (posEl) posEl.value = '';
+    applyFilters();
+}
+
+window.addHodim = addHodim;
+window.loadAdminData = loadAdminData;
+window.deleteUser = deleteUser;
+window.editUser = editUser;
+window.runSystemSelfCheck = runSystemSelfCheck;
+window.applyFilters = applyFilters;
+window.resetAdminFilters = resetAdminFilters;

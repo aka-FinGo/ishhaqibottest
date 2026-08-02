@@ -647,3 +647,5 @@ function _renderKvCharts(statusCounts, monthlyM2, workerM2, stepCounts) {
         kvMkHBar('kvDashChartWorkers', sorted.map(([n]) => n.length > 12 ? n.slice(0, 11) + '…' : n), sorted.map(([, v]) => parseFloat(v.toFixed(1))), sorted.map((_, i) => WORKER_COLORS[i % WORKER_COLORS.length]));
     }
 }
+
+window.renderKvDashboardPage = renderKvDashboardPage;

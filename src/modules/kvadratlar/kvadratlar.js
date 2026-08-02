@@ -1114,3 +1114,36 @@ function formatTime(seconds) {
     var s = seconds % 60;
     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 }
+
+function kvRefreshAll() {
+    if (typeof initKvadratTab === 'function') initKvadratTab(true);
+}
+
+function toggleKvFilterPanel() {
+    const panel = document.getElementById('kvFilterPanel');
+    if (panel) panel.classList.toggle('hidden');
+}
+
+function applyKvFilters() {
+    if (typeof filterKvList === 'function') filterKvList();
+}
+
+function closeKvModal() {
+    const modal = document.getElementById('kvAddModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function populateKvadratMeta() {}
+
+window.initKvadratTab = initKvadratTab;
+window.updateKvFabVisibility = updateKvFabVisibility;
+window.renderKvList = renderKvList;
+window.filterKvList = filterKvList;
+window.resetKvFilters = resetKvFilters;
+window.saveKvadratUI = saveKvadratUI;
+window.claimKvadratUI = claimKvadratUI;
+window.kvRefreshAll = kvRefreshAll;
+window.toggleKvFilterPanel = toggleKvFilterPanel;
+window.applyKvFilters = applyKvFilters;
+window.closeKvModal = closeKvModal;
+window.populateKvadratMeta = populateKvadratMeta;

@@ -360,3 +360,53 @@ async function deleteOwnRecord(rowId) {
         showToastMsg('❌ Server xatosi', true);
     }
 }
+
+function handleFabAction() {
+    if (typeof switchTab === 'function') switchTab('addTab', 'nav-add');
+}
+
+function cancelAdd() {
+    if (typeof switchTab === 'function') switchTab('kvadratTab', 'nav-kvadrat');
+}
+
+function contactAdmin() {
+    alert("Iltimos, adminga murojaat qiling.");
+}
+
+function formatSpaceNumberInput(el) {
+    if (!el) return;
+    let v = el.value.replace(/\s+/g, '');
+    if (!isNaN(v) && v !== '') {
+        el.value = Number(v).toLocaleString('ru-RU');
+    }
+}
+
+function updateAddCurrencyView() {}
+function toggleRate() {}
+function onRateInput() {}
+function toggleAvansForm() {}
+function requestAvans() {}
+function saveActionUI() {}
+
+function updateEditCurrencyView() {}
+function onEditRateInput() {}
+
+window.openEdit = openEdit;
+window.openSelfEdit = openSelfEdit;
+window.closeEditModal = closeEditModal;
+window.saveEdit = saveEdit;
+window.deleteRecord = deleteRecord;
+window.deleteOwnRecord = deleteOwnRecord;
+window.deleteSelfRecord = deleteOwnRecord;
+window.handleFabAction = handleFabAction;
+window.contactAdmin = contactAdmin;
+window.formatSpaceNumberInput = formatSpaceNumberInput;
+window.updateAddCurrencyView = updateAddCurrencyView;
+window.toggleRate = toggleRate;
+window.onRateInput = onRateInput;
+window.cancelAdd = cancelAdd;
+window.toggleAvansForm = toggleAvansForm;
+window.requestAvans = requestAvans;
+window.saveActionUI = saveActionUI;
+window.updateEditCurrencyView = updateEditCurrencyView;
+window.onEditRateInput = onEditRateInput;

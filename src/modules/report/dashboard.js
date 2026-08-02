@@ -520,3 +520,29 @@ function renderSuperAdminDashboard(el) {
         renderPersonalCharts('chartS_my', my, months6);
     });
 }
+
+function switchReportSub(subId, btnEl) {
+    document.querySelectorAll('#reportActionsArea, #reportDashArea').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.report-sub-btn').forEach(btn => btn.classList.remove('active'));
+    
+    const target = document.getElementById(subId);
+    if (target) target.classList.remove('hidden');
+    if (btnEl) btnEl.classList.add('active');
+    
+    if (subId === 'reportDashArea' && typeof renderDashboardPage === 'function') {
+        renderDashboardPage();
+    }
+}
+
+function handleDashboardNav() {
+    switchReportSub('reportDashArea');
+}
+
+function switchDashboardSub(subId, btnEl) {
+    switchReportSub(subId, btnEl);
+}
+
+window.renderDashboardPage = renderDashboardPage;
+window.switchReportSub = switchReportSub;
+window.handleDashboardNav = handleDashboardNav;
+window.switchDashboardSub = switchDashboardSub;
