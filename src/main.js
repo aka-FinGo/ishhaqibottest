@@ -11,15 +11,7 @@ import { AppCache } from './core/cache.js';
 // 2. Component Utils
 import * as UiUtils from './components/ui_utils.js';
 
-// 3. Stylesheets
-import './styles/style.css';
-import './styles/components.css';
-import './styles/dark.css';
-import './styles/ai_chat.css';
-import './styles/gloss.css';
-import './styles/module_fl.css';
-
-// 4. Feature Modules
+// 3. Feature Modules
 import './modules/admin/roles.js';
 import './modules/admin/employee.js';
 import './modules/admin/admin.js';
@@ -49,4 +41,24 @@ window.AppState = AppState;
 window.apiRequest = apiRequest;
 window.AppCache = AppCache;
 
-console.log(`🚀 Aristokrat Ish Haqi Fully Modular System Bootstrapped (${Config.APP_VERSION})`);
+// Automatic Application Bootstrapping on DOM Ready
+function bootApp() {
+  console.log(`🚀 Aristokrat Ish Haqi Fully Modular System Bootstrapped (${Config.APP_VERSION})`);
+  
+  // Restore saved theme
+  const savedTheme = localStorage.getItem('user_theme');
+  if (savedTheme && typeof window.setTheme === 'function') {
+    window.setTheme(savedTheme);
+  }
+
+  // Initial tab boot
+  if (typeof window.initKvadratTab === 'function') {
+    window.initKvadratTab();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootApp);
+} else {
+  bootApp();
+}
