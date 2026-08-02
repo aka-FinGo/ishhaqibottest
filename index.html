@@ -137,44 +137,6 @@
             </div>
         </div>
 
-        <!-- TAB: MODUL (CABIX NATIVE MODULE CATALOG — NO BLACK SCREEN, NO IFRAME) -->
-        <div id="moduleTab" class="tab-content" style="padding:16px; background:var(--background, #0c0d0f); min-height:100vh;">
-            <div class="page-header" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <h2>📦 Cabix Modul Tizimi</h2>
-                    <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Mebel modullari, chizmalar va furnituralar ro'yxati</p>
-                </div>
-                <div class="header-avatar">🧩</div>
-            </div>
-
-            <!-- Login / Password Container if needed -->
-            <div id="moduleFlLoginCard" class="card" style="margin-bottom:16px; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:14px;">
-                <div style="font-size:13px; font-weight:600; color:var(--cyan-neon); margin-bottom:8px;">🔑 Modul Tizimiga Kirish</div>
-                <div style="display:flex; gap:8px;">
-                    <input id="moduleFlPassInput" type="password" placeholder="Admin parolini kiriting..." 
-                           style="flex:1; padding:10px 14px; background:var(--bg-card,#111215); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; outline:none;"
-                           onkeydown="if(event.key==='Enter')initModuleFlWithPass()">
-                    <button class="btn-main" onclick="initModuleFlWithPass()" style="padding:10px 18px; margin:0; font-size:13px;">Kirish</button>
-                </div>
-                <div id="moduleFlPassErr" style="display:none; color:#ef4444; font-size:12px; margin-top:8px;"></div>
-            </div>
-
-            <!-- User Module Search & Filters -->
-            <div id="moduleFlAppArea" style="display:none;">
-                <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
-                    <input id="userModuleSearch" placeholder="🔍 Artikul yoki modul nomi bo'yicha qidirish..." 
-                           oninput="filterUserModules()" 
-                           style="flex:1; min-width:200px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text); font-size:14px; outline:none;">
-                    <button class="btn-secondary" onclick="initModuleFl()" style="padding:10px 14px; font-size:13px;">↻ Yangilash</button>
-                </div>
-
-                <!-- User Module Grid -->
-                <div id="userModuleGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
-                    <div style="color:var(--text-muted); font-size:13px;">⏳ Modullar yuklanmoqda...</div>
-                </div>
-            </div>
-        </div>
-
         <!-- TAB 2: YANGI AMAL -->
         <div id="addTab" class="tab-content">
             <div class="form-header">
@@ -445,9 +407,6 @@
                 <button class="admin-sub-btn" id="adminNavAI" onclick="switchAdminSub('adminAIArea',this)">
                     <span class="btn-icon">🤖</span><span class="btn-text">AI Agent</span>
                 </button>
-                <button class="admin-sub-btn" id="adminNavModuleFl" onclick="switchAdminSub('adminModuleFlArea',this)">
-                    <span class="btn-icon">📦</span><span class="btn-text">Modullar Admin</span>
-                </button>
                 <button class="admin-sub-btn" id="adminNavService" onclick="switchAdminSub('adminServiceArea',this)">
                     <span class="btn-icon">🧪</span><span class="btn-text">Tizim</span>
                 </button>
@@ -602,44 +561,6 @@
                     <button class="btn-secondary" id="selfCheckBtnAdmin" style="margin-top:0;"
                         onclick="runSystemSelfCheck('admin')">🧪 Self-check</button>
                     <div id="adminServiceStatus" class="status-msg"></div>
-                </div>
-            </div>
-
-            <div id="adminModuleFlArea" class="hidden">
-                <div class="card" style="background:var(--mf-bg2, #111215); border:1px solid var(--border);">
-                    <div class="card-title" style="color:var(--mf-amber, #f59e0b); display:flex; align-items:center; gap:8px;">
-                        <span>📦</span> Modullar Admin Paneli
-                    </div>
-
-                    <div id="admin-login-screen">
-                      <div class="field" style="margin-top:12px">
-                        <label style="font-size:12px; color:var(--text-muted)">Admin paroli</label>
-                        <input id="inp-pass" type="password" placeholder="••••••••" class="input-field" style="margin-top:4px; width:100%" onkeydown="if(event.key==='Enter')doLogin()">
-                      </div>
-                      <button class="btn-main" id="login-btn" onclick="doLogin()" style="margin-top:12px; width:100%">Kirish</button>
-                      <div id="login-err" style="display:none; color:#ef4444; margin-top:10px; font-size:12px"></div>
-                    </div>
-
-                    <div id="admin-app" style="display:none; margin-top:15px">
-                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:8px">
-                        <span style="font-weight:600">Modullar Boshqaruvi</span>
-                        <div style="display:flex; gap:8px">
-                          <button class="btn-secondary" onclick="loadModules()">↻ Yangilash</button>
-                          <button class="btn-main" onclick="openModal()">+ Yangi Modul</button>
-                          <button class="btn-secondary" onclick="logout()">Chiqish</button>
-                        </div>
-                      </div>
-                      <div class="stats-bar" id="stats-bar" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:15px">
-                        <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Jami</div></div>
-                        <div class="stat"><div class="num" id="s-pdf">—</div><div class="lbl">PDF (TG)</div></div>
-                        <div class="stat"><div class="num" id="s-video">—</div><div class="lbl">Video (TG)</div></div>
-                        <div class="stat"><div class="num" id="s-fur">—</div><div class="lbl">Furnitura</div></div>
-                      </div>
-                      <div class="toolbar" style="margin-bottom:15px">
-                        <input id="search" placeholder="Artikul yoki nomi..." oninput="filterModules()" style="padding:8px; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; width:100%">
-                      </div>
-                      <div id="mod-grid" class="mod-grid"></div>
-                    </div>
                 </div>
             </div>
 
@@ -1101,9 +1022,6 @@
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-kvadrat" onclick="switchTab('kvadratTab','nav-kvadrat')">
                 <span class="nav-icon">🧾</span><span>Buyurtmalar</span>
-            </div>
-            <div class="nav-item" id="nav-module" onclick="switchTab('moduleTab','nav-module')">
-                <span class="nav-icon">🧩</span><span>Modul</span>
             </div>
             <div class="nav-fab-container">
                 <div class="nav-fab" id="nav-add" onclick="handleFabAction()">➕</div>

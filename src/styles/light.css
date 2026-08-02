@@ -1,0 +1,32 @@
+/* light.css — Yorug'roq va toza dizayn mavzusi */
+:root {
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --border: #E2E8F0;
+    --text: #1E293B;
+    --text-muted: #64748B;
+    --navy: #0F172A;
+    --green: #10B981;
+    --green-dark: #059669;
+    --green-glow: rgba(16,185,129,0.1);
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.card, .stat-card, .filter-box, .history-item {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+input, select, textarea {
+    background: #FFFFFF;
+    border-color: var(--border);
+}
+
+.bottom-nav {
+    background: rgba(255, 255, 255, 0.9);
+}

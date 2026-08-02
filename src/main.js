@@ -32,8 +32,6 @@ import './modules/report/detail_modal.js';
 import './modules/ai_chat/admin_ai.js';
 import './modules/ai_chat/admin_ai_chat.js';
 
-import './modules/module_fl/module_fl.js';
-
 // Expose Config & Core globals for HTML onclick compatibility
 Object.assign(window, Config);
 Object.assign(window, UiUtils);
