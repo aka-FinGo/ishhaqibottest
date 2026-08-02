@@ -1,7 +1,7 @@
 // ============================================================
 // src/core/config.js — Modular System Configuration & Utils
 // ============================================================
-export const API_URL = "https://script.google.com/macros/s/AKfycbwwCfiCjL6Nvi3uXw6gfLkrXJrV30SS7YKoeQbnzJj0wXieWjTHrcn9vtPBtvonFQa4RA/exec";
+export const API_URL = "https://script.google.com/macros/s/AKfycbxvwRMY-t-9_0S0A7zl8DXSMpCCj35D_kv8iREYDTs5TAMbKTVEs5ol2mpeLaedomA5Og/exec";
 
 export const tg = (typeof window !== 'undefined' && window.Telegram?.WebApp)
   ? window.Telegram.WebApp
