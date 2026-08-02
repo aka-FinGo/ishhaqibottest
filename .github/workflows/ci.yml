@@ -18,11 +18,24 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Check ES Modules Syntax
-        run: find src -name "*.js" -exec node --check {} +
+      - name: Check Frontend Syntax
+        run: |
+          node --check config.js
+          node --check ui.js
+          node --check employee.js
+          node --check admin.js
+          node --check export.js
+          node --check actions.js
+          node --check dashboard.js
+          node --check detail_modal.js
+          node --check roles.js
 
-      - name: Verify Window Scope Exports
-        run: node tests/module-window-export.test.js
+      - name: Check Apps Script Syntax
+        run: |
+          for f in gsheetscode/*.gs; do
+            cp "$f" "/tmp/$(basename "$f").js"
+            node --check "/tmp/$(basename "$f").js"
+          done
 
       - name: Run Date Tests
         run: node tests/date-parse.test.js

@@ -21,7 +21,7 @@ const {
   parseDateParts,
   getDateMonthYear,
   getTodayDdMmYyyy
-} = require('./config.js');
+} = require('../config.js');
 
 function run() {
   const d1 = parseDateParts('02/03/2026');

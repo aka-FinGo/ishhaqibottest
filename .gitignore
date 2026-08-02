@@ -66,7 +66,7 @@ project/
 admin — копия.js
 
 # Test files
-# tests/
+tests/
 
 # Documentation
 OPTIMIZATSIYA_XULOSA.md
@@ -76,9 +76,10 @@ OPTIMIZATSIYA_XULOSA.md
 *.zip
 cache optimizatsiya qilish.md
 temp_*.js
-# tests/
+tests/
 project/
 old_style.css
 *.local.json
 .claude/*
 Dockerfile
+*.zip
