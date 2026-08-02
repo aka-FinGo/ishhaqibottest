@@ -330,3 +330,35 @@ function autoResizeAi(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
+
+function runAIReportTest() {
+    showToastMsg("🤖 AI hisobot testi bajarilmoqda...");
+}
+
+function clearAiChat() {
+    const box = document.getElementById('chatMessages');
+    if (box) box.innerHTML = '';
+}
+
+function quickAskAi(q) {
+    const inp = document.getElementById('aiChatInput');
+    if (inp) {
+        inp.value = q;
+        sendAiMsg();
+    }
+}
+
+function sendAiMsg() {
+    if (typeof sendAiQuery === 'function') sendAiQuery();
+}
+
+window.toggleAiSettings = toggleAiSettings;
+window.loadAIConfig = loadAIConfig;
+window.saveAIConfigUI = saveAIConfigUI;
+window.openFullAiChat = openFullAiChat;
+window.sendAiQuery = sendAiQuery;
+window.autoResizeAi = autoResizeAi;
+window.runAIReportTest = runAIReportTest;
+window.clearAiChat = clearAiChat;
+window.quickAskAi = quickAskAi;
+window.sendAiMsg = sendAiMsg;

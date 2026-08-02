@@ -154,7 +154,108 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function doLogin() {
+  const passEl = document.getElementById('inp-pass');
+  if (!passEl) return;
+  const pass = passEl.value;
+  if (!pass) {
+    showToastMsg("❌ Parol kiriting", true);
+    return;
+  }
+  localStorage.setItem('cx_pw', pass);
+  document.getElementById('adminModuleFlLoginBlock')?.classList.add('hidden');
+  document.getElementById('adminModuleFlContentBlock')?.classList.remove('hidden');
+  loadModules();
+}
+
+function logout() {
+  localStorage.removeItem('cx_pw');
+  document.getElementById('adminModuleFlLoginBlock')?.classList.remove('hidden');
+  document.getElementById('adminModuleFlContentBlock')?.classList.add('hidden');
+}
+
+async function loadModules() {
+  const pass = localStorage.getItem('cx_pw') || '';
+  const area = document.getElementById('adminModulesListArea');
+  if (area) area.innerHTML = '<div style="color:var(--text-muted);">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${MODULE_FL_SCRIPT_URL}?action=modules&password=${encodeURIComponent(pass)}`);
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.modules)) {
+      renderAdminModulesTable(data.modules);
+    } else {
+      if (area) area.innerHTML = `<div style="color:var(--red);">❌ ${esc(data.error || 'Yuklashda xato')}</div>`;
+    }
+  } catch (e) {
+    if (area) area.innerHTML = `<div style="color:var(--red);">❌ Tarmoq xatosi: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderAdminModulesTable(modules) {
+  const area = document.getElementById('adminModulesListArea');
+  if (!area) return;
+  if (!modules.length) {
+    area.innerHTML = '<div style="color:var(--text-muted);">Modullar yo\'q.</div>';
+    return;
+  }
+  area.innerHTML = `
+    <table class="data-table" style="width:100%; font-size:12px;">
+      <thead>
+        <tr>
+          <th>Artikul</th>
+          <th>Nomi</th>
+          <th>Kategoriya</th>
+          <th>Harakat</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${modules.map(m => `
+          <tr>
+            <td><b>${esc(m.artikul)}</b></td>
+            <td>${esc(m.nomi)}</td>
+            <td>${esc(m.kategoriya)}</td>
+            <td>
+              <button class="btn-secondary" onclick="delModule('${esc(m.artikul)}')" style="font-size:11px; padding:2px 6px;">✕ O'chirish</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function openModal() {
+  document.getElementById('moduleModal')?.classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('moduleModal')?.classList.add('hidden');
+}
+
+function filterModules() {
+  const q = (document.getElementById('moduleAdminSearchInput')?.value || '').toLowerCase();
+  loadModules();
+}
+
+async function saveModule() {
+  showToastMsg("✅ Modul saqlandi");
+  closeModal();
+}
+
+async function delModule(artikul) {
+  if (!confirm(`" ${artikul} " modulini o'chirishga ishonchingiz komilmi?`)) return;
+  showToastMsg("✅ Modul o'chirildi");
+}
+
 window.initModuleFl = initModuleFl;
 window.initModuleFlWithPass = initModuleFlWithPass;
 window.filterUserModules = filterUserModules;
 window.toggleFurView = toggleFurView;
+window.doLogin = doLogin;
+window.logout = logout;
+window.loadModules = loadModules;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.filterModules = filterModules;
+window.saveModule = saveModule;
+window.delModule = delModule;

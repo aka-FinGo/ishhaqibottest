@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/ui_utils.js — Global Tab Switching & UI Utilities
+// src/components/ui_utils.js — Global UI Helpers & Event Handlers
 // ============================================================
 
 export const UZ_MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
@@ -56,7 +56,6 @@ export function showToastMsg(message, isError = false) {
   setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-// Global Tab Switcher
 export function switchTab(tabId, navId) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -70,9 +69,14 @@ export function switchTab(tabId, navId) {
   if (tabId === 'moduleTab' && typeof window.initModuleFl === 'function') {
     window.initModuleFl();
   }
+  if (tabId === 'profileTab' && typeof window.updateProfileUI === 'function') {
+    window.updateProfileUI();
+  }
+  if (tabId === 'kvDashboardTab' && typeof window.renderKvDashboardPage === 'function') {
+    window.renderKvDashboardPage();
+  }
 }
 
-// Admin Sub-Tab Switcher
 export function switchAdminSub(areaId, btnEl) {
   document.querySelectorAll('#adminTab > div[id$="Area"]').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('#adminNav .admin-sub-btn').forEach(btn => btn.classList.remove('active'));
@@ -83,6 +87,37 @@ export function switchAdminSub(areaId, btnEl) {
   if (btnEl) btnEl.classList.add('active');
 }
 
+export function setTheme(themeFile) {
+  const link = document.getElementById('dynamic-theme');
+  if (!link) return;
+  link.href = themeFile ? themeFile : '';
+  localStorage.setItem('user_theme', themeFile || '');
+  showToastMsg(themeFile ? `Mavzu o'zgardi: ${themeFile}` : 'Boshlang\'ich mavzu o\'rnatildi');
+}
+
+export function toggleSetting(key, enabled) {
+  localStorage.setItem(`setting_${key}`, enabled ? 'true' : 'false');
+  showToastMsg(`Sozlama (${key}): ${enabled ? 'Yoqildi' : 'O\'chirildi'}`);
+}
+
+export function applyMyFilters() {
+  if (typeof window.renderMyRecords === 'function') {
+    window.renderMyRecords();
+  }
+}
+
+export function resetMyFilters() {
+  const m = document.getElementById('myFilterMonth');
+  const y = document.getElementById('myFilterYear');
+  if (m) m.value = '';
+  if (y) y.value = '';
+  applyMyFilters();
+}
+
 window.switchTab = switchTab;
 window.switchAdminSub = switchAdminSub;
 window.showToastMsg = showToastMsg;
+window.setTheme = setTheme;
+window.toggleSetting = toggleSetting;
+window.applyMyFilters = applyMyFilters;
+window.resetMyFilters = resetMyFilters;

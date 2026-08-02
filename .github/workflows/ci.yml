@@ -20,12 +20,10 @@ jobs:
 
       - name: Check ES Modules Syntax
         run: |
-          node --check src/main.js
-          node --check src/core/config.js
-          node --check src/core/state.js
-          node --check src/core/api.js
-          node --check src/core/cache.js
-          node --check src/components/ui_utils.js
+          for f in src/*.js src/*/*.js src/*/*/*.js; do node --check "$f" || exit 1; done
+
+      - name: Verify Window Scope Exports
+        run: node tests/module-window-export.test.js
 
       - name: Run Date Tests
         run: node tests/date-parse.test.js

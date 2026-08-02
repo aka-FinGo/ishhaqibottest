@@ -159,3 +159,6 @@ async function exportAdminExcel() {
         setButtonLoading(exportBtn, false);
     }
 }
+
+window.exportMyExcel = exportMyExcel;
+window.exportAdminExcel = exportAdminExcel;

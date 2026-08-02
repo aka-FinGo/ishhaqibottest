@@ -297,3 +297,7 @@ async function saveStrictSettingUI() {
         setButtonLoading(btn, false);
     }
 }
+
+window.addNewWorkflowStep = addNewWorkflowStep;
+window.saveWorkflowConfigUI = saveWorkflowConfigUI;
+window.saveStrictSettingUI = saveStrictSettingUI;
