@@ -19,8 +19,7 @@ jobs:
           node-version: '20'
 
       - name: Check ES Modules Syntax
-        run: |
-          for f in src/*.js src/*/*.js src/*/*/*.js; do node --check "$f" || exit 1; done
+        run: find src -name "*.js" -exec node --check {} +
 
       - name: Verify Window Scope Exports
         run: node tests/module-window-export.test.js
