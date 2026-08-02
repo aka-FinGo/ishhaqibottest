@@ -434,26 +434,13 @@ function switchTab(tabId, navId) {
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
     if (tabId === 'addTab') checkAddPermission();
     if (tabId === 'moduleTab') {
-        // Iframe allaqachon yuklangan, agar kerak bo'lsa refresh qilish mumkin
+        if (typeof initModuleFl === 'function') initModuleFl();
     }
     if (typeof updateKvFabVisibility === 'function') updateKvFabVisibility();
 }
 
 function updateModuleIframe() {
-    const iframe = document.getElementById('moduleIframe');
-    if (iframe) {
-        const initDataParam = (typeof tgInitData !== 'undefined' && tgInitData) ? "#tgWebAppData=" + encodeURIComponent(tgInitData) : "";
-        const onlineUrl = "https://aka-fingo.github.io/module_fl/" + initDataParam;
-        const localAdminUrl = "./module_fl/web/admin.html" + initDataParam;
-        
-        // Kompilyatsiya qilingan Flutter Web URL (GitHub Pages) ni yuklaymiz
-        iframe.src = onlineUrl;
-
-        // Agar online URL ishlamasa, mahalliy admin.html ga zaxira sifatida o'tadi
-        iframe.onerror = function() {
-            iframe.src = localAdminUrl;
-        };
-    }
+    if (typeof initModuleFl === 'function') initModuleFl();
 }
 
 function setTheme(themeFile) {
