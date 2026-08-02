@@ -434,13 +434,17 @@ function switchTab(tabId, navId) {
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
     if (tabId === 'addTab') checkAddPermission();
     if (tabId === 'moduleTab') {
-        if (typeof initModuleFl === 'function') initModuleFl();
+        if (typeof updateModuleIframe === 'function') updateModuleIframe();
     }
     if (typeof updateKvFabVisibility === 'function') updateKvFabVisibility();
 }
 
 function updateModuleIframe() {
-    if (typeof initModuleFl === 'function') initModuleFl();
+    const iframe = document.getElementById('moduleIframe');
+    if (iframe && typeof tgInitData !== 'undefined' && tgInitData) {
+        const baseUrl = "https://aka-fingo.github.io/module_fl/";
+        iframe.src = baseUrl + "#tgWebAppData=" + encodeURIComponent(tgInitData);
+    }
 }
 
 function setTheme(themeFile) {
