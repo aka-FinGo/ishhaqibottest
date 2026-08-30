@@ -14,21 +14,27 @@ function addRecord(data, auth, actorTgId) {
   var notifyPayload = null;
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
-    var emp = getEmployee(String(data.telegramId));
+    var targetTgId = String(data.telegramId || actorTgId);
+    var emp = getEmployee(targetTgId);
     var displayName = (emp && emp.username) ? emp.username : (data.employeeName || '');
     var parsedDate = parseDateInput_(data.date, data.dateISO);
     if (!parsedDate) parsedDate = parseDateInput_(new Date(), null);
     var forPeriod = String(data.actionPeriod || '').trim();
     
-    var isForSelf = (String(data.telegramId) === String(actorTgId));
     var isBugalter = auth.isBugalter || auth.isSuperAdmin;
     var initialStatus = 'Tasdiqlandi';
-    if (isBugalter && !isForSelf) {
+    var notifyTarget = null;
+    
+    if (isBugalter && targetTgId !== String(actorTgId)) {
         initialStatus = 'Kutilmoqda';
+        notifyTarget = 'employee';
+    } else if (!isBugalter) {
+        initialStatus = 'Kutilmoqda';
+        notifyTarget = 'bugalter';
     }
     
     // OPTIMIZED: Batch append with format in single operation
-    var newRow = [displayName, data.telegramId || '', Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, forPeriod ? "'" + forPeriod : "", initialStatus];
+    var newRow = [displayName, targetTgId, Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, forPeriod ? "'" + forPeriod : "", initialStatus];
     dataSheet.appendRow(newRow);
     var row = dataSheet.getLastRow();
     
@@ -38,7 +44,7 @@ function addRecord(data, auth, actorTgId) {
     
     var appendedValues = dataSheet.getRange(row, 1, 1, 10).getValues()[0];
     addAuditLog_(actorTgId, 'add_record', row, null, rowToRecordForAudit_(appendedValues), 'created');
-    notifyPayload = { employeeName: displayName, amountUZS: Number(data.amountUZS) || 0, amountUSD: Number(data.amountUSD) || 0, rate: Number(data.rate) || 0, comment: data.comment || '', date: parsedDate.display, actionPeriod: forPeriod, tgId: data.telegramId, rowId: row, initialStatus: initialStatus };
+    notifyPayload = { employeeName: displayName, amountUZS: Number(data.amountUZS) || 0, amountUSD: Number(data.amountUSD) || 0, rate: Number(data.rate) || 0, comment: data.comment || '', date: parsedDate.display, actionPeriod: forPeriod, tgId: targetTgId, actorTgId: actorTgId, rowId: row, initialStatus: initialStatus, notifyTarget: notifyTarget };
     
     // OPTIMIZED: Reset data cache after write
     resetDataCache_();
@@ -50,8 +56,10 @@ function addRecord(data, auth, actorTgId) {
   });
   if (!writeResult.success) return writeResult;
   if (notifyPayload) {
-      if (notifyPayload.initialStatus === 'Kutilmoqda') {
+      if (notifyPayload.notifyTarget === 'employee') {
           sendSalaryConfirmationToEmployee_(notifyPayload.tgId, notifyPayload.rowId, notifyPayload.employeeName, notifyPayload.amountUZS, notifyPayload.amountUSD, notifyPayload.rate, notifyPayload.comment, notifyPayload.date, notifyPayload.actionPeriod);
+      } else if (notifyPayload.notifyTarget === 'bugalter') {
+          sendSalaryConfirmationToBugalters_(notifyPayload.actorTgId, notifyPayload.rowId, notifyPayload.employeeName, notifyPayload.amountUZS, notifyPayload.amountUSD, notifyPayload.rate, notifyPayload.comment, notifyPayload.date, notifyPayload.actionPeriod);
       } else {
           sendTelegramNotification(notifyPayload);
       }

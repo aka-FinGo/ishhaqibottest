@@ -240,28 +240,36 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
         return rUzs === amountUZS && rUsd === amountUSD && rPeriod === actionPeriod;
     });
 
+    let targetTgId = telegramId;
+    let targetEmpName = employeeName;
+    const selEl = document.getElementById('addSelectedTgId');
+    if (selEl && selEl.value !== '') {
+        targetTgId = selEl.value;
+        targetEmpName = selEl.options[selEl.selectedIndex].text;
+    }
+
     if (isDuplicate) {
         const confirmMsg = `Ushbu davr (${actionPeriod || 'joriy'}) uchun ${amount.toLocaleString()} ${currency} miqdoridagi amal allaqachon mavjud!`;
         if (typeof showConfirmModal === 'function') {
             showConfirmModal(confirmMsg, () => {
-                executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod);
+                executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod, targetTgId, targetEmpName);
             });
         } else if (confirm('⚠️ ' + confirmMsg + '\n\nBaribir saqlaysizmi?')) {
-            executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod);
+            executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod, targetTgId, targetEmpName);
         }
     } else {
-        executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod);
+        executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod, targetTgId, targetEmpName);
     }
 });
 
-async function executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod) {
+async function executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, comment, actionPeriod, targetTgId, targetEmpName) {
     const today = getTodayDdMmYyyy();
     const date = today.display;
     btn.disabled = true; btn.innerText = '⏳ Yuborilmoqda...';
 
     try {
         const data = await apiRequest({
-            action: 'add', employeeName, telegramId, amountUZS, amountUSD, rate, comment, date, dateISO: today.iso, actionPeriod
+            action: 'add', employeeName: targetEmpName, telegramId: targetTgId, actorTgId: telegramId, amountUZS, amountUSD, rate, comment, date, dateISO: today.iso, actionPeriod
         });
         if (data.success) {
             status.style.color = 'var(--green-dark)'; status.innerText = '✅ Muvaffaqiyatli saqlandi!';

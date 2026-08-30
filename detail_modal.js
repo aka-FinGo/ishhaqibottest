@@ -49,16 +49,19 @@ function showDetailModal(r, mode) {
 
     if (mode === 'admin' || mode === true) {
         if (isOwner) {
-            /* O'z amalini har doim tahrirlash/o'chirish mumkin */
-            actionBtns = `
-            <div class="dm-act-row">
-                <button class="dm-act-btn dm-act-btn--edit"
-                    title="Tahrirlash"
-                    onclick="closeDetailModal();openEdit(${rowId})">✏️</button>
-                <button class="dm-act-btn dm-act-btn--del"
-                    title="O'chirish"
-                    onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>
-            </div>`;
+            if (globalSettings.disableEmpEditDelete && myRole !== 'SuperAdmin' && !myPermissions.canEdit) {
+                actionBtns = '';
+            } else {
+                actionBtns = `
+                <div class="dm-act-row">
+                    <button class="dm-act-btn dm-act-btn--edit"
+                        title="Tahrirlash"
+                        onclick="closeDetailModal();openEdit(${rowId})">✏️</button>
+                    <button class="dm-act-btn dm-act-btn--del"
+                        title="O'chirish"
+                        onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>
+                </div>`;
+            }
         } else {
             /* Boshqalarning amallari — ruxsatga qarab */
             const canDel = myRole === 'SuperAdmin' || myPermissions.canDelete;

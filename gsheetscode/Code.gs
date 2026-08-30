@@ -337,23 +337,37 @@ function handleCallbackQuery_(query) {
   if (data.indexOf('conf_sal_') === 0 || data.indexOf('rej_sal_') === 0) {
     var isConfirm = data.indexOf('conf_sal_') === 0;
     var rowId = parseInt(data.replace('conf_sal_', '').replace('rej_sal_', ''), 10);
+    var success = false;
+    var errorMsg = '';
     
     withWriteLock_(function() {
       var dataSheet = getSheets().dataSheet;
       var rowData = dataSheet.getRange(rowId, 1, 1, 10).getValues()[0];
-      var newStatus = isConfirm ? 'Tasdiqlandi' : 'Rad etildi';
-      dataSheet.getRange(rowId, DATA_COL.STATUS + 1).setValue(newStatus);
-      addAuditLog_(actorTgId, isConfirm ? 'confirm_record' : 'reject_record', rowId, rowToRecordForAudit_(rowData), 'updated', newStatus);
-      resetDataCache_();
-      touchDataVersion(DV_KEYS.FINANCE);
-      return { success: true };
+      var rowTgId = String(rowData[DATA_COL.TG_ID] || '').trim();
+      var auth = checkUserRoles(actorTgId);
+      
+      if (String(actorTgId) === rowTgId || auth.isBugalter || auth.isSuperAdmin) {
+        var newStatus = isConfirm ? 'Tasdiqlandi' : 'Rad etildi';
+        dataSheet.getRange(rowId, DATA_COL.STATUS + 1).setValue(newStatus);
+        addAuditLog_(actorTgId, isConfirm ? 'confirm_record' : 'reject_record', rowId, rowToRecordForAudit_(rowData), 'updated', newStatus);
+        resetDataCache_();
+        touchDataVersion(DV_KEYS.FINANCE);
+        success = true;
+        return { success: true };
+      } else {
+        errorMsg = "Sizda buni tasdiqlash uchun ruxsat yo'q!";
+        return { success: false };
+      }
     });
     
-    var originalText = query.message.text || '';
-    // Xabar textidagi HTML teglar o'chib ketishining oldini olish uchun HTML formatni ishlatmagan ma'qul
-    var newText = originalText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi" : "❌ Rad etildi");
-    tgEditMessageText_(chatId, messageId, newText, null, { inline_keyboard: [] });
-    tgAnswerCallbackQuery_(query.id, isConfirm ? "Tasdiqlandi!" : "Rad etildi!", false);
+    if (success) {
+      var originalText = query.message.text || '';
+      var newText = originalText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi" : "❌ Rad etildi");
+      tgEditMessageText_(chatId, messageId, newText, null, { inline_keyboard: [] });
+      tgAnswerCallbackQuery_(query.id, isConfirm ? "Tasdiqlandi!" : "Rad etildi!", false);
+    } else {
+      tgAnswerCallbackQuery_(query.id, errorMsg || "Xatolik", true);
+    }
   }
 }
 

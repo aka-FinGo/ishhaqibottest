@@ -173,6 +173,12 @@
 
             <div id="addFormContent" class="card">
                 <form id="financeForm">
+                    <div id="addEmployeeGroup" class="input-group hidden">
+                        <label>👤 Xodimni tanlang</label>
+                        <select id="addSelectedTgId">
+                            <option value="">O'zim uchun</option>
+                        </select>
+                    </div>
                     <div class="input-group">
                         <label>Davri (Qaysi oy uchun)</label>
                         <div style="display:flex; gap:10px;">
@@ -617,16 +623,7 @@
                         </label>
                     </div>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0;">
-                        <div>
-                            <h4 style="margin:0; font-size:15px; color: var(--cyan-neon, #00f2fe);">Qat'iy Ish Oqimi</h4>
-                            <div style="font-size:12px; color:var(--text-light); margin-top:4px;">Buyurtmalar faqat ketma-ketlikda bajariladi</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="settingWorkflowStrictMode" onchange="toggleGlobalSettingUI('WORKFLOW_STRICT_MODE', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+
                 </div>
             </div>
 

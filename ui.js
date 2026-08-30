@@ -786,8 +786,24 @@ function checkAddPermission() {
     if (!myCanAdd) { showPermWarning('🚫 Amal qo\'shish ruxsati yo\'q!', 'Sizda ruxsat yo\'q. SuperAdminga murojaat qiling.'); return false; }
     
     if (globalSettings.onlyBugalterAdd && myRole !== 'Bugalter' && myRole !== 'SuperAdmin') {
-        showPermWarning('🚫 Faqat Bugalter kirita oladi!', 'Hozirgi vaqtda faqat Bugalter amal qo\'sha oladi.');
+        showPermWarning('⚠️ Faqat Bugalter yoki SuperAdmin amal qo\'sha oladi', 'Hozirgi vaqtda faqat Bugalter yoki SuperAdmin amal qo\'sha oladi.');
         return false;
+    }
+    
+    const addGroup = document.getElementById('addEmployeeGroup');
+    const addSel = document.getElementById('addSelectedTgId');
+    if (myRole === 'Bugalter' || myRole === 'SuperAdmin' || myRole === 'Admin') {
+        addGroup.classList.remove('hidden');
+        if (addSel.options.length <= 1) {
+            addSel.innerHTML = '<option value="">O\'zim uchun</option>';
+            globalEmployeeList.forEach(e => {
+                if(e.tgId != telegramId) {
+                    addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}">${e.name} (${e.role})</option>`);
+                }
+            });
+        }
+    } else {
+        addGroup.classList.add('hidden');
     }
     
     document.getElementById('permWarning').classList.add('hidden');

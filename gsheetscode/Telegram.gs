@@ -198,6 +198,38 @@ function sendSalaryConfirmationToEmployee_(tgId, rowId, employeeName, amountUZS,
   return tgSendMessage_(tgId, msg, "HTML", replyMarkup);
 }
 
+function sendSalaryConfirmationToBugalters_(actorTgId, rowId, empName, uzs, usd, rate, comment, dateStr, actionPeriod) {
+  var uzsText = Number(uzs) > 0 ? "\n💰 " + Number(uzs).toLocaleString() + " UZS" : "";
+  var usdText = Number(usd) > 0 ? "\n💵 $" + Number(usd).toLocaleString() : "";
+  var rateText = Number(usd) > 0 && Number(rate) > 0 ? "\n📈 Kurs: " + Number(rate).toLocaleString() + " UZS" : "";
+  var periodText = actionPeriod ? "\n📅 Davr: " + actionPeriod : "";
+  
+  var msg = "⚠️ <b>Xodim tomonidan kiritilgan amal tasdiqlash uchun</b>\n" +
+            "Quyidagi amal kiritildi. Iltimos, tasdiqlang yoki rad eting:\n" +
+            "👤 " + (empName || "—") +
+            uzsText + usdText + rateText + periodText +
+            "\n📝 " + (comment || "—") +
+            "\n📅 " + (dateStr || "—");
+            
+  var replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: "✅ Tasdiqlash", callback_data: "conf_sal_" + rowId },
+        { text: "❌ Rad etish", callback_data: "rej_sal_" + rowId }
+      ]
+    ]
+  };
+  
+  // Bugalterlar va SuperAdminga yuborish
+  var employees = getCacheOrFetch_('global_employees_data', buildEmployeeList, 86400);
+  for (var i = 0; i < employees.length; i++) {
+    var e = employees[i];
+    if (e.role === 'Bugalter' || e.role === 'SuperAdmin') {
+      tgSendMessage_(e.tgId, msg, "HTML", replyMarkup);
+    }
+  }
+}
+
 function tgAnswerCallbackQuery_(callbackQueryId, text, showAlert) {
   var url = "https://api.telegram.org/bot" + CONFIG.BOT_TOKEN + "/answerCallbackQuery";
   var payload = {
