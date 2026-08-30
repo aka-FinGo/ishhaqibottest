@@ -269,7 +269,7 @@ async function executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, commen
 
     try {
         const data = await apiRequest({
-            action: 'add', employeeName: targetEmpName, telegramId: targetTgId, actorTgId: telegramId, amountUZS, amountUSD, rate, comment, date, dateISO: today.iso, actionPeriod
+            action: 'add', telegramId: telegramId, targetTgId: targetTgId, employeeName: targetEmpName, amountUZS, amountUSD, rate, comment, date, dateISO: today.iso, actionPeriod
         });
         if (data.success) {
             status.style.color = 'var(--green-dark)'; status.innerText = '✅ Muvaffaqiyatli saqlandi!';

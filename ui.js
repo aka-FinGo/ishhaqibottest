@@ -794,14 +794,15 @@ function checkAddPermission() {
     const addSel = document.getElementById('addSelectedTgId');
     if (myRole === 'Bugalter' || myRole === 'SuperAdmin' || myRole === 'Admin') {
         addGroup.classList.remove('hidden');
-        if (addSel.options.length <= 1) {
-            addSel.innerHTML = '<option value="">O\'zim uchun</option>';
-            globalEmployeeList.forEach(e => {
-                if(e.tgId != telegramId) {
-                    addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}">${e.name} (${e.role})</option>`);
-                }
-            });
-        }
+        addSel.innerHTML = '<option value="">O\'zim uchun</option>';
+        globalEmployeeList.forEach(e => {
+            if(e.tgId != telegramId) {
+                const empName = e.username || e.name || e.displayName || ('ID: ' + e.tgId);
+                const roleLabel = e.lavozim || e.role || e.roleKey || '';
+                const label = roleLabel ? (empName + ' (' + roleLabel + ')') : empName;
+                addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}">${label}</option>`);
+            }
+        });
     } else {
         addGroup.classList.add('hidden');
     }

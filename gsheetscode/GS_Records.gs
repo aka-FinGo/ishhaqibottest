@@ -14,7 +14,7 @@ function addRecord(data, auth, actorTgId) {
   var notifyPayload = null;
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
-    var targetTgId = String(data.telegramId || actorTgId);
+    var targetTgId = String(data.targetTgId || actorTgId);
     var emp = getEmployee(targetTgId);
     var displayName = (emp && emp.username) ? emp.username : (data.employeeName || '');
     var parsedDate = parseDateInput_(data.date, data.dateISO);
