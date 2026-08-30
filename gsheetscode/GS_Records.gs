@@ -5,6 +5,12 @@
 
 function addRecord(data, auth, actorTgId) {
   if (!auth.canAdd) return { success: false, error: "Sizda amal qo'shish ruxsati yo'q!" };
+  
+  var globalSettings = getGlobalSettings_();
+  if (globalSettings.onlyBugalterAdd && !auth.isBugalter && !auth.isSuperAdmin) {
+    return { success: false, error: "Faqat Bugalter amal qo'sha oladi!" };
+  }
+  
   var notifyPayload = null;
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
@@ -14,8 +20,15 @@ function addRecord(data, auth, actorTgId) {
     if (!parsedDate) parsedDate = parseDateInput_(new Date(), null);
     var forPeriod = String(data.actionPeriod || '').trim();
     
+    var isForSelf = (String(data.telegramId) === String(actorTgId));
+    var isBugalter = auth.isBugalter || auth.isSuperAdmin;
+    var initialStatus = 'Tasdiqlandi';
+    if (isBugalter && !isForSelf) {
+        initialStatus = 'Kutilmoqda';
+    }
+    
     // OPTIMIZED: Batch append with format in single operation
-    var newRow = [displayName, data.telegramId || '', Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, forPeriod ? "'" + forPeriod : ""];
+    var newRow = [displayName, data.telegramId || '', Number(data.amountUZS) || 0, Number(data.amountUSD) || 0, Number(data.rate) || 0, data.comment || '', parsedDate.dateObj, 0, forPeriod ? "'" + forPeriod : "", initialStatus];
     dataSheet.appendRow(newRow);
     var row = dataSheet.getLastRow();
     
@@ -23,9 +36,9 @@ function addRecord(data, auth, actorTgId) {
     var formats = [['dd/MM/yyyy', '0', '@']];
     dataSheet.getRange(row, 7, 1, 3).setNumberFormats(formats);
     
-    var appendedValues = dataSheet.getRange(row, 1, 1, 9).getValues()[0];
+    var appendedValues = dataSheet.getRange(row, 1, 1, 10).getValues()[0];
     addAuditLog_(actorTgId, 'add_record', row, null, rowToRecordForAudit_(appendedValues), 'created');
-    notifyPayload = { employeeName: displayName, amountUZS: Number(data.amountUZS) || 0, amountUSD: Number(data.amountUSD) || 0, rate: Number(data.rate) || 0, comment: data.comment || '', date: parsedDate.display, actionPeriod: forPeriod };
+    notifyPayload = { employeeName: displayName, amountUZS: Number(data.amountUZS) || 0, amountUSD: Number(data.amountUSD) || 0, rate: Number(data.rate) || 0, comment: data.comment || '', date: parsedDate.display, actionPeriod: forPeriod, tgId: data.telegramId, rowId: row, initialStatus: initialStatus };
     
     // OPTIMIZED: Reset data cache after write
     resetDataCache_();
@@ -36,7 +49,13 @@ function addRecord(data, auth, actorTgId) {
     return { success: true, rowId: row };
   });
   if (!writeResult.success) return writeResult;
-  if (notifyPayload) sendTelegramNotification(notifyPayload);
+  if (notifyPayload) {
+      if (notifyPayload.initialStatus === 'Kutilmoqda') {
+          sendSalaryConfirmationToEmployee_(notifyPayload.tgId, notifyPayload.rowId, notifyPayload.employeeName, notifyPayload.amountUZS, notifyPayload.amountUSD, notifyPayload.rate, notifyPayload.comment, notifyPayload.date, notifyPayload.actionPeriod);
+      } else {
+          sendTelegramNotification(notifyPayload);
+      }
+  }
   return writeResult;
 }
 
@@ -66,7 +85,8 @@ function adminGetAll(options) {
     if (!matchesAdminFilters_(name, comment, dateMeta, ap, opts)) continue;
     var amountUZS = Number(row[DATA_COL.AMOUNT_UZS]) || 0;
     totalUZS += amountUZS;
-    records.push({ rowId: i + 1, name: name, telegramId:String(row[DATA_COL.TG_ID] || ''), amountUZS: amountUZS, amountUSD: Number(row[DATA_COL.AMOUNT_USD]) || 0, rate: Number(row[DATA_COL.RATE]) || 0, comment: comment, date: dateText, actionPeriod: ap });
+    var status = String(row[DATA_COL.STATUS] || 'Tasdiqlandi');
+    records.push({ rowId: i + 1, name: name, telegramId:String(row[DATA_COL.TG_ID] || ''), amountUZS: amountUZS, amountUSD: Number(row[DATA_COL.AMOUNT_USD]) || 0, rate: Number(row[DATA_COL.RATE]) || 0, comment: comment, date: dateText, actionPeriod: ap, status: status });
   }
   var employees = Object.keys(employeeSet).sort();
   var years = Object.keys(yearSet).sort(function (a, b) { return Number(b) - Number(a); });
@@ -88,6 +108,10 @@ function adminGetAll(options) {
 
 function selfEditRecord(data, actorTgId) {
   var auth = checkUserRoles(actorTgId);
+  var globalSettings = getGlobalSettings_();
+  if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+    return { success: false, error: "Xodimlar uchun tahrirlash va o'chirish taqiqlangan!" };
+  }
   var rowId = Number(data.rowId);
   var reason = String(data.reason || '').trim();
   if (!reason) return { success: false, error: "Tahrirlash sababini ko'rsatishingiz shart!" };
@@ -123,6 +147,10 @@ function selfEditRecord(data, actorTgId) {
 
 function selfDeleteRecord(rowId, actorTgId, reason) {
   var auth = checkUserRoles(actorTgId);
+  var globalSettings = getGlobalSettings_();
+  if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+    return { success: false, error: "Xodimlar uchun tahrirlash va o'chirish taqiqlangan!" };
+  }
   var rowIdNum = Number(rowId);
   var reasonText = String(reason || '').trim();
   if (!reasonText) return { success: false, error: "O'chirish sababini ko'rsatishingiz shart!" };

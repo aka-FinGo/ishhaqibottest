@@ -129,6 +129,9 @@ function processUserData(data) {
     myCanAdd = data.canAdd !== false;
     myUsername = data.username || '';
     adminContactId = String(data.adminContactId || '').trim();
+    if (data.globalSettings) {
+        Object.assign(globalSettings, data.globalSettings);
+    }
     const displayName = data.username || (user ? user.first_name : 'Xodim');
     document.getElementById('greeting').innerText = `Salom, ${displayName}!`;
 
@@ -781,6 +784,12 @@ function switchDashboardSub(areaId, btn) {
 function checkAddPermission() {
     if (!myInList) { showPermWarning('⚠️ Siz tizimda ro\'yxatdan o\'tmagan xodimsiz!', 'Amal qo\'shish uchun SuperAdminga murojaat qiling.'); return false; }
     if (!myCanAdd) { showPermWarning('🚫 Amal qo\'shish ruxsati yo\'q!', 'Sizda ruxsat yo\'q. SuperAdminga murojaat qiling.'); return false; }
+    
+    if (globalSettings.onlyBugalterAdd && myRole !== 'Bugalter' && myRole !== 'SuperAdmin') {
+        showPermWarning('🚫 Faqat Bugalter kirita oladi!', 'Hozirgi vaqtda faqat Bugalter amal qo\'sha oladi.');
+        return false;
+    }
+    
     document.getElementById('permWarning').classList.add('hidden');
     document.getElementById('addFormContent').classList.remove('hidden');
     return true;
@@ -835,14 +844,14 @@ async function switchAdminSub(areaId, btn) {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
 
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea', 'adminSettingsArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));
     if (document.getElementById(areaId)) document.getElementById(areaId).classList.remove('hidden');
     if (btn) btn.classList.add('active');
 
-    if (['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea'].includes(areaId)) {
+    if (['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminSettingsArea'].includes(areaId)) {
         await ensureAdminDataLoaded();
     }
 
@@ -857,6 +866,7 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminNotifyArea') { loadNotifyTargets(); loadReminderTextSettings(); cancelReminderSend(); loadDirectorNotifySetting(); }
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
     if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
+    if (areaId === 'adminSettingsArea') { loadGlobalSettingsUI(); }
 }
 
 function toggleRate() {

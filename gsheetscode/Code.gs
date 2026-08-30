@@ -43,7 +43,7 @@ function doPost(e) {
     var result;
 
     // Yozish amallari uchun LockService
-    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'kvadrat_revert', 'force_reassign_step', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report'];
+    var writeActions = ['add', 'admin_edit', 'admin_delete', 'self_edit', 'self_delete', 'add_hodim', 'update_hodim', 'delete_hodim', 'kvadrat_add', 'kvadrat_edit', 'kvadrat_delete', 'kvadrat_claim', 'kvadrat_revert', 'force_reassign_step', 'workflow_save_config', 'positions_save_all', 'ai_save_config', 'ai_run_report', 'set_global_setting'];
     var lock = null;
     if (writeActions.indexOf(action) !== -1) {
       lock = LockService.getScriptLock();
@@ -249,6 +249,16 @@ function doPost(e) {
         result = setWorkflowStrictMode(data.isWorkflowStrict);
         break;
 
+      case "get_global_settings":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin sozlamalarni ko'ra oladi" });
+        result = { success: true, settings: getGlobalSettings_() };
+        break;
+        
+      case "set_global_setting":
+        if (!auth.isSuperAdmin) return sendJSON({ success:false, error: "Faqat SuperAdmin sozlamalarni o'zgartira oladi" });
+        result = setGlobalSetting_(data.key, data.value);
+        break;
+
       case "positions_get_all":
         result = { success:true, positions: getAllPositions() };
         break;
@@ -305,12 +315,45 @@ function deleteWebhook() {
 }
 
 function handleTelegramUpdate_(update) {
+  if (update && update.callback_query) {
+    handleCallbackQuery_(update.callback_query);
+    return;
+  }
   var msg = update && update.message ? update.message : null;
   if (!msg || !msg.from) return;
 
   var text = String(msg.text || '').trim();
   if (text.indexOf('/start') === 0) {
     handleStartCommand_(msg);
+  }
+}
+
+function handleCallbackQuery_(query) {
+  var data = query.data || '';
+  var chatId = query.message.chat.id;
+  var messageId = query.message.message_id;
+  var actorTgId = query.from.id;
+  
+  if (data.indexOf('conf_sal_') === 0 || data.indexOf('rej_sal_') === 0) {
+    var isConfirm = data.indexOf('conf_sal_') === 0;
+    var rowId = parseInt(data.replace('conf_sal_', '').replace('rej_sal_', ''), 10);
+    
+    withWriteLock_(function() {
+      var dataSheet = getSheets().dataSheet;
+      var rowData = dataSheet.getRange(rowId, 1, 1, 10).getValues()[0];
+      var newStatus = isConfirm ? 'Tasdiqlandi' : 'Rad etildi';
+      dataSheet.getRange(rowId, DATA_COL.STATUS + 1).setValue(newStatus);
+      addAuditLog_(actorTgId, isConfirm ? 'confirm_record' : 'reject_record', rowId, rowToRecordForAudit_(rowData), 'updated', newStatus);
+      resetDataCache_();
+      touchDataVersion(DV_KEYS.FINANCE);
+      return { success: true };
+    });
+    
+    var originalText = query.message.text || '';
+    // Xabar textidagi HTML teglar o'chib ketishining oldini olish uchun HTML formatni ishlatmagan ma'qul
+    var newText = originalText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi" : "❌ Rad etildi");
+    tgEditMessageText_(chatId, messageId, newText, null, { inline_keyboard: [] });
+    tgAnswerCallbackQuery_(query.id, isConfirm ? "Tasdiqlandi!" : "Rad etildi!", false);
   }
 }
 

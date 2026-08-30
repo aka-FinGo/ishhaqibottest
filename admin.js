@@ -274,6 +274,48 @@ async function deleteUser(id) {
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     initAdminCache();
-    loadAdminData();
+    if (typeof loadAdminData === 'function') loadAdminData();
     setupEventListeners();
 });
+
+// Global settings UI functions
+async function loadGlobalSettingsUI() {
+    try {
+        const res = await apiRequest({ action: 'get_global_settings' });
+        if (res.success && res.settings) {
+            Object.assign(globalSettings, res.settings);
+            
+            const el1 = document.getElementById('settingOnlyBugalterAdd');
+            if (el1) el1.checked = globalSettings.onlyBugalterAdd;
+            
+            const el2 = document.getElementById('settingDisableEmpEditDelete');
+            if (el2) el2.checked = globalSettings.disableEmpEditDelete;
+            
+            const el3 = document.getElementById('settingNotifyDirector');
+            if (el3) el3.checked = globalSettings.notifyDirector;
+            
+            const el4 = document.getElementById('settingWorkflowStrictMode');
+            if (el4) el4.checked = globalSettings.workflowStrictMode;
+        }
+    } catch (e) {
+        showError("Sozlamalarni yuklashda xatolik");
+    }
+}
+
+async function toggleGlobalSettingUI(key, value) {
+    try {
+        const res = await apiRequest({ action: 'set_global_setting', key: key, value: value });
+        if (res.success) {
+            showSuccess("Sozlama saqlandi!");
+            // Update local state
+            if (key === 'ONLY_BUGALTER_ADD') globalSettings.onlyBugalterAdd = value;
+            if (key === 'DISABLE_EMP_EDIT_DELETE') globalSettings.disableEmpEditDelete = value;
+            if (key === 'NOTIFY_DIRECTOR') globalSettings.notifyDirector = value;
+            if (key === 'WORKFLOW_STRICT_MODE') globalSettings.workflowStrictMode = value;
+        } else {
+            showError("Saqlashda xatolik: " + res.error);
+        }
+    } catch (e) {
+        showError("Saqlashda xatolik: " + e.message);
+    }
+}

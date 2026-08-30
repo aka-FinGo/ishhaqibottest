@@ -78,20 +78,35 @@ function showDetailModal(r, mode) {
                 : '';
         }
     } else if (mode === 'self') {
-        actionBtns = `
-            <div class="dm-act-row">
-                <button class="dm-act-btn dm-act-btn--edit"
-                    title="Tahrirlash"
-                    onclick="closeDetailModal();openSelfEdit(${rowId})">✏️</button>
-                <button class="dm-act-btn dm-act-btn--del"
-                    title="O'chirish"
-                    onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑</button>
-            </div>`;
+        if (globalSettings.disableEmpEditDelete && myRole !== 'SuperAdmin' && !myPermissions.canEdit) {
+            actionBtns = '';
+        } else {
+            actionBtns = `
+                <div class="dm-act-row">
+                    <button class="dm-act-btn dm-act-btn--edit"
+                        title="Tahrirlash"
+                        onclick="closeDetailModal();openSelfEdit(${rowId})">✏️</button>
+                    <button class="dm-act-btn dm-act-btn--del"
+                        title="O'chirish"
+                        onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑</button>
+                </div>`;
+        }
     }
 
     /* Valyuta badge */
     const badgeClass = isUsd ? 'dm-badge--usd' : 'dm-badge--uzs';
     const badgeLabel  = isUsd ? "💵 DOLLAR TO'LOVI" : "💰 SO'M TO'LOVI";
+    
+    /* Status badge */
+    const status = r.status || 'Tasdiqlandi';
+    let statusBadge = '';
+    if (status === 'Tasdiqlandi') {
+        statusBadge = `<span style="background:#22c55e; color:#fff; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:10px;">✅ Tasdiqlangan</span>`;
+    } else if (status === 'Kutilmoqda') {
+        statusBadge = `<span style="background:#f59e0b; color:#fff; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:10px;">⏳ Kutilmoqda</span>`;
+    } else if (status === 'Rad etildi') {
+        statusBadge = `<span style="background:#ef4444; color:#fff; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:10px;">❌ Rad etilgan</span>`;
+    }
 
     /* Davr chipi */
     const periodChip = safePeriod
@@ -139,7 +154,10 @@ function showDetailModal(r, mode) {
         <div class="modal-drag"></div>
 
         <div class="dm-top-row">
-            <div class="dm-badge ${badgeClass}">${badgeLabel}</div>
+            <div style="display:flex; align-items:center;">
+                <div class="dm-badge ${badgeClass}">${badgeLabel}</div>
+                ${statusBadge}
+            </div>
             ${actionBtns}
         </div>
 

@@ -30,7 +30,8 @@ var DATA_COL = {
   COMMENT: 5,
   DATE: 6,
   IS_DELETED: 7,
-  ACTION_PERIOD: 8
+  ACTION_PERIOD: 8,
+  STATUS: 9
 };
 
 var _MEMO = {
@@ -146,10 +147,11 @@ function synchronizeEmployeeRowsToV2_(empSheet, hideLegacyColumns) {
 
 function ensureDataInfrastructure_(dataSheet) {
   if (!dataSheet) return;
-  if (dataSheet.getMaxColumns() < 9) dataSheet.insertColumnsAfter(dataSheet.getMaxColumns(), 9 - dataSheet.getMaxColumns());
-  var header = dataSheet.getRange(1, 1, 1, 9).getValues()[0];
+  if (dataSheet.getMaxColumns() < 10) dataSheet.insertColumnsAfter(dataSheet.getMaxColumns(), 10 - dataSheet.getMaxColumns());
+  var header = dataSheet.getRange(1, 1, 1, 10).getValues()[0];
   if (!header[DATA_COL.IS_DELETED]) dataSheet.getRange(1, DATA_COL.IS_DELETED + 1).setValue('IsDeleted');
   if (!header[DATA_COL.ACTION_PERIOD]) dataSheet.getRange(1, DATA_COL.ACTION_PERIOD + 1).setValue('Davri');
+  if (!header[DATA_COL.STATUS]) dataSheet.getRange(1, DATA_COL.STATUS + 1).setValue('Status');
 }
 
 function ensureWorkflowInfrastructure_(sh) {
@@ -267,7 +269,8 @@ function initUser(tgId, auth, data) {
         rate: Number(row[DATA_COL.RATE]) || 0,
         comment: String(row[DATA_COL.COMMENT] || ''),
         date: formatFn(row[DATA_COL.DATE]),
-        actionPeriod: apFn(row[DATA_COL.ACTION_PERIOD])
+        actionPeriod: apFn(row[DATA_COL.ACTION_PERIOD]),
+        status: String(row[DATA_COL.STATUS] || 'Tasdiqlandi')
       });
     }
   }
@@ -302,8 +305,28 @@ function initUser(tgId, auth, data) {
     isWorkflowStrict: getWorkflowStrictMode(),
     data: userRecords,
     employeeList: employeeListFull,
-    dataVersions: (typeof getDataVersions === 'function') ? getDataVersions() : {}
+    dataVersions: (typeof getDataVersions === 'function') ? getDataVersions() : {},
+    globalSettings: getGlobalSettings_()
   };
+}
+
+/**
+ * Global Settings
+ */
+function getGlobalSettings_() {
+  var p = PropertiesService.getScriptProperties();
+  return {
+    onlyBugalterAdd: p.getProperty('ONLY_BUGALTER_ADD') === '1',
+    disableEmpEditDelete: p.getProperty('DISABLE_EMP_EDIT_DELETE') === '1',
+    notifyDirector: p.getProperty('NOTIFY_DIRECTOR') === '1',
+    workflowStrictMode: p.getProperty('WORKFLOW_STRICT_MODE') === '1'
+  };
+}
+
+function setGlobalSetting_(key, val) {
+  var p = PropertiesService.getScriptProperties();
+  p.setProperty(key, val ? '1' : '0');
+  return { success: true };
 }
 
 /**

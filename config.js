@@ -21,6 +21,7 @@ let myFullRecords = [];
 let myFilteredRecords = [];
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
+let globalSettings = { onlyBugalterAdd: false, disableEmpEditDelete: false, notifyDirector: false, strictWorkflow: false };
 
 let myRole = 'User';
 let myUsername = '';   // Sheetdan kelgan Ism

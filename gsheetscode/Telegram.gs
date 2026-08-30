@@ -172,3 +172,68 @@ function sendAvansRequestNotification(username, amount, reason) {
     Logger.log('[sendAvansRequestNotification] ' + e.message);
   }
 }
+
+function sendSalaryConfirmationToEmployee_(tgId, rowId, employeeName, amountUZS, amountUSD, rate, comment, dateStr, actionPeriod) {
+  var uzsText = Number(amountUZS) > 0 ? "\n💰 " + Number(amountUZS).toLocaleString() + " UZS" : "";
+  var usdText = Number(amountUSD) > 0 ? "\n💵 $" + Number(amountUSD).toLocaleString() : "";
+  var rateText = Number(amountUSD) > 0 && Number(rate) > 0 ? "\n📈 Kurs: " + Number(rate).toLocaleString() + " UZS" : "";
+  var periodText = actionPeriod ? "\n📅 Davr: " + actionPeriod : "";
+  
+  var msg = "⚠️ <b>Yangi amal tasdiqlash uchun</b>\n" +
+            "Sizning hisobingizga quyidagi amal kiritildi. Iltimos, tasdiqlang yoki rad eting:\n" +
+            "👤 " + (employeeName || "—") +
+            uzsText + usdText + rateText + periodText +
+            "\n📝 " + (comment || "—") +
+            "\n📅 " + (dateStr || "—");
+            
+  var replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: "✅ Tasdiqlash", callback_data: "conf_sal_" + rowId },
+        { text: "❌ Rad etish", callback_data: "rej_sal_" + rowId }
+      ]
+    ]
+  };
+  
+  return tgSendMessage_(tgId, msg, "HTML", replyMarkup);
+}
+
+function tgAnswerCallbackQuery_(callbackQueryId, text, showAlert) {
+  var url = "https://api.telegram.org/bot" + CONFIG.BOT_TOKEN + "/answerCallbackQuery";
+  var payload = {
+    callback_query_id: String(callbackQueryId),
+    text: String(text || ''),
+    show_alert: !!showAlert
+  };
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    muteHttpExceptions: true,
+    payload: JSON.stringify(payload)
+  };
+
+  var resp = UrlFetchApp.fetch(url, options);
+  try { return JSON.parse(resp.getContentText()); } catch (e) { return {}; }
+}
+
+function tgEditMessageText_(chatId, messageId, text, parseMode, replyMarkup) {
+  var url = "https://api.telegram.org/bot" + CONFIG.BOT_TOKEN + "/editMessageText";
+  var payload = {
+    chat_id: String(chatId),
+    message_id: messageId,
+    text: String(text)
+  };
+  if (parseMode) payload.parse_mode = parseMode;
+  if (replyMarkup) payload.reply_markup = replyMarkup;
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    muteHttpExceptions: true,
+    payload: JSON.stringify(payload)
+  };
+
+  var resp = UrlFetchApp.fetch(url, options);
+  try { return JSON.parse(resp.getContentText()); } catch (e) { return {}; }
+}
