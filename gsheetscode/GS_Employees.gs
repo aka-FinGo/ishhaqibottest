@@ -57,6 +57,25 @@ function getHodimlar() {
 }
 
 function getEmployee(tgId) {
+  if (isConfigSuperAdminId_(tgId)) {
+    return {
+      sheetRow: -1,
+      tgId: String(tgId),
+      username: String((CONFIG && CONFIG.SUPER_ADMIN_NAME) || 'SuperAdmin'),
+      roleKey: 'SUPER_ADMIN',
+      role: 'SuperAdmin',
+      canAdd: true,
+      isSuperAdmin: true,
+      isDirektor: false,
+      isAdmin: true,
+      isBugalter: false,
+      permissions: { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true },
+      overrides: {},
+      positions: ['Loyihachi', 'Yig\'uvchi', 'Qadoqlovchi'],
+      group: 'ADMIN',
+      isSardor: true
+    };
+  }
   var rows = getEmployeeRows_();
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][COL.TG_ID]) === String(tgId)) {

@@ -245,7 +245,7 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
     const selEl = document.getElementById('addSelectedTgId');
     if (selEl && selEl.value !== '') {
         targetTgId = selEl.value;
-        targetEmpName = selEl.options[selEl.selectedIndex].text;
+        targetEmpName = selEl.options[selEl.selectedIndex].getAttribute('data-emp-name') || selEl.options[selEl.selectedIndex].text;
     }
 
     if (isDuplicate) {
@@ -273,18 +273,22 @@ async function executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, commen
         });
         if (data.success) {
             status.style.color = 'var(--green-dark)'; status.innerText = '✅ Muvaffaqiyatli saqlandi!';
-            myFullRecords.push({
-                rowId: data.rowId || Date.now(),
-                name: myUsername || employeeName || '—',
-                amountUZS: Number(amountUZS) || 0,
-                amountUSD: Number(amountUSD) || 0,
-                rate: Number(rate) || 0,
-                comment: comment,
-                date: date,
-                actionPeriod: actionPeriod,
-                dateISO: today.iso
-            });
-            applyMyFilters();
+            if (String(targetTgId) === String(telegramId)) {
+                myFullRecords.push({
+                    rowId: data.rowId || Date.now(),
+                    name: myUsername || employeeName || '—',
+                    amountUZS: Number(amountUZS) || 0,
+                    amountUSD: Number(amountUSD) || 0,
+                    rate: Number(rate) || 0,
+                    comment: comment,
+                    date: date,
+                    actionPeriod: actionPeriod,
+                    dateISO: today.iso
+                });
+                applyMyFilters();
+            } else {
+                showToastMsg("✅ Amal " + targetEmpName + " hisobiga saqlandi va xodimga tasdiqlash uchun xabar yuborildi!");
+            }
             resetAddForm();
             btn.disabled = false; btn.innerText = '💾 Saqlash';
             if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');

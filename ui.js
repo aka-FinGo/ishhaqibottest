@@ -800,7 +800,7 @@ function checkAddPermission() {
                 const empName = e.username || e.name || e.displayName || ('ID: ' + e.tgId);
                 const roleLabel = e.lavozim || e.role || e.roleKey || '';
                 const label = roleLabel ? (empName + ' (' + roleLabel + ')') : empName;
-                addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}">${label}</option>`);
+                addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}" data-emp-name="${escapeHtml(empName)}">${label}</option>`);
             }
         });
     } else {

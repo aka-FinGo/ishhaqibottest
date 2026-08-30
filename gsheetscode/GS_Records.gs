@@ -14,23 +14,31 @@ function addRecord(data, auth, actorTgId) {
   var notifyPayload = null;
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
-    var targetTgId = String(data.targetTgId || actorTgId);
+    var targetTgId = String(data.targetTgId || actorTgId).trim();
     var emp = getEmployee(targetTgId);
-    var displayName = (emp && emp.username) ? emp.username : (data.employeeName || '');
+    var displayName = (emp && emp.username) ? emp.username : String(data.employeeName || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (!emp && !data.employeeName) {
+      displayName = 'Xodim (' + targetTgId + ')';
+    }
+    
     var parsedDate = parseDateInput_(data.date, data.dateISO);
     if (!parsedDate) parsedDate = parseDateInput_(new Date(), null);
     var forPeriod = String(data.actionPeriod || '').trim();
     
     var isBugalter = auth.isBugalter || auth.isSuperAdmin;
+    var isSelf = (targetTgId === String(actorTgId));
     var initialStatus = 'Tasdiqlandi';
     var notifyTarget = null;
     
-    if (isBugalter && targetTgId !== String(actorTgId)) {
+    if (isBugalter && !isSelf) {
         initialStatus = 'Kutilmoqda';
         notifyTarget = 'employee';
     } else if (!isBugalter) {
         initialStatus = 'Kutilmoqda';
         notifyTarget = 'bugalter';
+    } else if (isBugalter && isSelf) {
+        initialStatus = 'Tasdiqlandi';
+        notifyTarget = null;
     }
     
     // OPTIMIZED: Batch append with format in single operation
@@ -56,12 +64,11 @@ function addRecord(data, auth, actorTgId) {
   });
   if (!writeResult.success) return writeResult;
   if (notifyPayload) {
+      sendTelegramNotification(notifyPayload);
       if (notifyPayload.notifyTarget === 'employee') {
           sendSalaryConfirmationToEmployee_(notifyPayload.tgId, notifyPayload.rowId, notifyPayload.employeeName, notifyPayload.amountUZS, notifyPayload.amountUSD, notifyPayload.rate, notifyPayload.comment, notifyPayload.date, notifyPayload.actionPeriod);
       } else if (notifyPayload.notifyTarget === 'bugalter') {
           sendSalaryConfirmationToBugalters_(notifyPayload.actorTgId, notifyPayload.rowId, notifyPayload.employeeName, notifyPayload.amountUZS, notifyPayload.amountUSD, notifyPayload.rate, notifyPayload.comment, notifyPayload.date, notifyPayload.actionPeriod);
-      } else {
-          sendTelegramNotification(notifyPayload);
       }
   }
   return writeResult;

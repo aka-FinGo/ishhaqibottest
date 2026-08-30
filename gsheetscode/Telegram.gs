@@ -221,12 +221,16 @@ function sendSalaryConfirmationToBugalters_(actorTgId, rowId, empName, uzs, usd,
   };
   
   // Bugalterlar va SuperAdminga yuborish
-  var employees = getCacheOrFetch_('global_employees_data', buildEmployeeList, 86400);
+  var empRes = getHodimlar();
+  var employees = (empRes && empRes.data) ? empRes.data : [];
   for (var i = 0; i < employees.length; i++) {
     var e = employees[i];
-    if (e.role === 'Bugalter' || e.role === 'SuperAdmin') {
+    if ((e.role === 'BUGALTER' || e.isBugalter) && e.tgId && String(e.tgId) !== String(CONFIG.SUPER_ADMIN_ID)) {
       tgSendMessage_(e.tgId, msg, "HTML", replyMarkup);
     }
+  }
+  if (CONFIG.SUPER_ADMIN_ID) {
+    tgSendMessage_(CONFIG.SUPER_ADMIN_ID, msg, "HTML", replyMarkup);
   }
 }
 
