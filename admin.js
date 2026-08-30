@@ -279,23 +279,29 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Global settings UI functions
+function updateSettingsDOM() {
+    if (typeof globalSettings === 'undefined') return;
+    
+    const el1 = document.getElementById('settingOnlyBugalterAdd');
+    if (el1) el1.checked = globalSettings.onlyBugalterAdd;
+    
+    const el2 = document.getElementById('settingDisableEmpEditDelete');
+    if (el2) el2.checked = globalSettings.disableEmpEditDelete;
+    
+    const el3 = document.getElementById('settingNotifyDirector');
+    if (el3) el3.checked = globalSettings.notifyDirector;
+    
+    const el4 = document.getElementById('settingWorkflowStrictMode');
+    if (el4) el4.checked = globalSettings.workflowStrictMode;
+}
+
 async function loadGlobalSettingsUI() {
+    updateSettingsDOM(); // Darhol DOMni yangilaymiz
     try {
         const res = await apiRequest({ action: 'get_global_settings' });
         if (res.success && res.settings) {
             Object.assign(globalSettings, res.settings);
-            
-            const el1 = document.getElementById('settingOnlyBugalterAdd');
-            if (el1) el1.checked = globalSettings.onlyBugalterAdd;
-            
-            const el2 = document.getElementById('settingDisableEmpEditDelete');
-            if (el2) el2.checked = globalSettings.disableEmpEditDelete;
-            
-            const el3 = document.getElementById('settingNotifyDirector');
-            if (el3) el3.checked = globalSettings.notifyDirector;
-            
-            const el4 = document.getElementById('settingWorkflowStrictMode');
-            if (el4) el4.checked = globalSettings.workflowStrictMode;
+            updateSettingsDOM(); // Yangi ma'lumot kelsa yana yangilaymiz
         }
     } catch (e) {
         showError("Sozlamalarni yuklashda xatolik");
@@ -303,10 +309,13 @@ async function loadGlobalSettingsUI() {
 }
 
 async function toggleGlobalSettingUI(key, value) {
+    if (window.tg && tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('light');
+    }
     try {
         const res = await apiRequest({ action: 'set_global_setting', key: key, value: value });
         if (res.success) {
-            showSuccess("Sozlama saqlandi!");
+            showSuccess("Sozlama muvaffaqiyatli saqlandi!");
             // Update local state
             if (key === 'ONLY_BUGALTER_ADD') globalSettings.onlyBugalterAdd = value;
             if (key === 'DISABLE_EMP_EDIT_DELETE') globalSettings.disableEmpEditDelete = value;
@@ -314,8 +323,12 @@ async function toggleGlobalSettingUI(key, value) {
             if (key === 'WORKFLOW_STRICT_MODE') globalSettings.workflowStrictMode = value;
         } else {
             showError("Saqlashda xatolik: " + res.error);
+            // Revert DOM on error
+            updateSettingsDOM();
         }
     } catch (e) {
         showError("Saqlashda xatolik: " + e.message);
+        // Revert DOM on error
+        updateSettingsDOM();
     }
 }
