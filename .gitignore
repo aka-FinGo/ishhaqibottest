@@ -83,3 +83,6 @@ old_style.css
 .claude/*
 Dockerfile
 *.zip
+HANDOFF.md
+handoff.md
+*handoff*
