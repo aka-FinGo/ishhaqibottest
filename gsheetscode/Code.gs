@@ -414,11 +414,9 @@ function handleCallbackQuery_(query) {
     });
     
     if (success) {
-      var baseText = (query.message && query.message.text) ? query.message.text : '';
       var statusLine = isConfirm ? ("\n\n✅ <b>Tasdiqlandi</b> (" + actorName + ")") : ("\n\n❌ <b>Rad etildi</b> (" + actorName + ")");
-      var updatedText = baseText + statusLine;
       
-      // Barcha yuborilgan xabarlarni sinxron yangilash (Multi-recipient sync)
+      // Barcha yuborilgan xabarlarni (SuperAdmin, Direktor, Bugalter, Xodim) sinxron yangilash
       var trackedJson = cache ? cache.get('trk_sal_' + rowId) : null;
       var trackedList = [];
       if (trackedJson) {
@@ -427,22 +425,27 @@ function handleCallbackQuery_(query) {
       
       var foundCurrent = false;
       for (var k = 0; k < trackedList.length; k++) {
-        if (String(trackedList[k].chatId) === String(chatId)) {
+        if (String(trackedList[k].chatId) === String(chatId) && trackedList[k].messageId === messageId) {
           foundCurrent = true;
           break;
         }
       }
       if (!foundCurrent && chatId && messageId) {
-        trackedList.push({ chatId: String(chatId), messageId: messageId });
+        trackedList.push({ chatId: String(chatId), messageId: messageId, baseText: (query.message ? query.message.text : '') });
       }
       
       for (var j = 0; j < trackedList.length; j++) {
         var item = trackedList[j];
+        var itemBaseText = item.baseText || ((query.message && String(item.chatId) === String(chatId)) ? query.message.text : '');
+        var cleanBaseText = itemBaseText.replace(/\n⏳\s*<i>Holati:\s*Kutilmoqda\.\.\.<\/i>/gi, '').replace(/\n⏳\s*Holati:\s*Kutilmoqda\.\.\./gi, '');
+        var finalMsg = cleanBaseText ? (cleanBaseText + statusLine) : (statusLine.trim());
+        
         try {
-          tgEditMessageText_(item.chatId, item.messageId, updatedText, "HTML", { inline_keyboard: [] });
+          tgEditMessageText_(item.chatId, item.messageId, finalMsg, "HTML", { inline_keyboard: [] });
         } catch (eEdit) {
           try {
-            tgEditMessageText_(item.chatId, item.messageId, baseText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi (" + actorName + ")" : "❌ Rad etildi (" + actorName + ")"), null, { inline_keyboard: [] });
+            var plainMsg = finalMsg.replace(/<[^>]*>/g, '');
+            tgEditMessageText_(item.chatId, item.messageId, plainMsg, null, { inline_keyboard: [] });
           } catch (ignore) {}
         }
       }

@@ -31,17 +31,36 @@ function sendTelegramNotification(data) {
   var rateText= Number(data.amountUSD) > 0 && Number(data.rate) > 0
                 ? "\n📈 Kurs: " + Number(data.rate).toLocaleString() + " UZS" : "";
 
-  var msg = "✅ <b>Yangi amal qo'shildi</b>\n" +
+  var initialStatus = data.initialStatus || '';
+  var statusBadge = initialStatus === 'Kutilmoqda' ? "\n⏳ <i>Holati: Kutilmoqda...</i>" : "";
+
+  var msg = "⚠️ <b>Yangi amal qo'shildi</b>\n" +
             "👤 " + (data.employeeName || "—") +
             uzsText + usdText + rateText +
             "\n📝 " + (data.comment || "—") +
-            "\n📅 " + (data.date    || "—");
+            "\n📅 " + (data.date    || "—") +
+            statusBadge;
 
-  // SuperAdmin ga har doim yuborish
-  tgSendMessage_(CONFIG.CHAT_ID, msg, "HTML");
+  var sentTrack = [];
+  var rowId = data.rowId;
+
+  // SuperAdmin ga yuborish
+  if (CONFIG.CHAT_ID) {
+    var resAdmin = tgSendMessage_(CONFIG.CHAT_ID, msg, "HTML");
+    if (resAdmin && resAdmin.result && resAdmin.result.message_id) {
+      sentTrack.push({ chatId: String(CONFIG.CHAT_ID), messageId: resAdmin.result.message_id, baseText: msg });
+    }
+  }
 
   // Direktorlarga yuborish (agar yoqilgan bo'lsa)
-  sendNotifyToDirectors_(msg);
+  var dirTracks = sendNotifyToDirectors_(msg);
+  if (dirTracks && dirTracks.length > 0) {
+    sentTrack = sentTrack.concat(dirTracks);
+  }
+
+  if (rowId && sentTrack.length > 0) {
+    appendTrackedMessages_(rowId, sentTrack);
+  }
 }
 
 /**
@@ -49,29 +68,59 @@ function sendTelegramNotification(data) {
  * PropertiesService da 'NOTIFY_DIRECTOR' = '1' bo'lsa ishlaydi.
  */
 function sendNotifyToDirectors_(msg) {
+  var sentTracks = [];
   try {
     var props = PropertiesService.getScriptProperties();
     var enabled = props.getProperty('NOTIFY_DIRECTOR');
-    if (enabled !== '1') return; // O'chirilgan — chiqib ketamiz
+    if (enabled !== '1') return sentTracks; // O'chirilgan — chiqib ketamiz
 
     var empRows = getEmployeeRows_();
-    if (!empRows || empRows.length < 2) return;
+    if (!empRows || empRows.length < 2) return sentTracks;
 
     var headers = empRows[0];
     var direktorIdx = headers.indexOf('Direktor');
     var tgIdIdx     = headers.indexOf('TelegramId');
-    if (direktorIdx < 0 || tgIdIdx < 0) return;
+    if (direktorIdx < 0 || tgIdIdx < 0) return sentTracks;
 
     empRows.slice(1).forEach(function(row) {
       var isDirektor = toBool01_(row[direktorIdx]);
       var tgId       = String(row[tgIdIdx] || '').trim();
       if (isDirektor && tgId && tgId !== String(CONFIG.SUPER_ADMIN_ID)) {
-        tgSendMessage_(tgId, msg, "HTML");
+        var res = tgSendMessage_(tgId, msg, "HTML");
+        if (res && res.result && res.result.message_id) {
+          sentTracks.push({ chatId: String(tgId), messageId: res.result.message_id, baseText: msg });
+        }
       }
     });
   } catch(e) {
     Logger.log('[sendNotifyToDirectors_] ' + e.message);
   }
+  return sentTracks;
+}
+
+function appendTrackedMessages_(rowId, newTracks) {
+  if (!rowId || !newTracks || newTracks.length === 0) return;
+  try {
+    var cache = CacheService.getScriptCache();
+    if (!cache) return;
+    var existingJson = cache.get('trk_sal_' + rowId);
+    var list = [];
+    if (existingJson) {
+      try { list = JSON.parse(existingJson); } catch (e) {}
+    }
+    for (var i = 0; i < newTracks.length; i++) {
+      var item = newTracks[i];
+      var exists = false;
+      for (var j = 0; j < list.length; j++) {
+        if (String(list[j].chatId) === String(item.chatId) && list[j].messageId === item.messageId) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) list.push(item);
+    }
+    cache.put('trk_sal_' + rowId, JSON.stringify(list), 21600);
+  } catch (err) {}
 }
 
 function getDefaultReminderTemplate_() {
@@ -197,10 +246,7 @@ function sendSalaryConfirmationToEmployee_(tgId, rowId, employeeName, amountUZS,
   
   var res = tgSendMessage_(tgId, msg, "HTML", replyMarkup);
   if (res && res.result && res.result.message_id) {
-    try {
-      var cache = CacheService.getScriptCache();
-      if (cache) cache.put('trk_sal_' + rowId, JSON.stringify([{ chatId: String(tgId), messageId: res.result.message_id }]), 21600);
-    } catch(e) {}
+    appendTrackedMessages_(rowId, [{ chatId: String(tgId), messageId: res.result.message_id, baseText: msg }]);
   }
   return res;
 }
@@ -236,22 +282,19 @@ function sendSalaryConfirmationToBugalters_(actorTgId, rowId, empName, uzs, usd,
     if ((e.role === 'BUGALTER' || e.isBugalter) && e.tgId && String(e.tgId) !== String(CONFIG.SUPER_ADMIN_ID)) {
       var res = tgSendMessage_(e.tgId, msg, "HTML", replyMarkup);
       if (res && res.result && res.result.message_id) {
-        sentTrack.push({ chatId: String(e.tgId), messageId: res.result.message_id });
+        sentTrack.push({ chatId: String(e.tgId), messageId: res.result.message_id, baseText: msg });
       }
     }
   }
   if (CONFIG.SUPER_ADMIN_ID) {
     var resAdmin = tgSendMessage_(CONFIG.SUPER_ADMIN_ID, msg, "HTML", replyMarkup);
     if (resAdmin && resAdmin.result && resAdmin.result.message_id) {
-      sentTrack.push({ chatId: String(CONFIG.SUPER_ADMIN_ID), messageId: resAdmin.result.message_id });
+      sentTrack.push({ chatId: String(CONFIG.SUPER_ADMIN_ID), messageId: resAdmin.result.message_id, baseText: msg });
     }
   }
   
   if (sentTrack.length > 0) {
-    try {
-      var cache = CacheService.getScriptCache();
-      if (cache) cache.put('trk_sal_' + rowId, JSON.stringify(sentTrack), 21600);
-    } catch(eTrk) {}
+    appendTrackedMessages_(rowId, sentTrack);
   }
 }
 
