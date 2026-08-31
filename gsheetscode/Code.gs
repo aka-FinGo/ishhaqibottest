@@ -333,16 +333,20 @@ function deleteWebhook() {
 }
 
 function handleTelegramUpdate_(update) {
-  if (update && update.callback_query) {
-    handleCallbackQuery_(update.callback_query);
-    return;
-  }
-  var msg = update && update.message ? update.message : null;
-  if (!msg || !msg.from) return;
+  try {
+    if (update && update.callback_query) {
+      handleCallbackQuery_(update.callback_query);
+      return;
+    }
+    var msg = update && update.message ? update.message : null;
+    if (!msg || !msg.from) return;
 
-  var text = String(msg.text || '').trim();
-  if (text.indexOf('/start') === 0) {
-    handleStartCommand_(msg);
+    var text = String(msg.text || '').trim();
+    if (text.indexOf('/start') === 0) {
+      handleStartCommand_(msg);
+    }
+  } catch (err) {
+    Logger.log('[handleTelegramUpdate_ error] ' + err.toString());
   }
 }
 
@@ -355,11 +359,20 @@ function handleCallbackQuery_(query) {
   if (data.indexOf('conf_sal_') === 0 || data.indexOf('rej_sal_') === 0) {
     var isConfirm = data.indexOf('conf_sal_') === 0;
     var rowId = parseInt(data.replace('conf_sal_', '').replace('rej_sal_', ''), 10);
+    
+    // Tezkor javob (Instant Telegram UI Feedback)
+    tgAnswerCallbackQuery_(query.id, isConfirm ? "✅ Tasdiqlandi!" : "❌ Rad etildi!", false);
+    
     var success = false;
     var errorMsg = '';
     
     withWriteLock_(function() {
       var dataSheet = getSheets().dataSheet;
+      var lastRow = dataSheet.getLastRow();
+      if (rowId < 2 || rowId > lastRow) {
+        errorMsg = "Amal topilmadi!";
+        return { success: false };
+      }
       var rowData = dataSheet.getRange(rowId, 1, 1, 10).getValues()[0];
       var rowTgId = String(rowData[DATA_COL.TG_ID] || '').trim();
       var auth = checkUserRoles(actorTgId);
@@ -382,9 +395,8 @@ function handleCallbackQuery_(query) {
       var originalText = query.message.text || '';
       var newText = originalText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi" : "❌ Rad etildi");
       tgEditMessageText_(chatId, messageId, newText, null, { inline_keyboard: [] });
-      tgAnswerCallbackQuery_(query.id, isConfirm ? "Tasdiqlandi!" : "Rad etildi!", false);
-    } else {
-      tgAnswerCallbackQuery_(query.id, errorMsg || "Xatolik", true);
+    } else if (errorMsg) {
+      tgSendMessage_(chatId, "⚠️ " + errorMsg, null);
     }
   }
 }
@@ -393,6 +405,16 @@ function handleStartCommand_(message) {
   var from = message && message.from ? message.from : {};
   var tgId = String(from.id || '').trim();
   if (!tgId) return;
+
+  // Rate-limit: Bir xodimga 2 daqiqa ichida qayta-qayta /start xabari yuborilishini oldini olish
+  try {
+    var cache = CacheService.getScriptCache();
+    var startKey = 'start_msg_sent_' + tgId;
+    if (cache && cache.get(startKey)) {
+      return; // Yaqinda yuborilgan, spam qilmaymiz
+    }
+    if (cache) cache.put(startKey, '1', 120); // 120 soniya himoya
+  } catch (e) {}
 
   var data = {
     firstName: String(from.first_name || ''),
