@@ -307,6 +307,24 @@ function doPost(e) {
   }
 }
 
+// Webhook o'rnatish
+function setWebhook() {
+  var webAppUrl = "https://script.google.com/macros/s/AKfycbwwCfiCjL6Nvi3uXw6gfLkrXJrV30SS7YKoeQbnzJj0wXieWjTHrcn9vtPBtvonFQa4RA/exec";
+  var url = 'https://api.telegram.org/bot' + CONFIG.BOT_TOKEN +
+            '/setWebhook?url=' + encodeURIComponent(webAppUrl);
+  var res = UrlFetchApp.fetch(url).getContentText();
+  Logger.log(res);
+  return res;
+}
+
+// Webhook holatini ko'rish
+function getWebhookInfo() {
+  var url = 'https://api.telegram.org/bot' + CONFIG.BOT_TOKEN + '/getWebhookInfo';
+  var res = UrlFetchApp.fetch(url).getContentText();
+  Logger.log(res);
+  return res;
+}
+
 // Webhook o'chirish
 function deleteWebhook() {
   var url = 'https://api.telegram.org/bot' + CONFIG.BOT_TOKEN +
