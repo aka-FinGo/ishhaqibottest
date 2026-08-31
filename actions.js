@@ -188,6 +188,12 @@ async function saveEdit(){
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
+    const canGlobalEdit = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
+    if (!canGlobalEdit || (!myPermissions.canEdit && myRole !== 'SuperAdmin')) {
+        showToastMsg("❌ Sizda tahrirlash ruxsati yo'q!", true);
+        return;
+    }
+
     const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
     const canEditAll = isAdmin && myPermissions.canEdit;
     const isOwner = String(r.telegramId) === String(telegramId);
@@ -300,6 +306,12 @@ async function deleteRecord(rowId) {
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
+    const canGlobalDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
+    if (!canGlobalDelete || (!myPermissions.canDelete && myRole !== 'SuperAdmin')) {
+        showToastMsg("❌ Sizda o'chirish ruxsati yo'q!", true);
+        return;
+    }
+
     const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
     const canDeleteAll = isAdmin && myPermissions.canDelete;
     const isOwner = String(r.telegramId) === String(telegramId);
@@ -333,6 +345,12 @@ async function deleteRecord(rowId) {
 async function deleteOwnRecord(rowId) {
     const r = findRecordByRowId(rowId);
     if (!r) return;
+
+    const canGlobalDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
+    if (!canGlobalDelete || (!myPermissions.canDelete && myRole !== 'SuperAdmin')) {
+        showToastMsg("❌ Sizda o'chirish ruxsati yo'q!", true);
+        return;
+    }
 
     if (String(r.telegramId) !== String(telegramId)) {
         showToastMsg("❌ Siz faqat o'zingiz kiritgan ma'lumotni o'chira olasiz", true);

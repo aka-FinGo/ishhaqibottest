@@ -250,6 +250,13 @@ function kvadratEdit(data, auth, actorTgId) {
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
     // Ruxsatni tekshirish
+    var globalSettings = getGlobalSettings_();
+    if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+      return { success: false, error: "Buyurtmalarni tahrirlash taqiqlangan!" };
+    }
+    if (!auth.isSuperAdmin && !auth.permissions.canEdit) {
+      return { success: false, error: "Sizda buyurtmalarni tahrirlash ruxsati yo'q!" };
+    }
     var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
     var isOwner = ownerTgId === String(actorTgId);
     var canEditAll = isAdmin && auth.permissions.canEdit;
@@ -335,6 +342,13 @@ function kvadratDelete(data, auth, actorTgId) {
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
     // Ruxsatni tekshirish
+    var globalSettings = getGlobalSettings_();
+    if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+      return { success: false, error: "Buyurtmalarni o'chirish taqiqlangan!" };
+    }
+    if (!auth.isSuperAdmin && !auth.permissions.canDelete) {
+      return { success: false, error: "Sizda buyurtmalarni o'chirish ruxsati yo'q!" };
+    }
     var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
     var isOwner = ownerTgId === String(actorTgId);
     var canDeleteAll = isAdmin && auth.permissions.canDelete;

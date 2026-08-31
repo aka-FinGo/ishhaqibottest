@@ -46,54 +46,39 @@ function showDetailModal(r, mode) {
     /* Amal tugmalari */
     let actionBtns = '';
     const isOwner = String(r.telegramId) === String(telegramId);
+    
+    // Tahrirlash va o'chirish huquqlari (SuperAdmin uchun doim ruxsat, boshqalar uchun global taqiq yo'q bo'lsa va individual ruxsat berilgan bo'lsa)
+    const canGlobalEditDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
+    const canEd = (myRole === 'SuperAdmin') || (canGlobalEditDelete && !!(myPermissions && myPermissions.canEdit));
+    const canDel = (myRole === 'SuperAdmin') || (canGlobalEditDelete && !!(myPermissions && myPermissions.canDelete));
 
     if (mode === 'admin' || mode === true) {
         if (isOwner) {
-            if (globalSettings.disableEmpEditDelete && myRole !== 'SuperAdmin' && !myPermissions.canEdit) {
-                actionBtns = '';
-            } else {
-                actionBtns = `
-                <div class="dm-act-row">
-                    <button class="dm-act-btn dm-act-btn--edit"
-                        title="Tahrirlash"
-                        onclick="closeDetailModal();openEdit(${rowId})">✏️</button>
-                    <button class="dm-act-btn dm-act-btn--del"
-                        title="O'chirish"
-                        onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>
-                </div>`;
-            }
-        } else {
-            /* Boshqalarning amallari — ruxsatga qarab */
-            const canDel = myRole === 'SuperAdmin' || myPermissions.canDelete;
-            const canEd  = myRole === 'SuperAdmin' || myPermissions.canEdit;
             const editBtn = canEd
-                ? `<button class="dm-act-btn dm-act-btn--edit"
-                    title="Tahrirlash"
-                    onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
+                ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
                 : '';
             const delBtn = canDel
-                ? `<button class="dm-act-btn dm-act-btn--del"
-                    title="O'chirish"
-                    onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
+                ? `<button class="dm-act-btn dm-act-btn--del" title="O'chirish" onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
                 : '';
-            actionBtns = (editBtn || delBtn)
-                ? `<div class="dm-act-row">${editBtn}${delBtn}</div>`
+            actionBtns = (editBtn || delBtn) ? `<div class="dm-act-row">${editBtn}${delBtn}</div>` : '';
+        } else {
+            /* Boshqalarning amallari */
+            const editBtn = canEd
+                ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
                 : '';
+            const delBtn = canDel
+                ? `<button class="dm-act-btn dm-act-btn--del" title="O'chirish" onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
+                : '';
+            actionBtns = (editBtn || delBtn) ? `<div class="dm-act-row">${editBtn}${delBtn}</div>` : '';
         }
     } else if (mode === 'self') {
-        if (globalSettings.disableEmpEditDelete && myRole !== 'SuperAdmin' && !myPermissions.canEdit) {
-            actionBtns = '';
-        } else {
-            actionBtns = `
-                <div class="dm-act-row">
-                    <button class="dm-act-btn dm-act-btn--edit"
-                        title="Tahrirlash"
-                        onclick="closeDetailModal();openSelfEdit(${rowId})">✏️</button>
-                    <button class="dm-act-btn dm-act-btn--del"
-                        title="O'chirish"
-                        onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑</button>
-                </div>`;
-        }
+        const editBtn = canEd
+            ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openSelfEdit(${rowId})">✏️</button>`
+            : '';
+        const delBtn = canDel
+            ? `<button class="dm-act-btn dm-act-btn--del" title="O'chirish" onclick="closeDetailModal();deleteOwnRecord(${rowId})">🗑</button>`
+            : '';
+        actionBtns = (editBtn || delBtn) ? `<div class="dm-act-row">${editBtn}${delBtn}</div>` : '';
     }
 
     /* Valyuta badge */

@@ -439,15 +439,11 @@ function showKvDetailModal(idx) {
         });
 
         /* ---- Tahrirlash / O'chirish tugmalari ---- */
-        const isAdmin = (typeof myRole !== 'undefined') && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor' || myRole === 'Bugalter');
         const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
-        let canEdit = (isAdmin && hasPerms && myPermissions.canEdit) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
-        let canDelete = (isAdmin && hasPerms && myPermissions.canDelete) || String(rec.ownerTgId) === String(typeof telegramId !== 'undefined' ? telegramId : '0') || myRole === 'SuperAdmin';
+        const canGlobalEditDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
         
-        if (typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete && (typeof myRole !== 'undefined' && myRole !== 'SuperAdmin' && myRole !== 'Admin')) {
-            canEdit = false;
-            canDelete = false;
-        }
+        let canEdit = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || (canGlobalEditDelete && hasPerms && !!myPermissions.canEdit);
+        let canDelete = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || (canGlobalEditDelete && hasPerms && !!myPermissions.canDelete);
 
         const buttonsRow = (canEdit || canDelete) ? `
             <div class="kvdm-btn-row">

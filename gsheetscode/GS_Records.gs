@@ -128,6 +128,9 @@ function selfEditRecord(data, actorTgId) {
   if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
     return { success: false, error: "Xodimlar uchun tahrirlash va o'chirish taqiqlangan!" };
   }
+  if (!auth.isSuperAdmin && !auth.permissions.canEdit) {
+    return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
+  }
   var rowId = Number(data.rowId);
   var reason = String(data.reason || '').trim();
   if (!reason) return { success: false, error: "Tahrirlash sababini ko'rsatishingiz shart!" };
@@ -166,6 +169,9 @@ function selfDeleteRecord(rowId, actorTgId, reason) {
   var globalSettings = getGlobalSettings_();
   if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
     return { success: false, error: "Xodimlar uchun tahrirlash va o'chirish taqiqlangan!" };
+  }
+  if (!auth.isSuperAdmin && !auth.permissions.canDelete) {
+    return { success: false, error: "Sizda o'chirish ruxsati yo'q!" };
   }
   var rowIdNum = Number(rowId);
   var reasonText = String(reason || '').trim();
