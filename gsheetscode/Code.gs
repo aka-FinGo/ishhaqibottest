@@ -459,7 +459,20 @@ function handleCallbackQuery_(query) {
           .replace(/\n\n✅\s*<b>.*?<\/b>/gi, '')
           .replace(/\n\n❌\s*<b>.*?<\/b>/gi, '')
           .replace(/\n\n✅\s*.*/gi, '')
-          .replace(/\n\n❌\s*.*/gi, '');
+          .replace(/\n\n❌\s*.*/gi, '')
+          .replace(/\. Iltimos, tasdiqlang yoki rad eting:/gi, ':')
+          .replace(/Iltimos, tasdiqlang yoki rad eting:/gi, '');
+          
+        // Bosh sarlavhani doim qalin (bold) qilish
+        if (cleanBaseText.indexOf('⚠️') === 0) {
+          var firstLineEnd = cleanBaseText.indexOf('\n');
+          if (firstLineEnd > 0) {
+            var firstLine = cleanBaseText.substring(0, firstLineEnd);
+            var restOfMsg = cleanBaseText.substring(firstLineEnd);
+            var headerPure = firstLine.replace('⚠️', '').replace(/<\/?b>/gi, '').trim();
+            cleanBaseText = '⚠️ <b>' + headerPure + '</b>' + restOfMsg;
+          }
+        }
           
         var finalMsg = cleanBaseText ? (cleanBaseText + recipientStatusLine) : (recipientStatusLine.trim());
         
