@@ -203,7 +203,7 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const selEl = document.getElementById('addSelectedTgId');
     let targetTgId = telegramId;
-    let targetEmpName = employeeName;
+    let targetEmpName = (typeof myUsername !== 'undefined' && myUsername) ? myUsername : (typeof employeeName !== 'undefined' ? employeeName : '');
     if (selEl && selEl.value !== '') {
         targetTgId = selEl.value;
         const selectedOpt = selEl.options[selEl.selectedIndex];

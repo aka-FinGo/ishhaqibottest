@@ -57,6 +57,33 @@ function getHodimlar() {
 }
 
 function getEmployee(tgId) {
+  var rows = getEmployeeRows_();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][COL.TG_ID]).trim() === String(tgId).trim()) {
+      var access = resolveEmployeeAccessFromRow_(rows[i]);
+      var isCfgSuper = isConfigSuperAdminId_(tgId);
+      var sheetUsername = String(rows[i][COL.USERNAME] || '').trim();
+      return {
+        sheetRow:    i + 1,
+        tgId:        String(rows[i][COL.TG_ID]),
+        username:    sheetUsername || (isCfgSuper ? String((CONFIG && CONFIG.SUPER_ADMIN_NAME) || 'SuperAdmin') : ''),
+        roleKey:     isCfgSuper ? 'SUPER_ADMIN' : access.roleKey,
+        role:        isCfgSuper ? 'SuperAdmin' : access.roleLabel,
+        canAdd:      isCfgSuper ? true : access.canAdd,
+        isSuperAdmin:isCfgSuper || access.isSuperAdmin,
+        isDirektor:  access.isDirektor,
+        isAdmin:     isCfgSuper || access.isAdmin,
+        isBugalter:  access.isBugalter,
+        permissions: isCfgSuper ? { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true } : access.permissions,
+        overrides:   access.overrides,
+        positions:   String(rows[i][COL.LAVOZIM] || '').split(',').map(function(s){return s.trim();}).filter(Boolean),
+        group:       String(rows[i][COL.GURUH] || '').trim(),
+        isSardor:    String(rows[i][COL.IS_SARDOR]) == "1" || rows[i][COL.IS_SARDOR] === true
+      };
+    }
+  }
+
+  // Agar Hodimlar varag'ida topilmasa va Config'dagi SUPER_ADMIN_ID bo'lsa:
   if (isConfigSuperAdminId_(tgId)) {
     return {
       sheetRow: -1,
@@ -75,29 +102,6 @@ function getEmployee(tgId) {
       group: 'ADMIN',
       isSardor: true
     };
-  }
-  var rows = getEmployeeRows_();
-  for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][COL.TG_ID]) === String(tgId)) {
-      var access = resolveEmployeeAccessFromRow_(rows[i]);
-      return {
-        sheetRow:    i + 1,
-        tgId:        String(rows[i][COL.TG_ID]),
-        username:    String(rows[i][COL.USERNAME] || ''),
-        roleKey:     access.roleKey,
-        role:        access.roleLabel,
-        canAdd:      access.canAdd,
-        isSuperAdmin:access.isSuperAdmin,
-        isDirektor:  access.isDirektor,
-        isAdmin:     access.isAdmin,
-        isBugalter:  access.isBugalter,
-        permissions: access.permissions,
-        overrides:   access.overrides,
-        positions:   String(rows[i][COL.LAVOZIM] || '').split(',').map(function(s){return s.trim();}).filter(Boolean),
-        group:       String(rows[i][COL.GURUH] || '').trim(),
-        isSardor:    String(rows[i][COL.IS_SARDOR]) == "1" || rows[i][COL.IS_SARDOR] === true
-      };
-    }
   }
   return null;
 }
