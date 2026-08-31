@@ -406,15 +406,12 @@ function handleStartCommand_(message) {
   var tgId = String(from.id || '').trim();
   if (!tgId) return;
 
-  // Rate-limit: Bir xodimga 2 daqiqa ichida qayta-qayta /start xabari yuborilishini oldini olish
-  try {
-    var cache = CacheService.getScriptCache();
-    var startKey = 'start_msg_sent_' + tgId;
-    if (cache && cache.get(startKey)) {
-      return; // Yaqinda yuborilgan, spam qilmaymiz
-    }
-    if (cache) cache.put(startKey, '1', 120); // 120 soniya himoya
-  } catch (e) {}
+  var auth = checkUserRoles(tgId);
+
+  // Agar foydalanuvchi allaqachon mavjud xodim yoki SuperAdmin bo'lsa -> hech qanday ortiqcha xabar yuborilmaydi
+  if (auth.isSuperAdmin || auth.inList) {
+    return;
+  }
 
   var data = {
     firstName: String(from.first_name || ''),
@@ -424,15 +421,10 @@ function handleStartCommand_(message) {
   var reg = autoRegisterPendingUserIfMissing_(tgId, data, 'start');
 
   var text;
-  var auth = checkUserRoles(tgId);
-
   if (reg && reg.created) {
     text = "Assalomu alaykum!\n" +
            "Siz yangi foydalanuvchi sifatida ro'yxatga qo'shildingiz.\n" +
            "Ruxsat olish uchun admin bilan bog'laning.";
-  } else if (auth.isSuperAdmin || auth.inList) {
-    text = "Assalomu alaykum! Tizimga xush kelibsiz.\n" +
-           "Pastdagi tugma orqali Web App dasturini oching:";
   } else {
     text = "Assalomu alaykum!\n" +
            "Sizning hisobingiz tasdiqlash jarayonida.\n" +
