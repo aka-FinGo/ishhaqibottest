@@ -352,16 +352,29 @@ function handleTelegramUpdate_(update) {
 
 function handleCallbackQuery_(query) {
   var data = query.data || '';
-  var chatId = query.message.chat.id;
-  var messageId = query.message.message_id;
+  var chatId = query.message ? query.message.chat.id : query.from.id;
+  var messageId = query.message ? query.message.message_id : null;
   var actorTgId = query.from.id;
   
   if (data.indexOf('conf_sal_') === 0 || data.indexOf('rej_sal_') === 0) {
     var isConfirm = data.indexOf('conf_sal_') === 0;
     var rowId = parseInt(data.replace('conf_sal_', '').replace('rej_sal_', ''), 10);
     
-    // Tezkor javob (Instant Telegram UI Feedback)
+    // 1. Double-click lock (Bir vaqtda bir necha marta bosilganda qotishni oldini olish)
+    var cache = CacheService.getScriptCache();
+    var cbLockKey = 'cb_proc_' + rowId;
+    if (cache && cache.get(cbLockKey)) {
+      tgAnswerCallbackQuery_(query.id, "Ushbu amal allaqachon ko'rib chiqilgan!", false);
+      if (chatId && messageId) tgEditMessageReplyMarkup_(chatId, messageId, { inline_keyboard: [] });
+      return;
+    }
+    if (cache) cache.put(cbLockKey, '1', 60);
+
+    // 2. Darhol foydalanuvchi ekranidagi tugmalarni o'chirib, qotib qolishni yo'qotamiz
     tgAnswerCallbackQuery_(query.id, isConfirm ? "✅ Tasdiqlandi!" : "❌ Rad etildi!", false);
+    if (chatId && messageId) {
+      tgEditMessageReplyMarkup_(chatId, messageId, { inline_keyboard: [] });
+    }
     
     var success = false;
     var errorMsg = '';
@@ -391,8 +404,8 @@ function handleCallbackQuery_(query) {
       }
     });
     
-    if (success) {
-      var originalText = query.message.text || '';
+    if (success && chatId && messageId) {
+      var originalText = (query.message && query.message.text) ? query.message.text : '';
       var newText = originalText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi" : "❌ Rad etildi");
       tgEditMessageText_(chatId, messageId, newText, null, { inline_keyboard: [] });
     } else if (errorMsg) {

@@ -273,3 +273,22 @@ function tgEditMessageText_(chatId, messageId, text, parseMode, replyMarkup) {
   var resp = UrlFetchApp.fetch(url, options);
   try { return JSON.parse(resp.getContentText()); } catch (e) { return {}; }
 }
+
+function tgEditMessageReplyMarkup_(chatId, messageId, replyMarkup) {
+  var url = "https://api.telegram.org/bot" + CONFIG.BOT_TOKEN + "/editMessageReplyMarkup";
+  var payload = {
+    chat_id: String(chatId),
+    message_id: messageId,
+    reply_markup: replyMarkup || { inline_keyboard: [] }
+  };
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    muteHttpExceptions: true,
+    payload: JSON.stringify(payload)
+  };
+
+  var resp = UrlFetchApp.fetch(url, options);
+  try { return JSON.parse(resp.getContentText()); } catch (e) { return {}; }
+}
