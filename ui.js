@@ -435,7 +435,7 @@ function switchTab(tabId, navId) {
     }
     if (tabId === 'profileTab') updateProfileUI();
     if (tabId === 'kvDashboardTab' && typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
-    if (tabId === 'addTab') checkAddPermission();
+    if (tabId === 'addTab') { checkAddPermission(); populateAddEmployeeDropdown(); }
     if (tabId === 'moduleTab') {
         // Iframe allaqachon yuklangan, agar kerak bo'lsa refresh qilish mumkin
     }
@@ -781,6 +781,26 @@ function switchDashboardSub(areaId, btn) {
     if (areaId === 'dashboardChartsArea') loadDashboard();
 }
 
+function populateAddEmployeeDropdown() {
+    const addSel = document.getElementById('addSelectedTgId');
+    if (!addSel) return;
+    if (myRole === 'Bugalter' || myRole === 'SuperAdmin' || myRole === 'Admin') {
+        const currentVal = addSel.value;
+        if (addSel.options.length <= 1) {
+            addSel.innerHTML = '<option value="">O\'zim uchun</option>';
+            globalEmployeeList.forEach(e => {
+                if (String(e.tgId) !== String(telegramId)) {
+                    const empName = e.username || e.name || e.displayName || ('ID: ' + e.tgId);
+                    const roleLabel = e.lavozim || e.role || e.roleKey || '';
+                    const label = roleLabel ? (empName + ' (' + roleLabel + ')') : empName;
+                    addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}" data-emp-name="${escapeHtml(empName)}">${label}</option>`);
+                }
+            });
+        }
+        addSel.value = currentVal;
+    }
+}
+
 function checkAddPermission() {
     if (!myInList) { showPermWarning('⚠️ Siz tizimda ro\'yxatdan o\'tmagan xodimsiz!', 'Amal qo\'shish uchun SuperAdminga murojaat qiling.'); return false; }
     if (!myCanAdd) { showPermWarning('🚫 Amal qo\'shish ruxsati yo\'q!', 'Sizda ruxsat yo\'q. SuperAdminga murojaat qiling.'); return false; }
@@ -791,18 +811,9 @@ function checkAddPermission() {
     }
     
     const addGroup = document.getElementById('addEmployeeGroup');
-    const addSel = document.getElementById('addSelectedTgId');
     if (myRole === 'Bugalter' || myRole === 'SuperAdmin' || myRole === 'Admin') {
         addGroup.classList.remove('hidden');
-        addSel.innerHTML = '<option value="">O\'zim uchun</option>';
-        globalEmployeeList.forEach(e => {
-            if(e.tgId != telegramId) {
-                const empName = e.username || e.name || e.displayName || ('ID: ' + e.tgId);
-                const roleLabel = e.lavozim || e.role || e.roleKey || '';
-                const label = roleLabel ? (empName + ' (' + roleLabel + ')') : empName;
-                addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}" data-emp-name="${escapeHtml(empName)}">${label}</option>`);
-            }
-        });
+        populateAddEmployeeDropdown();
     } else {
         addGroup.classList.add('hidden');
     }

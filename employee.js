@@ -201,6 +201,15 @@ function resetAddForm() {
 // ---- Yangi amal ----
 document.getElementById('financeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const selEl = document.getElementById('addSelectedTgId');
+    let targetTgId = telegramId;
+    let targetEmpName = employeeName;
+    if (selEl && selEl.value !== '') {
+        targetTgId = selEl.value;
+        const selectedOpt = selEl.options[selEl.selectedIndex];
+        targetEmpName = (selectedOpt && selectedOpt.dataset && selectedOpt.dataset.empName) ? selectedOpt.dataset.empName : (selectedOpt ? selectedOpt.text : '');
+    }
+
     if (!checkAddPermission()) return;
 
     const btn = document.getElementById('submitBtn');
@@ -217,21 +226,21 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
     const amountUSD = currency === 'USD' ? amount : 0;
 
     if (currency === 'USD') {
-    if (!rate || rate < 11000 || rate > 13000) {
-        const rateInput = document.getElementById('rate');
-        const warn = document.getElementById('rateWarning');
-        if (rateInput) {
-            rateInput.style.borderColor = '#EF4444';
-            rateInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
-            rateInput.focus();
+        if (!rate || rate < 11000 || rate > 13000) {
+            const rateInput = document.getElementById('rate');
+            const warn = document.getElementById('rateWarning');
+            if (rateInput) {
+                rateInput.style.borderColor = '#EF4444';
+                rateInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
+                rateInput.focus();
+            }
+            if (warn) warn.style.display = 'block';
+            showToastMsg("❌ Kurs 11 000 — 13 000 oralig'ida bo'lishi kerak!", true);
+            btn.disabled = false;
+            btn.innerText = '💾 Saqlash';
+            return;
         }
-        if (warn) warn.style.display = 'block';
-        showToastMsg("❌ Kurs 11 000 — 13 000 oralig'ida bo'lishi kerak!", true);
-        btn.disabled = false;
-        btn.innerText = '💾 Saqlash';
-        return;
     }
-}
 
     const isDuplicate = myFullRecords.some(r => {
         const rUzs = Number(r.amountUZS) || 0;
@@ -239,14 +248,6 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
         const rPeriod = r.actionPeriod || '';
         return rUzs === amountUZS && rUsd === amountUSD && rPeriod === actionPeriod;
     });
-
-    let targetTgId = telegramId;
-    let targetEmpName = employeeName;
-    const selEl = document.getElementById('addSelectedTgId');
-    if (selEl && selEl.value !== '') {
-        targetTgId = selEl.value;
-        targetEmpName = selEl.options[selEl.selectedIndex].getAttribute('data-emp-name') || selEl.options[selEl.selectedIndex].text;
-    }
 
     if (isDuplicate) {
         const confirmMsg = `Ushbu davr (${actionPeriod || 'joriy'}) uchun ${amount.toLocaleString()} ${currency} miqdoridagi amal allaqachon mavjud!`;

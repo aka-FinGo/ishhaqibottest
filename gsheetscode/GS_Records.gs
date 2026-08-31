@@ -15,9 +15,11 @@ function addRecord(data, auth, actorTgId) {
   var writeResult = withWriteLock_(function () {
     var dataSheet = getSheets().dataSheet;
     var targetTgId = String(data.targetTgId || actorTgId).trim();
+    var isSelf = (targetTgId === '' || targetTgId === String(actorTgId));
+    if (isSelf) { targetTgId = String(actorTgId); }
     var emp = getEmployee(targetTgId);
     var displayName = (emp && emp.username) ? emp.username : String(data.employeeName || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
-    if (!emp && !data.employeeName) {
+    if (!displayName) {
       displayName = 'Xodim (' + targetTgId + ')';
     }
     
@@ -26,7 +28,6 @@ function addRecord(data, auth, actorTgId) {
     var forPeriod = String(data.actionPeriod || '').trim();
     
     var isBugalter = auth.isBugalter || auth.isSuperAdmin;
-    var isSelf = (targetTgId === String(actorTgId));
     var initialStatus = 'Tasdiqlandi';
     var notifyTarget = null;
     
@@ -36,7 +37,7 @@ function addRecord(data, auth, actorTgId) {
     } else if (!isBugalter) {
         initialStatus = 'Kutilmoqda';
         notifyTarget = 'bugalter';
-    } else if (isBugalter && isSelf) {
+    } else {
         initialStatus = 'Tasdiqlandi';
         notifyTarget = null;
     }
