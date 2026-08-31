@@ -341,7 +341,18 @@ function tgEditMessageText_(chatId, messageId, text, parseMode, replyMarkup) {
   };
 
   var resp = UrlFetchApp.fetch(url, options);
-  try { return JSON.parse(resp.getContentText()); } catch (e) { return {}; }
+  var body = {};
+  try { body = JSON.parse(resp.getContentText()); } catch (e) {}
+
+  // Agar HTML format parse xatosi bersa, oddiy matn sifatida qayta tahrirlaymiz
+  if (!body.ok && parseMode) {
+    delete payload.parse_mode;
+    payload.text = String(text).replace(/<[^>]*>/g, '');
+    options.payload = JSON.stringify(payload);
+    var resp2 = UrlFetchApp.fetch(url, options);
+    try { body = JSON.parse(resp2.getContentText()); } catch (e2) {}
+  }
+  return body;
 }
 
 function tgEditMessageReplyMarkup_(chatId, messageId, replyMarkup) {

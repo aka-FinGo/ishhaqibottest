@@ -360,17 +360,7 @@ function handleCallbackQuery_(query) {
     var isConfirm = data.indexOf('conf_sal_') === 0;
     var rowId = parseInt(data.replace('conf_sal_', '').replace('rej_sal_', ''), 10);
     
-    // 1. Double-click lock (Bir vaqtda bir necha marta bosilganda qotishni oldini olish)
-    var cache = CacheService.getScriptCache();
-    var cbLockKey = 'cb_proc_' + rowId;
-    if (cache && cache.get(cbLockKey)) {
-      tgAnswerCallbackQuery_(query.id, "Ushbu amal allaqachon ko'rib chiqilgan!", false);
-      if (chatId && messageId) tgEditMessageReplyMarkup_(chatId, messageId, { inline_keyboard: [] });
-      return;
-    }
-    if (cache) cache.put(cbLockKey, '1', 60);
-
-    // 2. Darhol foydalanuvchi ekranidagi tugmalarni o'chirib, qotib qolishni yo'qotamiz
+    // 1. Darhol foydalanuvchi ekranidagi tugmalarni o'chirib, qotib qolishni yo'qotamiz
     tgAnswerCallbackQuery_(query.id, isConfirm ? "✅ Tasdiqlandi!" : "❌ Rad etildi!", false);
     if (chatId && messageId) {
       tgEditMessageReplyMarkup_(chatId, messageId, { inline_keyboard: [] });
@@ -379,6 +369,8 @@ function handleCallbackQuery_(query) {
     var success = false;
     var errorMsg = '';
     var actorName = '';
+    var auth = checkUserRoles(actorTgId);
+    actorName = auth.username || ((query.from && (query.from.first_name || query.from.username)) ? (query.from.first_name || query.from.username) : ('ID: ' + actorTgId));
     
     withWriteLock_(function() {
       var dataSheet = getSheets().dataSheet;
@@ -391,13 +383,12 @@ function handleCallbackQuery_(query) {
       var rowTgId = String(rowData[DATA_COL.TG_ID] || '').trim();
       var currentStatus = String(rowData[DATA_COL.STATUS] || '').trim();
       
+      // Agar amal allaqachon tasdiqlangan yoki rad etilgan bo'lsa, xabarlarni baribir to'g'rilaymiz
       if (currentStatus === 'Tasdiqlandi' || currentStatus === 'Rad etildi') {
-        errorMsg = "Ushbu amal allaqachon " + currentStatus.toLowerCase() + "!";
-        return { success: false };
+        isConfirm = (currentStatus === 'Tasdiqlandi');
+        success = true;
+        return { success: true };
       }
-      
-      var auth = checkUserRoles(actorTgId);
-      actorName = auth.username || ((query.from && (query.from.first_name || query.from.username)) ? (query.from.first_name || query.from.username) : ('ID: ' + actorTgId));
       
       if (String(actorTgId) === rowTgId || auth.isBugalter || auth.isSuperAdmin) {
         var newStatus = isConfirm ? 'Tasdiqlandi' : 'Rad etildi';
@@ -414,6 +405,7 @@ function handleCallbackQuery_(query) {
     });
     
     if (success) {
+      var cache = CacheService.getScriptCache();
       // Barcha yuborilgan xabarlarni (SuperAdmin, Direktor, Bugalter, Xodim) sinxron yangilash
       var trackedJson = cache ? cache.get('trk_sal_' + rowId) : null;
       var trackedList = [];
@@ -432,6 +424,9 @@ function handleCallbackQuery_(query) {
         trackedList.push({ chatId: String(chatId), messageId: messageId, baseText: (query.message ? query.message.text : '') });
       }
       
+      var dataSheet = getSheets().dataSheet;
+      var rowData = dataSheet.getRange(rowId, 1, 1, 10).getValues()[0];
+      var rowTgId = String(rowData[DATA_COL.TG_ID] || '').trim();
       var isActorTheEmployee = (String(actorTgId) === String(rowTgId));
       
       for (var j = 0; j < trackedList.length; j++) {
@@ -458,20 +453,20 @@ function handleCallbackQuery_(query) {
         }
         
         var itemBaseText = item.baseText || ((query.message && String(item.chatId) === String(chatId)) ? query.message.text : '');
-        var cleanBaseText = itemBaseText.replace(/\n⏳\s*<i>Holati:\s*Kutilmoqda\.\.\.<\/i>/gi, '').replace(/\n⏳\s*Holati:\s*Kutilmoqda\.\.\./gi, '');
+        var cleanBaseText = String(itemBaseText || '')
+          .replace(/\n⏳\s*<i>Holati:\s*Kutilmoqda\.\.\.<\/i>/gi, '')
+          .replace(/\n⏳\s*Holati:\s*Kutilmoqda\.\.\./gi, '')
+          .replace(/\n\n✅\s*<b>.*?<\/b>/gi, '')
+          .replace(/\n\n❌\s*<b>.*?<\/b>/gi, '')
+          .replace(/\n\n✅\s*.*/gi, '')
+          .replace(/\n\n❌\s*.*/gi, '');
+          
         var finalMsg = cleanBaseText ? (cleanBaseText + recipientStatusLine) : (recipientStatusLine.trim());
         
-        try {
-          tgEditMessageText_(item.chatId, item.messageId, finalMsg, "HTML", { inline_keyboard: [] });
-        } catch (eEdit) {
-          try {
-            var plainMsg = finalMsg.replace(/<[^>]*>/g, '');
-            tgEditMessageText_(item.chatId, item.messageId, plainMsg, null, { inline_keyboard: [] });
-          } catch (ignore) {}
-        }
+        tgEditMessageText_(item.chatId, item.messageId, finalMsg, "HTML", { inline_keyboard: [] });
       }
     } else if (errorMsg) {
-      tgSendMessage_(chatId, "⚠️ " + errorMsg, null);
+      tgAnswerCallbackQuery_(query.id, "⚠️ " + errorMsg, true);
     }
   }
 }
