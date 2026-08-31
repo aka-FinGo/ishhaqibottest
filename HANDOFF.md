@@ -25,11 +25,11 @@
 ## 3. Git va GitHub Mosligi
 - **Remote Repository:** `https://github.com/aka-FinGo/ishhaqibottest.git`
 - **Branch:** `main`
-- **So'nggi Commit Hash:** `f8487f2`
+- **So'nggi Commit Hash:** `4fbd889`
 - **Sinxronlik:** 100% to'liq sinxronlangan va toza.
 
 ## 4. Muhit va Ulanishlar
 - **Asosiy manzil:** `E:\Loyihalarim\GitHub\ishhaqibottest`
 - **Google Sheets:** `https://docs.google.com/spreadsheets/d/161ZwGGaORMZOp_Lbug7HWrjEt37kqnLj9QQufxMl-Dc/edit`
-- **GAS Deploy Versiyasi:** Version 110 (Active)
-- **Telegram Webhook:** Instant callback javobi va `/start` spam himoyasi bilan faol.
+- **GAS Deploy Versiyasi:** Version 111 (Active)
+- **Telegram Webhook:** Mavjud xodimlarga ortiqcha salomlashish xabari to'liq bekor qilingan, faqat yangi foydalanuvchilar va tasdiqlash bildirishnomalari ishlaydi.
