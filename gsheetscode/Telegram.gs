@@ -49,8 +49,13 @@ function sendTelegramNotification(data) {
   var sentTrack = [];
   var rowId = data.rowId;
 
-  // SuperAdmin ga yuborish
-  if (CONFIG.CHAT_ID) {
+  // SuperAdmin ga informativ xabar yuborish:
+  // Agar SuperAdmin o'zi tasdiqlash xabari (tugmali xabar) olayotgan bo'lsa,
+  // ikkilamchi informativ xabar yuborilmaydi (faqat 1 ta tugmali xabar boradi):
+  var isSuperAdminGettingButton = (data.notifyTarget === 'bugalter') || 
+                                  (data.notifyTarget === 'employee' && String(CONFIG.CHAT_ID) === String(data.tgId));
+
+  if (CONFIG.CHAT_ID && !isSuperAdminGettingButton) {
     var resAdmin = tgSendMessage_(CONFIG.CHAT_ID, msg, "HTML");
     if (resAdmin && resAdmin.result && resAdmin.result.message_id) {
       sentTrack.push({ chatId: String(CONFIG.CHAT_ID), messageId: resAdmin.result.message_id, baseText: msg });
