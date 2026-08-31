@@ -52,9 +52,12 @@ function checkUserRoles(tgId) {
 }
 
 function resolveEmployeeAccessFromRow_(row) {
-  var role = normalizeRole_(row[COL.ROLE], row);
-  var canAdd = toBool01_(row[COL.CAN_ADD]);
-  var perms = {
+  var isSuper = isConfigSuperAdminId_(row[COL.TG_ID]) || toBool01_(row[COL.SUPER_ADMIN]);
+  var role = isSuper ? 'SUPER_ADMIN' : normalizeRole_(row[COL.ROLE], row);
+  if (role === 'SUPER_ADMIN') isSuper = true;
+
+  var canAdd = isSuper ? true : toBool01_(row[COL.CAN_ADD]);
+  var perms = isSuper ? { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true } : {
     canViewAll: toBool01_(row[COL.VIEW_ALL]),
     canEdit: toBool01_(row[COL.EDIT]),
     canDelete: toBool01_(row[COL.DELETE]),
@@ -62,26 +65,21 @@ function resolveEmployeeAccessFromRow_(row) {
     canViewDash: toBool01_(row[COL.VIEW_DASH])
   };
   
-  if (role === 'SUPER_ADMIN') {
-    canAdd = true;
-    perms = { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true };
-  }
-  
-  var isSuperAdmin = role === 'SUPER_ADMIN';
-  var isDirektor = role === 'DIRECTOR';
-  var isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-  var isBugalter = role === 'BUGALTER';
+  var isSuperAdmin = isSuper;
+  var isDirektor = !isSuper && (role === 'DIRECTOR' || toBool01_(row[COL.DIREKTOR]));
+  var isAdmin = isSuper || (role === 'ADMIN' || toBool01_(row[COL.ADMIN]));
+  var isBugalter = !isSuper && (role === 'BUGALTER');
   
   return {
-    roleKey: role,
-    roleLabel: roleLabelFromKey_(role),
+    roleKey: isSuperAdmin ? 'SUPER_ADMIN' : role,
+    roleLabel: isSuperAdmin ? 'SuperAdmin' : roleLabelFromKey_(role),
     canAdd: canAdd,
     isSuperAdmin: isSuperAdmin,
     isDirektor: isDirektor,
     isAdmin: isAdmin,
     isBugalter: isBugalter,
     permissions: perms,
-    overrides: deriveOverridesForEffective_(role, canAdd, perms)
+    overrides: deriveOverridesForEffective_(isSuperAdmin ? 'SUPER_ADMIN' : role, canAdd, perms)
   };
 }
 

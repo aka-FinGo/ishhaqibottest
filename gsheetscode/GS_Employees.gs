@@ -61,7 +61,7 @@ function getEmployee(tgId) {
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][COL.TG_ID]).trim() === String(tgId).trim()) {
       var access = resolveEmployeeAccessFromRow_(rows[i]);
-      var isCfgSuper = isConfigSuperAdminId_(tgId);
+      var isCfgSuper = isConfigSuperAdminId_(tgId) || access.isSuperAdmin;
       var sheetUsername = String(rows[i][COL.USERNAME] || '').trim();
       return {
         sheetRow:    i + 1,
@@ -70,10 +70,10 @@ function getEmployee(tgId) {
         roleKey:     isCfgSuper ? 'SUPER_ADMIN' : access.roleKey,
         role:        isCfgSuper ? 'SuperAdmin' : access.roleLabel,
         canAdd:      isCfgSuper ? true : access.canAdd,
-        isSuperAdmin:isCfgSuper || access.isSuperAdmin,
-        isDirektor:  access.isDirektor,
+        isSuperAdmin:isCfgSuper,
+        isDirektor:  !isCfgSuper && access.isDirektor,
         isAdmin:     isCfgSuper || access.isAdmin,
-        isBugalter:  access.isBugalter,
+        isBugalter:  !isCfgSuper && access.isBugalter,
         permissions: isCfgSuper ? { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true } : access.permissions,
         overrides:   access.overrides,
         positions:   String(rows[i][COL.LAVOZIM] || '').split(',').map(function(s){return s.trim();}).filter(Boolean),
