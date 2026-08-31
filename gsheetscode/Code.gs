@@ -180,6 +180,7 @@ function doPost(e) {
 
       // ---- KVADRATLAR (Measurements) ----
       case "kvadrat_add":
+        if (auth.roleKey === 'PENDING' || !auth.inList) return sendJSON({ success:false, error: "Hisobingiz tasdiqlash jarayonida! Admin tasdiqlashini kuting." });
         if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
           return sendJSON({ success:false, error: "Faqat 'Loyihachi' buyurtma qo'sha oladi" });
         }
@@ -187,10 +188,14 @@ function doPost(e) {
         break;
 
       case "kvadrat_get_all":
-        result = kvadratGetAll(data);
+        if (auth.roleKey === 'PENDING' || !auth.inList) {
+          return sendJSON({ success:true, data:[], isPending:true });
+        }
+        result = kvadratGetAll(data, auth);
         break;
 
       case "kvadrat_edit":
+        if (auth.roleKey === 'PENDING' || !auth.inList) return sendJSON({ success:false, error: "Hisobingiz tasdiqlash jarayonida! Admin tasdiqlashini kuting." });
         if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
           return sendJSON({ success:false, error: "Faqat 'Loyihachi' tahrirlay oladi" });
         }
@@ -199,6 +204,7 @@ function doPost(e) {
 
       case "request_avans":
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error: "Ruxsat yo'q" });
+        if (auth.roleKey === 'PENDING') return sendJSON({ success:false, error: "Hisobingiz tasdiqlash jarayonida!" });
         var amount = Number(data.amount) || 0;
         if (amount <= 0) return sendJSON({ success:false, error: "Noto'g'ri summa" });
         var reason = String(data.reason || '').trim();
@@ -210,6 +216,7 @@ function doPost(e) {
         break;
 
       case "kvadrat_delete":
+        if (auth.roleKey === 'PENDING' || !auth.inList) return sendJSON({ success:false, error: "Hisobingiz tasdiqlash jarayonida! Admin tasdiqlashini kuting." });
         if (!auth.isSuperAdmin && (!auth.positions || auth.positions.indexOf('Loyihachi') === -1)) {
           return sendJSON({ success:false, error: "Faqat 'Loyihachi' o'chira oladi" });
         }
@@ -217,11 +224,13 @@ function doPost(e) {
         break;
 
       case "kvadrat_claim":
+        if (auth.roleKey === 'PENDING' || !auth.inList) return sendJSON({ success:false, error: "Hisobingiz tasdiqlash jarayonida! Admin tasdiqlashini kuting." });
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
         result = processWorkflowStep(data.rowId, auth, tgId, data.targetStepIndex);
         break;
 
       case "kvadrat_revert":
+        if (auth.roleKey === 'PENDING' || !auth.inList) return sendJSON({ success:false, error: "Hisobingiz tasdiqlash jarayonida! Admin tasdiqlashini kuting." });
         if (!auth.inList && !auth.isSuperAdmin) return sendJSON({ success:false, error:"Ro'yxatda topilmadingiz" });
         result = revertWorkflowStep(data.rowId, auth, tgId, data.targetStepIndex, data.reason);
         break;

@@ -163,6 +163,31 @@ async function initKvadratTab() {
     const listContainer = document.getElementById('kvList');
     if (!listContainer) return;
 
+    if (typeof isPendingUser === 'function' && isPendingUser()) {
+        kvFullRecords = [];
+        kvFilteredRecords = [];
+        if (typeof kvDashboardRecords !== 'undefined') kvDashboardRecords = [];
+        listContainer.innerHTML = `
+            <div class="pending-lock-card" style="text-align:center; padding:50px 20px; background:var(--surface); border:1px solid var(--border); border-radius:20px; margin:20px 0; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+                <div style="font-size:52px; margin-bottom:14px;">⏳</div>
+                <h3 style="font-size:18px; font-weight:700; margin-bottom:8px; color:var(--text);">Hisobingiz tasdiqlash jarayonida</h3>
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.6; max-width:340px; margin:0 auto 20px;">Buyurtmalar va o'lchovlar ma'lumotlarini ko'rish uchun iltimos, admin tasdiqlashini kuting.</p>
+                <button class="btn-secondary" onclick="contactAdmin()" style="margin:0 auto; padding:10px 20px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:8px;">📩 Admin bilan bog'lanish</button>
+            </div>`;
+        const totalDisplay = document.getElementById('kvTotalM2');
+        if (totalDisplay) totalDisplay.innerText = '0';
+        const totalOrdersEl = document.getElementById('kvTotalOrders');
+        if (totalOrdersEl) totalOrdersEl.innerText = '0 ta buyurtma';
+        const filterWrap = document.getElementById('kvFilterWrap');
+        if (filterWrap) filterWrap.style.display = 'none';
+        updateKvFabVisibility();
+        return;
+    }
+
+    if (typeof populateKvadratMeta === 'function') {
+        populateKvadratMeta(typeof globalEmployeeList !== 'undefined' ? globalEmployeeList : []);
+    }
+
     /* Keshdan ko'rsat (AppCache orqali — versiya va TTL nazorati bilan) */
     try {
         const cached = AppCache.get(AppCache.KEYS.KV_RECORDS, 60);
@@ -210,6 +235,14 @@ async function initKvadratTab() {
 function updateKvFabVisibility() {
     const fab = document.getElementById('nav-add');
     if (!fab) return;
+
+    if (typeof isPendingUser === 'function' && isPendingUser()) {
+        fab.style.visibility = 'hidden';
+        fab.style.pointerEvents = 'none';
+        fab.style.opacity = '0';
+        return;
+    }
+
     const activeTab = document.querySelector('.tab-content.active');
     const isKvadrat = activeTab && activeTab.id === 'kvadratTab';
     if (isKvadrat) {

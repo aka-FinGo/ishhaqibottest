@@ -139,7 +139,10 @@ function processUserData(data) {
     else if (data.isAdmin) myRole = 'Admin';
     else if (data.isDirector || data.isDirektor) myRole = 'Direktor';
     else if (data.roleKey === 'BUGALTER' || data.role === 'Bugalter' || data.isBugalter) myRole = 'Bugalter';
+    else if (data.roleKey === 'PENDING' || data.role === 'Kutilmoqda' || data.role === 'Pending') myRole = 'Kutilmoqda';
     else myRole = 'User';
+
+    myRoleKey = data.roleKey || (myRole === 'SuperAdmin' ? 'SUPER_ADMIN' : (myRole === 'Kutilmoqda' ? 'PENDING' : 'EMPLOYEE'));
 
     myIsSardor = !!data.isSardor;
     const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';

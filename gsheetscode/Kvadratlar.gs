@@ -186,7 +186,10 @@ function kvadratAdd(data, auth, actorTgId) {
   });
 }
 
-function kvadratGetAll(options) {
+function kvadratGetAll(options, auth) {
+  if (auth && (auth.roleKey === 'PENDING' || !auth.inList)) {
+    return { success: true, data: [], isPending: true };
+  }
   var cache = CacheService.getScriptCache();
   var cached = cache.get("kv_data_all");
   if (cached) return { success: true, data: JSON.parse(cached), fromCache: true };

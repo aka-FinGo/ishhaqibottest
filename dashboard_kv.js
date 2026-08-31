@@ -452,6 +452,19 @@ async function renderKvDashboardPage() {
         console.error('KV Dashboard:kvDashboardMainBody element not found');
         return;
     }
+
+    if (typeof isPendingUser === 'function' && isPendingUser()) {
+        kvDashboardRecords = [];
+        container.innerHTML = `
+            <div class="pending-lock-card" style="text-align:center; padding:50px 20px; background:var(--surface); border:1px solid var(--border); border-radius:20px; margin:20px 0; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+                <div style="font-size:52px; margin-bottom:14px;">⏳</div>
+                <h3 style="font-size:18px; font-weight:700; margin-bottom:8px; color:var(--text);">Hisobingiz tasdiqlash jarayonida</h3>
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.6; max-width:340px; margin:0 auto 20px;">Kvadratlar dashboard statistikasini ko'rish uchun iltimos, admin tasdiqlashini kuting.</p>
+                <button class="btn-secondary" onclick="contactAdmin()" style="margin:0 auto; padding:10px 20px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:8px;">📩 Admin bilan bog'lanish</button>
+            </div>`;
+        return;
+    }
+
     container.innerHTML = `<div class="kv-loading-state">
         <div class="kv-loading-box">
             <div class="kv-loading-icon">⏳</div>

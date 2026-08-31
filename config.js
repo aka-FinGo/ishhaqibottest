@@ -24,6 +24,7 @@ const ITEMS_PER_PAGE = 10;
 let globalSettings = { onlyBugalterAdd: false, disableEmpEditDelete: false, notifyDirector: false, workflowStrictMode: false, strictWorkflow: false };
 
 let myRole = 'User';
+let myRoleKey = 'EMPLOYEE';
 let myUsername = '';   // Sheetdan kelgan Ism
 let myCanAdd = true; // + tugmasi doim ko'rinadi, ruxsat yo'q bo'lsa ogohlantirish
 let myInList = false;// Hodimlar sheetida bormi
@@ -36,6 +37,13 @@ let myPermissions = {
   canViewAll: false, canEdit: false,
   canDelete: false, canExport: false, canViewDash: false
 };
+
+function isPendingUser() {
+  if (typeof myRole !== 'undefined' && (myRole === 'Kutilmoqda' || myRole === 'Pending')) return true;
+  if (typeof myRoleKey !== 'undefined' && myRoleKey === 'PENDING') return true;
+  if (typeof myPermissions !== 'undefined' && myPermissions.roleKey === 'PENDING') return true;
+  return false;
+}
 
 // Keep template rendering safe when using innerHTML with server-provided values.
 function escapeHtml(value) {
