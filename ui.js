@@ -688,8 +688,16 @@ function toggleSetting(type, isEnabled) {
 
 function handleFabAction() {
     const activeTab = document.querySelector('.tab-content.active');
-    if (activeTab && activeTab.id === 'kvadratTab') { openKvModal(); }
-    else { switchTab('addTab', 'nav-add'); }
+    if (activeTab && activeTab.id === 'kvadratTab') {
+        openKvModal();
+    } else {
+        const isBugalterOrAdmin = (typeof myRole !== 'undefined') && (myRole === 'Bugalter' || myRole === 'SuperAdmin');
+        if (typeof globalSettings !== 'undefined' && globalSettings.onlyBugalterAdd && !isBugalterOrAdmin) {
+            showToastMsg('⚠️ Faqat Bugalter yoki SuperAdmin amal qo\'sha oladi', true);
+            return;
+        }
+        switchTab('addTab', 'nav-add');
+    }
 }
 
 function setSelfCheckButtonsVisibility(canRunSelfCheck) {

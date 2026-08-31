@@ -211,16 +211,21 @@ function updateKvFabVisibility() {
     const fab = document.getElementById('nav-add');
     if (!fab) return;
     const activeTab = document.querySelector('.tab-content.active');
-    if (activeTab && activeTab.id === 'kvadratTab') {
+    const isKvadrat = activeTab && activeTab.id === 'kvadratTab';
+    if (isKvadrat) {
         const positions = (typeof myPermissions !== 'undefined' && myPermissions.positions) || [];
-        const isLoyihachi = myRole === 'SuperAdmin' || positions.indexOf('Loyihachi') !== -1;
+        const isLoyihachi = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || positions.indexOf('Loyihachi') !== -1;
         fab.style.visibility = isLoyihachi ? 'visible' : 'hidden';
         fab.style.pointerEvents = isLoyihachi ? 'auto' : 'none';
         fab.style.opacity = isLoyihachi ? '1' : '0';
     } else {
-        fab.style.visibility = 'visible';
-        fab.style.pointerEvents = 'auto';
-        fab.style.opacity = '1';
+        const isBugalterOrAdmin = (typeof myRole !== 'undefined') && (myRole === 'Bugalter' || myRole === 'SuperAdmin');
+        const canAddFinance = (typeof globalSettings === 'undefined' || !globalSettings.onlyBugalterAdd) || isBugalterOrAdmin;
+        const shouldShow = canAddFinance && (typeof myCanAdd !== 'undefined' ? myCanAdd : true);
+
+        fab.style.visibility = shouldShow ? 'visible' : 'hidden';
+        fab.style.pointerEvents = shouldShow ? 'auto' : 'none';
+        fab.style.opacity = shouldShow ? '1' : '0';
     }
 }
 

@@ -317,7 +317,10 @@ async function toggleGlobalSettingUI(key, value) {
         if (res.success) {
             showSuccess("Sozlama muvaffaqiyatli saqlandi!");
             // Update local state
-            if (key === 'ONLY_BUGALTER_ADD') globalSettings.onlyBugalterAdd = value;
+            if (key === 'ONLY_BUGALTER_ADD') {
+                globalSettings.onlyBugalterAdd = value;
+                if (typeof updateKvFabVisibility === 'function') updateKvFabVisibility();
+            }
             if (key === 'DISABLE_EMP_EDIT_DELETE') globalSettings.disableEmpEditDelete = value;
             if (key === 'NOTIFY_DIRECTOR') globalSettings.notifyDirector = value;
             if (key === 'WORKFLOW_STRICT_MODE') globalSettings.workflowStrictMode = value;
