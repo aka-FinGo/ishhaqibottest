@@ -33,10 +33,15 @@ function sendTelegramNotification(data) {
 
   var initialStatus = data.initialStatus || '';
   var statusBadge = initialStatus === 'Kutilmoqda' ? "\n⏳ <i>Holati: Kutilmoqda...</i>" : "";
+  var actorLine = (data.actorTgId && String(data.actorTgId) !== String(data.tgId) && data.actorName)
+                ? ("\n✍️ Kiritdi: " + data.actorName + " (Bugalter)")
+                : "";
 
   var msg = "⚠️ <b>Yangi amal qo'shildi</b>\n" +
-            "👤 " + (data.employeeName || "—") +
+            "👤 Xodim: " + (data.employeeName || "—") +
+            actorLine +
             uzsText + usdText + rateText +
+            (data.actionPeriod ? "\n📅 Davr: " + data.actionPeriod : "") +
             "\n📝 " + (data.comment || "—") +
             "\n📅 " + (data.date    || "—") +
             statusBadge;
@@ -222,15 +227,16 @@ function sendAvansRequestNotification(username, amount, reason) {
   }
 }
 
-function sendSalaryConfirmationToEmployee_(tgId, rowId, employeeName, amountUZS, amountUSD, rate, comment, dateStr, actionPeriod) {
+function sendSalaryConfirmationToEmployee_(tgId, rowId, employeeName, amountUZS, amountUSD, rate, comment, dateStr, actionPeriod, actorName) {
   var uzsText = Number(amountUZS) > 0 ? "\n💰 " + Number(amountUZS).toLocaleString() + " UZS" : "";
   var usdText = Number(amountUSD) > 0 ? "\n💵 $" + Number(amountUSD).toLocaleString() : "";
   var rateText = Number(amountUSD) > 0 && Number(rate) > 0 ? "\n📈 Kurs: " + Number(rate).toLocaleString() + " UZS" : "";
   var periodText = actionPeriod ? "\n📅 Davr: " + actionPeriod : "";
   
-  var msg = "⚠️ <b>Yangi amal tasdiqlash uchun</b>\n" +
-            "Sizning hisobingizga quyidagi amal kiritildi. Iltimos, tasdiqlang yoki rad eting:\n" +
-            "👤 " + (employeeName || "—") +
+  var whoEntered = actorName ? ("Bugalter (" + actorName + ")") : "Bugalter";
+  
+  var msg = "⚠️ <b>Sizning hisobingizga " + whoEntered + " quyidagi amalni kiritdi. Iltimos, tasdiqlang yoki rad eting:</b>\n" +
+            "👤 Xodim: " + (employeeName || "—") +
             uzsText + usdText + rateText + periodText +
             "\n📝 " + (comment || "—") +
             "\n📅 " + (dateStr || "—");

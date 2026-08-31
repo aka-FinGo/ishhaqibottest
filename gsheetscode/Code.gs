@@ -414,8 +414,6 @@ function handleCallbackQuery_(query) {
     });
     
     if (success) {
-      var statusLine = isConfirm ? ("\n\n✅ <b>Tasdiqlandi</b> (" + actorName + ")") : ("\n\n❌ <b>Rad etildi</b> (" + actorName + ")");
-      
       // Barcha yuborilgan xabarlarni (SuperAdmin, Direktor, Bugalter, Xodim) sinxron yangilash
       var trackedJson = cache ? cache.get('trk_sal_' + rowId) : null;
       var trackedList = [];
@@ -434,11 +432,34 @@ function handleCallbackQuery_(query) {
         trackedList.push({ chatId: String(chatId), messageId: messageId, baseText: (query.message ? query.message.text : '') });
       }
       
+      var isActorTheEmployee = (String(actorTgId) === String(rowTgId));
+      
       for (var j = 0; j < trackedList.length; j++) {
         var item = trackedList[j];
+        var isOwnChat = (String(item.chatId) === String(actorTgId));
+        
+        var recipientStatusLine = '';
+        if (isConfirm) {
+          if (isOwnChat) {
+            recipientStatusLine = "\n\n✅ <b>Siz tomoningizdan tasdiqlandi</b>";
+          } else if (isActorTheEmployee) {
+            recipientStatusLine = "\n\n✅ <b>Xodim (" + actorName + ") tomonidan tasdiqlandi</b>";
+          } else {
+            recipientStatusLine = "\n\n✅ <b>" + actorName + " tomonidan tasdiqlandi</b>";
+          }
+        } else {
+          if (isOwnChat) {
+            recipientStatusLine = "\n\n❌ <b>Siz tomoningizdan rad etildi</b>";
+          } else if (isActorTheEmployee) {
+            recipientStatusLine = "\n\n❌ <b>Xodim (" + actorName + ") tomonidan rad etildi</b>";
+          } else {
+            recipientStatusLine = "\n\n❌ <b>" + actorName + " tomonidan rad etildi</b>";
+          }
+        }
+        
         var itemBaseText = item.baseText || ((query.message && String(item.chatId) === String(chatId)) ? query.message.text : '');
         var cleanBaseText = itemBaseText.replace(/\n⏳\s*<i>Holati:\s*Kutilmoqda\.\.\.<\/i>/gi, '').replace(/\n⏳\s*Holati:\s*Kutilmoqda\.\.\./gi, '');
-        var finalMsg = cleanBaseText ? (cleanBaseText + statusLine) : (statusLine.trim());
+        var finalMsg = cleanBaseText ? (cleanBaseText + recipientStatusLine) : (recipientStatusLine.trim());
         
         try {
           tgEditMessageText_(item.chatId, item.messageId, finalMsg, "HTML", { inline_keyboard: [] });
