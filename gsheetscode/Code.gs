@@ -378,6 +378,7 @@ function handleCallbackQuery_(query) {
     
     var success = false;
     var errorMsg = '';
+    var actorName = '';
     
     withWriteLock_(function() {
       var dataSheet = getSheets().dataSheet;
@@ -388,12 +389,20 @@ function handleCallbackQuery_(query) {
       }
       var rowData = dataSheet.getRange(rowId, 1, 1, 10).getValues()[0];
       var rowTgId = String(rowData[DATA_COL.TG_ID] || '').trim();
+      var currentStatus = String(rowData[DATA_COL.STATUS] || '').trim();
+      
+      if (currentStatus === 'Tasdiqlandi' || currentStatus === 'Rad etildi') {
+        errorMsg = "Ushbu amal allaqachon " + currentStatus.toLowerCase() + "!";
+        return { success: false };
+      }
+      
       var auth = checkUserRoles(actorTgId);
+      actorName = auth.username || ((query.from && (query.from.first_name || query.from.username)) ? (query.from.first_name || query.from.username) : ('ID: ' + actorTgId));
       
       if (String(actorTgId) === rowTgId || auth.isBugalter || auth.isSuperAdmin) {
         var newStatus = isConfirm ? 'Tasdiqlandi' : 'Rad etildi';
         dataSheet.getRange(rowId, DATA_COL.STATUS + 1).setValue(newStatus);
-        addAuditLog_(actorTgId, isConfirm ? 'confirm_record' : 'reject_record', rowId, rowToRecordForAudit_(rowData), 'updated', newStatus);
+        addAuditLog_(actorTgId, isConfirm ? 'confirm_record' : 'reject_record', rowId, rowToRecordForAudit_(rowData), 'updated', newStatus + ' (' + actorName + ')');
         resetDataCache_();
         touchDataVersion(DV_KEYS.FINANCE);
         success = true;
@@ -404,10 +413,39 @@ function handleCallbackQuery_(query) {
       }
     });
     
-    if (success && chatId && messageId) {
-      var originalText = (query.message && query.message.text) ? query.message.text : '';
-      var newText = originalText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi" : "❌ Rad etildi");
-      tgEditMessageText_(chatId, messageId, newText, null, { inline_keyboard: [] });
+    if (success) {
+      var baseText = (query.message && query.message.text) ? query.message.text : '';
+      var statusLine = isConfirm ? ("\n\n✅ <b>Tasdiqlandi</b> (" + actorName + ")") : ("\n\n❌ <b>Rad etildi</b> (" + actorName + ")");
+      var updatedText = baseText + statusLine;
+      
+      // Barcha yuborilgan xabarlarni sinxron yangilash (Multi-recipient sync)
+      var trackedJson = cache ? cache.get('trk_sal_' + rowId) : null;
+      var trackedList = [];
+      if (trackedJson) {
+        try { trackedList = JSON.parse(trackedJson); } catch (eTrk) {}
+      }
+      
+      var foundCurrent = false;
+      for (var k = 0; k < trackedList.length; k++) {
+        if (String(trackedList[k].chatId) === String(chatId)) {
+          foundCurrent = true;
+          break;
+        }
+      }
+      if (!foundCurrent && chatId && messageId) {
+        trackedList.push({ chatId: String(chatId), messageId: messageId });
+      }
+      
+      for (var j = 0; j < trackedList.length; j++) {
+        var item = trackedList[j];
+        try {
+          tgEditMessageText_(item.chatId, item.messageId, updatedText, "HTML", { inline_keyboard: [] });
+        } catch (eEdit) {
+          try {
+            tgEditMessageText_(item.chatId, item.messageId, baseText + "\n\n" + (isConfirm ? "✅ Tasdiqlandi (" + actorName + ")" : "❌ Rad etildi (" + actorName + ")"), null, { inline_keyboard: [] });
+          } catch (ignore) {}
+        }
+      }
     } else if (errorMsg) {
       tgSendMessage_(chatId, "⚠️ " + errorMsg, null);
     }

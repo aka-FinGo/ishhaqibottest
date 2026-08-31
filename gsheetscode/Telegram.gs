@@ -195,7 +195,14 @@ function sendSalaryConfirmationToEmployee_(tgId, rowId, employeeName, amountUZS,
     ]
   };
   
-  return tgSendMessage_(tgId, msg, "HTML", replyMarkup);
+  var res = tgSendMessage_(tgId, msg, "HTML", replyMarkup);
+  if (res && res.result && res.result.message_id) {
+    try {
+      var cache = CacheService.getScriptCache();
+      if (cache) cache.put('trk_sal_' + rowId, JSON.stringify([{ chatId: String(tgId), messageId: res.result.message_id }]), 21600);
+    } catch(e) {}
+  }
+  return res;
 }
 
 function sendSalaryConfirmationToBugalters_(actorTgId, rowId, empName, uzs, usd, rate, comment, dateStr, actionPeriod) {
@@ -220,17 +227,31 @@ function sendSalaryConfirmationToBugalters_(actorTgId, rowId, empName, uzs, usd,
     ]
   };
   
+  var sentTrack = [];
   // Bugalterlar va SuperAdminga yuborish
   var empRes = getHodimlar();
   var employees = (empRes && empRes.data) ? empRes.data : [];
   for (var i = 0; i < employees.length; i++) {
     var e = employees[i];
     if ((e.role === 'BUGALTER' || e.isBugalter) && e.tgId && String(e.tgId) !== String(CONFIG.SUPER_ADMIN_ID)) {
-      tgSendMessage_(e.tgId, msg, "HTML", replyMarkup);
+      var res = tgSendMessage_(e.tgId, msg, "HTML", replyMarkup);
+      if (res && res.result && res.result.message_id) {
+        sentTrack.push({ chatId: String(e.tgId), messageId: res.result.message_id });
+      }
     }
   }
   if (CONFIG.SUPER_ADMIN_ID) {
-    tgSendMessage_(CONFIG.SUPER_ADMIN_ID, msg, "HTML", replyMarkup);
+    var resAdmin = tgSendMessage_(CONFIG.SUPER_ADMIN_ID, msg, "HTML", replyMarkup);
+    if (resAdmin && resAdmin.result && resAdmin.result.message_id) {
+      sentTrack.push({ chatId: String(CONFIG.SUPER_ADMIN_ID), messageId: resAdmin.result.message_id });
+    }
+  }
+  
+  if (sentTrack.length > 0) {
+    try {
+      var cache = CacheService.getScriptCache();
+      if (cache) cache.put('trk_sal_' + rowId, JSON.stringify(sentTrack), 21600);
+    } catch(eTrk) {}
   }
 }
 
