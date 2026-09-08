@@ -161,6 +161,7 @@ function doPost(e) {
         break;
 
       case "self_check":
+      case "system_self_check":
         if (!(auth.isSuperAdmin || auth.isAdmin)) return sendJSON({ success:false, error:"Ruxsat yo'q!" });
         result = runSystemSelfCheck_();
         break;

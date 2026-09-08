@@ -346,15 +346,22 @@ async function runSystemSelfCheck(scope) {
     }
     
     try {
-        const res = await apiRequest({ action: 'system_self_check' });
+        const res = await apiRequest({ action: 'self_check' });
         if (res && res.success) {
-            let msg = "✅ Tizim tekshiruvi muvaffaqiyatli o'tdi!\n";
-            if (res.summary) msg += res.summary;
+            let msg = (res.warnings > 0)
+                ? `⚠️ Tekshiruvda ${res.warnings} ta ogohlantirish topildi:\n`
+                : "✅ Barcha tizim parametrlari to'g'ri sozlangan!\n";
+            if (Array.isArray(res.checks) && res.checks.length > 0) {
+                msg += res.checks.map(c => `${c.ok ? '✅' : '⚠️'} ${c.key}: ${c.note}`).join('\n');
+            } else if (res.summary) {
+                msg += res.summary;
+            }
             if (statusEl) {
                 statusEl.innerText = msg;
-                statusEl.className = 'status-msg text-green';
+                statusEl.className = 'status-msg ' + (res.warnings > 0 ? 'text-warn' : 'text-green');
+                statusEl.style.whiteSpace = 'pre-wrap';
             }
-            showToastMsg("✅ Tizim tekshiruvi muvaffaqiyatli!");
+            showToastMsg(res.warnings > 0 ? "⚠️ Tizimda ogohlantirishlar mavjud" : "✅ Tizim tekshiruvi muvaffaqiyatli!");
         } else {
             const err = res && res.error ? res.error : "Xatolik yuz berdi";
             if (statusEl) {
