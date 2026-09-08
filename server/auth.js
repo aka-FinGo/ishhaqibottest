@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // AUTH.JS — Telegram Auth + Role System
 // Replicates GS_Auth.gs and Code.gs auth logic exactly
 // ============================================================
@@ -127,41 +127,43 @@ function checkUserRoles(tgId) {
     isSardor:  false
   };
 
-  // Check if tgId is config super-admin (even if not in DB)
-  if (isConfigSuperAdmin(tgId)) {
-    auth.username    = String(cfg.SUPER_ADMIN_NAME || 'SuperAdmin');
-    auth.role        = 'SuperAdmin';
-    auth.roleKey     = 'SUPER_ADMIN';
-    auth.isSuperAdmin = true;
-    auth.isAdmin     = true;
-    auth.isBoss      = true;
-    auth.inList      = true;
-    auth.canAdd      = true;
-    auth.permissions = {
-      canViewAll: true, canEdit: true, canDelete: true,
-      canExport:  true, canViewDash: true
-    };
-    return auth;
-  }
-
-  // Look up in DB
+  // Look up in DB first
   const emp = getEmployee(tgId);
   if (!emp) {
+    if (isConfigSuperAdmin(tgId)) {
+      auth.username    = String(cfg.SUPER_ADMIN_NAME || 'SuperAdmin');
+      auth.role        = 'SuperAdmin';
+      auth.roleKey     = 'SUPER_ADMIN';
+      auth.isSuperAdmin = true;
+      auth.isAdmin     = true;
+      auth.isBoss      = true;
+      auth.inList      = true;
+      auth.canAdd      = true;
+      auth.permissions = {
+        canViewAll: true, canEdit: true, canDelete: true,
+        canExport:  true, canViewDash: true
+      };
+      return auth;
+    }
     auth.canAdd = false;
     return auth;
   }
 
+  const isSuper = emp.isSuperAdmin || isConfigSuperAdmin(tgId);
+
   auth.inList      = true;
   auth.username    = emp.username;
-  auth.canAdd      = emp.canAdd;
-  auth.role        = emp.role;
-  auth.roleKey     = emp.roleKey;
-  auth.isSuperAdmin = emp.isSuperAdmin;
+  auth.canAdd      = isSuper ? true : emp.canAdd;
+  auth.role        = isSuper ? 'SuperAdmin' : emp.role;
+  auth.roleKey     = isSuper ? 'SUPER_ADMIN' : emp.roleKey;
+  auth.isSuperAdmin = isSuper;
   auth.isDirector  = emp.isDirektor;
-  auth.isAdmin     = emp.isAdmin;
+  auth.isAdmin     = isSuper ? true : emp.isAdmin;
   auth.isBugalter  = emp.isBugalter || emp.roleKey === 'BUGALTER';
-  auth.isBoss      = emp.isSuperAdmin;
-  auth.permissions = emp.permissions;
+  auth.isBoss      = isSuper;
+  auth.permissions = isSuper
+    ? { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true }
+    : emp.permissions;
   auth.positions   = emp.positions || [];
   auth.group       = emp.group || '';
   auth.isSardor    = !!emp.isSardor;

@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // ROUTES/WEBHOOK.JS — Telegram Bot Webhook Handler
 // Mirrors handleTelegramUpdate_() and handleCallbackQuery_()
 // from Code.gs
@@ -66,8 +66,20 @@ async function handleStartCommand(message) {
 
   const auth = checkUserRoles(tgId);
 
-  // Existing user — no message needed
-  if (auth.isSuperAdmin || auth.inList) return;
+  // If user is already registered / SuperAdmin, send greeting with WebApp button
+  if (auth.isSuperAdmin || auth.inList) {
+    const webApp = String(cfg.WEB_APP_URL || 'https://ish.cabix.website').trim();
+    const buttons = [
+      [{ text: '🚀 Aristokrat Ish Haqi & Kvadratlar', web_app: { url: webApp } }]
+    ];
+    await tgCall('sendMessage', {
+      chat_id: tgId,
+      text: `👋 Assalomu alaykum, <b>${auth.username || 'iRealBy_3D'}</b>!\n\n🏢 <b>Aristokrat Ish Haqi & Kvadratlar Boshqaruv Tizimiga xush kelibsiz!</b>\n\nIlovadan foydalanish uchun quyidagi tugmani bosing 👇`,
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: buttons }
+    });
+    return;
+  }
 
   // Auto-register as PENDING if missing
   const firstName   = String(from.first_name || '');
