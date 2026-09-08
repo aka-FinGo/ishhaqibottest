@@ -253,19 +253,22 @@ function kvadratEdit(data, auth, actorTgId) {
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
     // Ruxsatni tekshirish
-    var globalSettings = getGlobalSettings_();
-    var isPrivileged = auth.isSuperAdmin || auth.isAdmin || auth.isBugalter || auth.isDirector || (auth.permissions && auth.permissions.canEdit);
-    if (globalSettings.disableEmpEditDelete && !isPrivileged) {
-      return { success: false, error: "Buyurtmalarni tahrirlash taqiqlangan!" };
+    var isSuperAdmin = auth.isSuperAdmin;
+    var isBugalter = auth.isBugalter;
+    var hasEditPerm = auth.permissions && auth.permissions.canEdit;
+
+    // Bugalter kvadratlarni tahrirlay olmaydi!
+    if (isBugalter && !isSuperAdmin) {
+      return { success: false, error: "Bugalter buyurtmalarni tahrirlash huquqiga ega emas!" };
     }
-    if (!isPrivileged) {
+    if (!isSuperAdmin && !hasEditPerm) {
       return { success: false, error: "Sizda buyurtmalarni tahrirlash ruxsati yo'q!" };
     }
-    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || auth.isBugalter;
-    var isOwner = ownerTgId === String(actorTgId);
-    var canEditAll = (isAdmin && auth.permissions.canEdit) || auth.isSuperAdmin;
 
-    if (!auth.isSuperAdmin && !canEditAll && !isOwner) {
+    var isOwner = ownerTgId === String(actorTgId);
+    var canEditAll = isSuperAdmin || (auth.isAdmin && hasEditPerm);
+
+    if (!canEditAll && !isOwner) {
       return { success: false, error: "Siz faqat o'zingiz kiritgan buyurtmani tahrirlashingiz mumkin!" };
     }
 
@@ -346,19 +349,22 @@ function kvadratDelete(data, auth, actorTgId) {
     var ownerTgId = String(existing[KV_COL.OWNER_TG_ID] || '').trim();
 
     // Ruxsatni tekshirish
-    var globalSettings = getGlobalSettings_();
-    var isPrivileged = auth.isSuperAdmin || auth.isAdmin || auth.isBugalter || auth.isDirector || (auth.permissions && auth.permissions.canDelete);
-    if (globalSettings.disableEmpEditDelete && !isPrivileged) {
-      return { success: false, error: "Buyurtmalarni o'chirish taqiqlangan!" };
+    var isSuperAdmin = auth.isSuperAdmin;
+    var isBugalter = auth.isBugalter;
+    var hasDeletePerm = auth.permissions && auth.permissions.canDelete;
+
+    // Bugalter kvadratlarni o'chira olmaydi!
+    if (isBugalter && !isSuperAdmin) {
+      return { success: false, error: "Bugalter buyurtmalarni o'chirish huquqiga ega emas!" };
     }
-    if (!isPrivileged) {
+    if (!isSuperAdmin && !hasDeletePerm) {
       return { success: false, error: "Sizda buyurtmalarni o'chirish ruxsati yo'q!" };
     }
-    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || auth.isBugalter;
-    var isOwner = ownerTgId === String(actorTgId);
-    var canDeleteAll = (isAdmin && auth.permissions.canDelete) || auth.isSuperAdmin;
 
-    if (!auth.isSuperAdmin && !canDeleteAll && !isOwner) {
+    var isOwner = ownerTgId === String(actorTgId);
+    var canDeleteAll = isSuperAdmin || (auth.isAdmin && hasDeletePerm);
+
+    if (!canDeleteAll && !isOwner) {
       return { success: false, error: "Siz faqat o'zingiz kiritgan buyurtmani o'chira olasiz!" };
     }
 

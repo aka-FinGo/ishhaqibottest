@@ -477,14 +477,17 @@ function showKvDetailModal(idx) {
         });
 
         /* ---- Tahrirlash / O'chirish tugmalari ---- */
+        const isSuperAdmin = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
+        const isBugalter = (typeof myRole !== 'undefined' && myRole === 'Bugalter');
         const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
-        const isPrivilegedRole = (typeof myRole !== 'undefined' && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor'));
         const hasExplicitEdit = Boolean(hasPerms && myPermissions.canEdit);
         const hasExplicitDelete = Boolean(hasPerms && myPermissions.canDelete);
-        const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+        const isOrderOwner = (String(rec.ownerTgId || '') === String(telegramId));
 
-        let canEdit = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || hasExplicitEdit || isPrivilegedRole || (!isGlobalRestricted);
-        let canDelete = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || hasExplicitDelete || isPrivilegedRole || (!isGlobalRestricted);
+        // Bugalter kvadratlarni tahrirlay/o'chira olmaydi.
+        // Faqat SuperAdmin yoki buyurtma egasi (agar unda canEdit/canDelete ruxsati bo'lsa) tahrirlay/o'chira oladi:
+        let canEdit = isSuperAdmin || (!isBugalter && hasExplicitEdit && isOrderOwner);
+        let canDelete = isSuperAdmin || (!isBugalter && hasExplicitDelete && isOrderOwner);
 
         const buttonsRow = (canEdit || canDelete) ? `
             <div class="kvdm-btn-row">

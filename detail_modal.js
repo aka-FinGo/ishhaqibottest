@@ -45,16 +45,16 @@ function showDetailModal(r, mode) {
 
     /* Amal tugmalari */
     let actionBtns = '';
-    const isOwner = String(r.telegramId) === String(telegramId);
-    
-    // Tahrirlash va o'chirish huquqlari (SuperAdmin, Admin, Bugalter yoki alohida ruxsat berilgan xodimlar uchun to'liq ruxsat)
-    const isPrivilegedRole = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor');
-    const hasExplicitEdit = Boolean(myPermissions && myPermissions.canEdit);
-    const hasExplicitDelete = Boolean(myPermissions && myPermissions.canDelete);
-    const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+    // Tahrirlash va o'chirish huquqlari:
+    // Faqat SuperAdmin uchun cheksiz huquq.
+    // Boshqa har qanday xodim (Bugalter, Admin, Direktor, Employee) uchun
+    // Google Sheets jadvalida (canEdit va canDelete ustunlarida) ruxsat berilgan bo'lsagina tugmalar chiqadi!
+    const isSuperAdmin = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
+    const hasEditPerm = Boolean(typeof myPermissions !== 'undefined' && myPermissions && myPermissions.canEdit);
+    const hasDeletePerm = Boolean(typeof myPermissions !== 'undefined' && myPermissions && myPermissions.canDelete);
 
-    const canEd = (myRole === 'SuperAdmin') || hasExplicitEdit || isPrivilegedRole || (!isGlobalRestricted);
-    const canDel = (myRole === 'SuperAdmin') || hasExplicitDelete || isPrivilegedRole || (!isGlobalRestricted);
+    const canEd = isSuperAdmin || hasEditPerm;
+    const canDel = isSuperAdmin || hasDeletePerm;
 
     if (mode === 'admin' || mode === true) {
         if (isOwner) {
