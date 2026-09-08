@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // ROUTES/API.JS — Web App POST /api handler
 // Mirrors doPost() switch from Code.gs
 // ============================================================
@@ -139,21 +139,59 @@ router.post('/', async (req, res) => {
         result = setGlobalSettingHandler(body.key, body.value);
         break;
 
-      // ---- Kvadratlar & Workflow (stubs — T2 completes logic) ----
-      case 'kvadrat_add':
+      // ---- Kvadratlar & Workflow ----
       case 'kvadrat_get_all':
+        result = await handleKvadratGetAll(auth);
+        break;
+
+      case 'kvadrat_add':
+        result = await handleKvadratAdd(body, auth, tgId);
+        break;
+
       case 'kvadrat_edit':
+        result = await handleKvadratEdit(body, auth, tgId);
+        break;
+
       case 'kvadrat_delete':
+        result = await handleKvadratDelete(body, auth, tgId);
+        break;
+
       case 'kvadrat_claim':
+        result = await handleKvadratClaim(body, auth, tgId);
+        break;
+
       case 'kvadrat_revert':
+        result = await handleKvadratRevert(body, auth, tgId);
+        break;
+
       case 'force_reassign_step':
+        result = await handleForceReassignStep(body, auth);
+        break;
+
       case 'workflow_get_config':
+      case 'get_workflow_config':
+        result = await handleWorkflowGetConfig();
+        break;
+
       case 'workflow_save_config':
+        result = await handleWorkflowSaveConfig(body.steps, auth);
+        break;
+
       case 'workflow_get_settings':
+        result = { success: true, isWorkflowStrict: getSetting('WORKFLOW_STRICT_MODE', '0') === '1' };
+        break;
+
       case 'workflow_save_settings':
+        result = await handleWorkflowSaveSettings(body, auth);
+        break;
+
       case 'positions_get_all':
+      case 'get_positions':
+        result = await handlePositionsGetAll();
+        break;
+
       case 'positions_save_all':
-        result = { success: false, error: `'${action}' route T2 tomonidan amalga oshiriladi` };
+        result = await handlePositionsSaveAll(body.positions, auth);
         break;
 
       case 'system_self_check':
@@ -491,6 +529,321 @@ function runSelfCheck() {
     warnings: warningCount,
     checks
   };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Kvadratlar, Workflow & Positions handlers
+// ─────────────────────────────────────────────────────────────
+
+function normalizeKvMonth(val) {
+  if (!val) {
+    const m = String(new Date().getMonth() + 1).padStart(2, '0');
+    return '_' + m;
+  }
+  const clean = String(val).replace(/^_+/, '').replace(/^'/, '').trim();
+  const num = parseInt(clean, 10);
+  if (!isFinite(num) || num < 1 || num > 12) {
+    const m2 = String(new Date().getMonth() + 1).padStart(2, '0');
+    return '_' + m2;
+  }
+  return '_' + String(num).padStart(2, '0');
+}
+
+async function handleKvadratGetAll(auth) {
+  const { db } = require('../db');
+  if (auth && (auth.roleKey === 'PENDING' || !auth.inList)) {
+    return { success: true, data: [], isPending: true };
+  }
+
+  const rows = db.prepare(`
+    SELECT * FROM kvadratlar
+    WHERE is_deleted = 0
+    ORDER BY id DESC
+  `).all();
+
+  const records = rows.map(row => {
+    let logs = [];
+    try { logs = JSON.parse(row.workflow_logs || '[]'); } catch (e) { logs = []; }
+    return {
+      rowId: row.id,
+      date: row.sana || '',
+      no: row.order_no || String(row.id),
+      month: String(row.oy || '').replace(/^'/, ''),
+      year: String(row.yil || '').replace(/^'/, ''),
+      totalM2: Number(row.total_m2) || 0,
+      orderName: row.order_name || '',
+      staffName: row.staff_name || '',
+      ownerTgId: String(row.owner_tg_id || ''),
+      currentStep: Number(row.current_step) || 1,
+      status: row.status || 'yangi',
+      logs: logs
+    };
+  });
+
+  return { success: true, data: records };
+}
+
+async function handleKvadratAdd(body, auth, actorTgId) {
+  const { db } = require('../db');
+  const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+  const monthStr = normalizeKvMonth(body.month);
+  const yearStr = String(body.year || now.getFullYear());
+  const totalM2 = Number(body.totalM2) || 0;
+  const orderName = String(body.orderName || '').trim();
+  const staffName = auth.username || body.staffName || 'iRealBy_3D';
+
+  let orderNo = String(body.no || '').trim();
+  if (!orderNo) {
+    const maxRow = db.prepare('SELECT MAX(id) as maxId FROM kvadratlar').get();
+    orderNo = String((maxRow?.maxId || 0) + 1);
+  }
+
+  const initialLog = JSON.stringify([{
+    step: 1,
+    uid: String(actorTgId),
+    u: staffName,
+    d: now.toISOString()
+  }]);
+
+  const info = db.prepare(`
+    INSERT INTO kvadratlar (sana, order_no, oy, yil, total_m2, order_name, staff_name, owner_tg_id, current_step, status, workflow_logs)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'yangi', ?)
+  `).run(dateStr, orderNo, monthStr, yearStr, totalM2, orderName, staffName, String(actorTgId), initialLog);
+
+  return { success: true, rowId: Number(info.lastInsertRowid) };
+}
+
+async function handleKvadratEdit(body, auth, actorTgId) {
+  const { db } = require('../db');
+  const rowId = parseInt(body.rowId, 10);
+  if (!rowId) return { success: false, error: "Buyurtma topilmadi" };
+
+  const existing = db.prepare('SELECT * FROM kvadratlar WHERE id = ?').get(rowId);
+  if (!existing) return { success: false, error: "Buyurtma topilmadi" };
+
+  const isOwner = String(existing.owner_tg_id) === String(actorTgId);
+  const canEdit = auth.isSuperAdmin || (auth.isAdmin && auth.permissions?.canEdit) || (isOwner && auth.permissions?.canEdit !== false);
+  if (!canEdit) return { success: false, error: "Sizda buyurtmani tahrirlash ruxsati yo'q!" };
+
+  const totalM2 = Number(body.totalM2) || existing.total_m2;
+  const orderNo = String(body.no || existing.order_no || '').trim();
+  const orderName = String(body.orderName || existing.order_name || '').trim();
+  const staffName = body.staffName || existing.staff_name;
+  const monthStr = body.month ? normalizeKvMonth(body.month) : existing.oy;
+  const yearStr = body.year ? String(body.year) : existing.yil;
+
+  db.prepare(`
+    UPDATE kvadratlar
+    SET total_m2 = ?, order_no = ?, order_name = ?, staff_name = ?, oy = ?, yil = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(totalM2, orderNo, orderName, staffName, monthStr, yearStr, rowId);
+
+  return { success: true };
+}
+
+async function handleKvadratDelete(body, auth, actorTgId) {
+  const { db } = require('../db');
+  const rowId = parseInt(body.rowId, 10);
+  if (!rowId) return { success: false, error: "Buyurtma topilmadi" };
+
+  const existing = db.prepare('SELECT * FROM kvadratlar WHERE id = ?').get(rowId);
+  if (!existing) return { success: false, error: "Buyurtma topilmadi" };
+
+  const isOwner = String(existing.owner_tg_id) === String(actorTgId);
+  const canDelete = auth.isSuperAdmin || (auth.isAdmin && auth.permissions?.canDelete) || (isOwner && auth.permissions?.canDelete !== false);
+  if (!canDelete) return { success: false, error: "Sizda buyurtmani o'chirish ruxsati yo'q!" };
+
+  db.prepare('UPDATE kvadratlar SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(rowId);
+  return { success: true };
+}
+
+async function handleKvadratClaim(body, auth, actorTgId) {
+  const { db } = require('../db');
+  const rowId = parseInt(body.rowId, 10);
+  if (!rowId) return { success: false, error: "Buyurtma topilmadi" };
+
+  const existing = db.prepare('SELECT * FROM kvadratlar WHERE id = ? AND is_deleted = 0').get(rowId);
+  if (!existing) return { success: false, error: "Buyurtma topilmadi" };
+
+  let logs = [];
+  try { logs = JSON.parse(existing.workflow_logs || '[]'); } catch (e) { logs = []; }
+
+  const steps = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
+  const currentStepIdx = Number(existing.current_step) || 1;
+  const targetStepIdx = body.targetStepIndex ? Number(body.targetStepIndex) : currentStepIdx + 1;
+
+  const stepToProcess = steps.find(s => s.step_index === targetStepIdx);
+  if (!stepToProcess) return { success: false, error: "Bajariladigan bosqich topilmadi" };
+
+  if (logs.some(l => l.step === stepToProcess.step_index)) {
+    return { success: false, error: "Ushbu bosqich avval tasdiqlangan" };
+  }
+
+  const userPositions = (auth.positions || []).map(p => String(p).trim().toLowerCase());
+  const stepPos = String(stepToProcess.position_name).trim().toLowerCase();
+  const hasPos = userPositions.includes(stepPos);
+  if (!auth.isSuperAdmin && !hasPos) {
+    return { success: false, error: `Sizda "${stepToProcess.position_name}" lavozimi yo'q` };
+  }
+
+  const now = new Date();
+  logs.push({
+    step: stepToProcess.step_index,
+    uid: String(actorTgId),
+    u: auth.username || 'iRealBy_3D',
+    d: now.toISOString(),
+    group: auth.group || ''
+  });
+  logs.sort((a, b) => Number(a.step) - Number(b.step));
+
+  const maxStep = logs.reduce((m, l) => Math.max(m, Number(l.step) || 0), 0);
+  const latestStep = steps.find(s => s.step_index === maxStep);
+
+  db.prepare(`
+    UPDATE kvadratlar
+    SET current_step = ?, status = ?, workflow_logs = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(
+    latestStep ? latestStep.step_index : existing.current_step,
+    latestStep ? latestStep.status_label : existing.status,
+    JSON.stringify(logs),
+    rowId
+  );
+
+  return { success: true };
+}
+
+async function handleKvadratRevert(body, auth, actorTgId) {
+  const { db } = require('../db');
+  const rowId = parseInt(body.rowId, 10);
+  if (!rowId) return { success: false, error: "Buyurtma topilmadi" };
+
+  const existing = db.prepare('SELECT * FROM kvadratlar WHERE id = ? AND is_deleted = 0').get(rowId);
+  if (!existing) return { success: false, error: "Buyurtma topilmadi" };
+
+  let logs = [];
+  try { logs = JSON.parse(existing.workflow_logs || '[]'); } catch (e) { logs = []; }
+  if (!logs.length) return { success: false, error: "Tarixda bosqich topilmadi" };
+
+  if (body.targetStepIndex) {
+    const tIdx = Number(body.targetStepIndex);
+    logs = logs.filter(l => Number(l.step) < tIdx);
+  } else {
+    logs.pop();
+  }
+
+  const steps = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
+  const maxStep = logs.reduce((m, l) => Math.max(m, Number(l.step) || 0), 1);
+  const latestStep = steps.find(s => s.step_index === maxStep);
+
+  db.prepare(`
+    UPDATE kvadratlar
+    SET current_step = ?, status = ?, workflow_logs = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(
+    latestStep ? latestStep.step_index : 1,
+    latestStep ? latestStep.status_label : 'yangi',
+    JSON.stringify(logs),
+    rowId
+  );
+
+  return { success: true };
+}
+
+async function handleForceReassignStep(body, auth) {
+  if (!auth.isSuperAdmin) return { success: false, error: "Faqat SuperAdmin o'zgartira oladi" };
+  const { db } = require('../db');
+  const rowId = parseInt(body.rowId, 10);
+  const stepIdx = parseInt(body.stepIndex, 10);
+  if (!rowId || !stepIdx) return { success: false, error: "Parametrlar yetarli emas" };
+
+  const existing = db.prepare('SELECT * FROM kvadratlar WHERE id = ?').get(rowId);
+  if (!existing) return { success: false, error: "Buyurtma topilmadi" };
+
+  let logs = [];
+  try { logs = JSON.parse(existing.workflow_logs || '[]'); } catch (e) { logs = []; }
+  
+  const existingLog = logs.find(l => l.step === stepIdx);
+  if (existingLog) {
+    existingLog.u = body.staffName || existingLog.u;
+    existingLog.uid = String(body.staffTgId || existingLog.uid);
+  } else {
+    logs.push({
+      step: stepIdx,
+      uid: String(body.staffTgId || ''),
+      u: body.staffName || 'Admin',
+      d: new Date().toISOString()
+    });
+  }
+  logs.sort((a, b) => Number(a.step) - Number(b.step));
+
+  db.prepare('UPDATE kvadratlar SET workflow_logs = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(JSON.stringify(logs), rowId);
+  return { success: true };
+}
+
+async function handleWorkflowGetConfig() {
+  const { db } = require('../db');
+  const steps = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
+  return { success: true, config: steps };
+}
+
+async function handleWorkflowSaveConfig(steps, auth) {
+  if (!auth.isSuperAdmin) return { success: false, error: "Faqat SuperAdmin oqimni saqlay oladi" };
+  const { db } = require('../db');
+  if (!Array.isArray(steps)) return { success: false, error: "Noto'g'ri format" };
+
+  db.exec('DELETE FROM workflow_steps;');
+  const stmt = db.prepare(`
+    INSERT INTO workflow_steps (step_index, position_name, action_label, status_label, is_start, is_end)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  steps.forEach((s, idx) => {
+    stmt.run(
+      idx + 1,
+      String(s.position || s.position_name || '').trim(),
+      String(s.action || s.action_label || '').trim(),
+      String(s.status || s.status_label || '').trim(),
+      s.isStart ? 1 : 0,
+      s.isEnd ? 1 : 0
+    );
+  });
+
+  return { success: true };
+}
+
+async function handleWorkflowSaveSettings(body, auth) {
+  if (!auth.isSuperAdmin) return { success: false, error: "Faqat SuperAdmin o'zgartira oladi" };
+  const { setSetting } = require('../db');
+  const isStrict = body.isWorkflowStrict === true || body.isWorkflowStrict === 'true';
+  setSetting('WORKFLOW_STRICT_MODE', isStrict ? '1' : '0');
+  return { success: true };
+}
+
+async function handlePositionsGetAll() {
+  const { db } = require('../db');
+  const positions = db.prepare('SELECT * FROM positions ORDER BY position_name ASC').all().map(p => ({
+    id: p.id,
+    name: p.position_name,
+    icon: p.icon || '💼'
+  }));
+  return { success: true, positions };
+}
+
+async function handlePositionsSaveAll(positions, auth) {
+  if (!auth.isSuperAdmin) return { success: false, error: "Faqat SuperAdmin lavozimlarni saqlay oladi" };
+  const { db } = require('../db');
+  if (!Array.isArray(positions)) return { success: false, error: "Noto'g'ri format" };
+
+  db.exec('DELETE FROM positions;');
+  const stmt = db.prepare('INSERT OR IGNORE INTO positions (position_name, icon) VALUES (?, ?)');
+  positions.forEach(p => {
+    if (p.name && p.name.trim()) {
+      stmt.run(p.name.trim(), p.icon || '💼');
+    }
+  });
+
+  return { success: true };
 }
 
 module.exports = router;

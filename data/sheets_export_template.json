@@ -1,0 +1,95 @@
+{
+  "_info": "Export your Google Sheets data and fill in this template. Then rename to sheets_export.json",
+  "employees": [
+    {
+      "telegram_id": "123456789",
+      "username": "Test User",
+      "can_add": 1,
+      "super_admin": 0,
+      "direktor": 0,
+      "admin": 0,
+      "view_all": 1,
+      "edit": 0,
+      "delete": 0,
+      "export": 0,
+      "view_dash": 1,
+      "role": "EMPLOYEE",
+      "lavozim": "Loyihachi",
+      "guruh": "1",
+      "is_sardor": 0
+    }
+  ],
+  "records": [
+    {
+      "name": "Test User",
+      "telegram_id": "123456789",
+      "amount_uzs": 500000,
+      "amount_usd": 0,
+      "rate": 12500,
+      "comment": "Test yozuv",
+      "date": "01/06/2026",
+      "is_deleted": 0,
+      "action_period": "2026-06",
+      "status": "Tasdiqlandi"
+    }
+  ],
+  "kvadratlar": [
+    {
+      "date": "01/06/2026",
+      "no": "1",
+      "month": "_06",
+      "year": "2026",
+      "total_m2": 15.5,
+      "order_name": "Test buyurtma",
+      "staff_name": "Test User",
+      "owner_tg_id": "123456789",
+      "is_deleted": 0,
+      "step_index": 1,
+      "status": "yangi",
+      "step_logs": "[]"
+    }
+  ],
+  "workflow_steps": [
+    {
+      "step_index": 1,
+      "position_name": "Loyihachi",
+      "action_label": "Kiritish",
+      "status_label": "Yangi",
+      "is_start": 1
+    },
+    {
+      "step_index": 2,
+      "position_name": "Yiguvchi",
+      "action_label": "Men yigdim",
+      "status_label": "Yigildi",
+      "is_start": 0
+    },
+    {
+      "step_index": 3,
+      "position_name": "Qadoqlovchi",
+      "action_label": "Men qadoqladim",
+      "status_label": "Tayyor",
+      "is_start": 0
+    }
+  ],
+  "positions": [
+    {
+      "position_name": "Loyihachi",
+      "icon": "?"
+    },
+    {
+      "position_name": "Yiguvchi",
+      "icon": "?"
+    },
+    {
+      "position_name": "Qadoqlovchi",
+      "icon": "?"
+    }
+  ],
+  "global_settings": {
+    "only_bugalter_add": 0,
+    "disable_emp_edit_delete": 0,
+    "notify_director": 0,
+    "workflow_strict_mode": 0
+  }
+}

@@ -87,3 +87,8 @@ Dockerfile
 HANDOFF.md
 handoff.md
 *handoff*
+
+# Database & Multi-agent
+data/*.db
+data/backups/
+.multi-agent/
