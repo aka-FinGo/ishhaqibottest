@@ -43,6 +43,8 @@ const SheetsApp = {
 
 // ── Boshlang'ich Sozlash (Init) ─────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    // Avval xavfsizlik tekshiruvi — ochiq internetdan himoya
+    if (!checkAccessGuard()) return;
     initAuth();
     initTheme();
     setupEventListeners();
@@ -266,7 +268,7 @@ function updateFilterOptions() {
         filterContainer.appendChild(selStatus);
 
         // Yil filter
-        const years = [...new Set(SheetsApp.data.kvadratlar.map(k => k.yil).filter(Boolean))].sort().reverse();
+        const years = [...new Set(SheetsApp.data.kvadratlar.map(k => k.year).filter(Boolean))].sort().reverse();
         if (years.length) {
             const selYear = document.createElement('select');
             selYear.className = 'gs-select';
@@ -280,7 +282,7 @@ function updateFilterOptions() {
         }
 
         // Oy filter
-        const months = [...new Set(SheetsApp.data.kvadratlar.map(k => k.oy).filter(Boolean))];
+        const months = [...new Set(SheetsApp.data.kvadratlar.map(k => k.month).filter(Boolean))];
         if (months.length) {
             const selMonth = document.createElement('select');
             selMonth.className = 'gs-select';
@@ -451,25 +453,25 @@ function renderKvadratlarTable() {
 
     let items = [...SheetsApp.data.kvadratlar];
 
-    // Qidiruv va filtrlar
+    // Qidiruv va filtrlar — API camelCase: orderName, no, staffName, date, ownerTgId
     const search = SheetsApp.filters.search.toLowerCase().trim();
     if (search) {
         items = items.filter(k => {
-            return (k.order_name && k.order_name.toLowerCase().includes(search)) ||
-                   (k.order_no && String(k.order_no).toLowerCase().includes(search)) ||
-                   (k.staff_name && k.staff_name.toLowerCase().includes(search)) ||
-                   (k.sana && k.sana.toLowerCase().includes(search)) ||
-                   (k.owner_tg_id && String(k.owner_tg_id).includes(search));
+            return (k.orderName && k.orderName.toLowerCase().includes(search)) ||
+                   (k.no && String(k.no).toLowerCase().includes(search)) ||
+                   (k.staffName && k.staffName.toLowerCase().includes(search)) ||
+                   (k.date && k.date.toLowerCase().includes(search)) ||
+                   (k.ownerTgId && String(k.ownerTgId).includes(search));
         });
     }
     if (SheetsApp.filters.status) {
         items = items.filter(k => (k.status || 'yangi') === SheetsApp.filters.status);
     }
     if (SheetsApp.filters.year) {
-        items = items.filter(k => String(k.yil) === SheetsApp.filters.year);
+        items = items.filter(k => String(k.year) === SheetsApp.filters.year);
     }
     if (SheetsApp.filters.month) {
-        items = items.filter(k => String(k.oy) === SheetsApp.filters.month);
+        items = items.filter(k => String(k.month) === SheetsApp.filters.month);
     }
 
     // Saralash (Sort)
@@ -488,16 +490,16 @@ function renderKvadratlarTable() {
     thead.innerHTML = `
         <tr>
             <th class="gs-col-row-num">#</th>
-            <th onclick="sortTable('id')">ID ${getSortIcon('id')}</th>
-            <th onclick="sortTable('sana')">Sana 📅 ${getSortIcon('sana')}</th>
-            <th onclick="sortTable('order_no')">№ ${getSortIcon('order_no')}</th>
-            <th onclick="sortTable('order_name')">Buyurtma Nomi 🏷 ${getSortIcon('order_name')}</th>
-            <th onclick="sortTable('total_m2')" style="text-align:right;">Maydon (m²) 📐 ${getSortIcon('total_m2')}</th>
-            <th onclick="sortTable('oy')">Oy 🗓 ${getSortIcon('oy')}</th>
-            <th onclick="sortTable('yil')">Yil 📅 ${getSortIcon('yil')}</th>
-            <th onclick="sortTable('owner_tg_id')">Mulkdor ID 🆔 ${getSortIcon('owner_tg_id')}</th>
-            <th onclick="sortTable('staff_name')">Xodim 👤 ${getSortIcon('staff_name')}</th>
-            <th onclick="sortTable('current_step')">Joriy Bosqich ⚡ ${getSortIcon('current_step')}</th>
+            <th onclick="sortTable('rowId')">ID ${getSortIcon('rowId')}</th>
+            <th onclick="sortTable('date')">Sana 📅 ${getSortIcon('date')}</th>
+            <th onclick="sortTable('no')">№ ${getSortIcon('no')}</th>
+            <th onclick="sortTable('orderName')">Buyurtma Nomi 🏷 ${getSortIcon('orderName')}</th>
+            <th onclick="sortTable('totalM2')" style="text-align:right;">Maydon (m²) 📐 ${getSortIcon('totalM2')}</th>
+            <th onclick="sortTable('month')">Oy 🗓 ${getSortIcon('month')}</th>
+            <th onclick="sortTable('year')">Yil 📅 ${getSortIcon('year')}</th>
+            <th onclick="sortTable('ownerTgId')">Mulkdor ID 🆔 ${getSortIcon('ownerTgId')}</th>
+            <th onclick="sortTable('staffName')">Xodim 👤 ${getSortIcon('staffName')}</th>
+            <th onclick="sortTable('currentStep')">Bosqich ⚡ ${getSortIcon('currentStep')}</th>
             <th onclick="sortTable('status')">Holat 🟢 ${getSortIcon('status')}</th>
             <th style="text-align:center; width: 70px;">Amallar ⚙️</th>
         </tr>
@@ -512,38 +514,36 @@ function renderKvadratlarTable() {
     let totalM2 = 0;
 
     tbody.innerHTML = items.map((k, idx) => {
-        const m2 = Number(k.total_m2 || 0);
+        const m2 = Number(k.totalM2 || 0);
         totalM2 += m2;
-
+        const id = k.rowId || k.id;
         const statusStr = k.status || 'yangi';
         let badgeClass = 'gs-badge-kutilmoqda';
         if (statusStr.toLowerCase().includes('bajarildi') || statusStr.toLowerCase().includes('yakunlandi')) {
             badgeClass = 'gs-badge-tasdiqlandi';
-        } else if (statusStr.toLowerCase().includes('yangi')) {
-            badgeClass = 'gs-badge-kutilmoqda';
         }
 
         return `
-            <tr data-row-id="${k.id}">
+            <tr data-row-id="${id}">
                 <td class="gs-col-row-num">${idx + 1}</td>
-                <td style="color: var(--gs-text-muted); font-size:11px;">#${k.id}</td>
-                <td class="gs-cell-editable" data-col="sana" data-id="${k.id}" data-type="date" title="2 marta bosing tahrirlash uchun">${escapeHtml(k.sana)}</td>
-                <td class="gs-cell-editable" data-col="order_no" data-id="${k.id}" data-type="text" title="2 marta bosing tahrirlash uchun" style="font-weight:700;">${escapeHtml(k.order_no || '—')}</td>
-                <td class="gs-cell-editable" data-col="order_name" data-id="${k.id}" data-type="text" title="2 marta bosing tahrirlash uchun"><b>${escapeHtml(k.order_name)}</b></td>
-                <td class="gs-cell-editable gs-num" data-col="total_m2" data-id="${k.id}" data-type="number" title="2 marta bosing tahrirlash uchun" style="font-weight:800; color: #0284c7;">${m2.toLocaleString('uz-UZ', {minimumFractionDigits: 1, maximumFractionDigits: 2})} m²</td>
-                <td class="gs-cell-editable" data-col="oy" data-id="${k.id}" data-type="text" title="2 marta bosing tahrirlash uchun">${escapeHtml(k.oy || '—')}</td>
-                <td class="gs-cell-editable" data-col="yil" data-id="${k.id}" data-type="text" title="2 marta bosing tahrirlash uchun">${escapeHtml(k.yil || '—')}</td>
-                <td class="gs-cell-editable" data-col="owner_tg_id" data-id="${k.id}" data-type="text" title="2 marta bosing tahrirlash uchun" style="font-family: var(--gs-mono); font-size:11.5px;">${escapeHtml(k.owner_tg_id || '')}</td>
-                <td class="gs-cell-editable" data-col="staff_name" data-id="${k.id}" data-type="text" title="2 marta bosing tahrirlash uchun">${escapeHtml(k.staff_name || '—')}</td>
-                <td class="gs-cell-editable" data-col="current_step" data-id="${k.id}" data-type="select-step" title="2 marta bosing tahrirlash uchun" style="text-align:center;">
-                    <span style="font-weight:700; background:rgba(2,132,199,0.1); color:#0284c7; padding:2px 8px; border-radius:6px;">Bosqich ${k.current_step || 1}</span>
+                <td style="color: var(--gs-text-muted); font-size:11px;">#${id}</td>
+                <td class="gs-cell-editable" data-col="date" data-id="${id}" data-type="date" title="2 marta bosing">${escapeHtml(k.date || '')}</td>
+                <td class="gs-cell-editable" data-col="no" data-id="${id}" data-type="text" title="2 marta bosing" style="font-weight:700;">${escapeHtml(k.no || '—')}</td>
+                <td class="gs-cell-editable" data-col="orderName" data-id="${id}" data-type="text" title="2 marta bosing"><b>${escapeHtml(k.orderName || '')}</b></td>
+                <td class="gs-cell-editable gs-num" data-col="totalM2" data-id="${id}" data-type="number" title="2 marta bosing" style="font-weight:800; color: #0284c7;">${m2.toLocaleString('uz-UZ', {minimumFractionDigits: 1, maximumFractionDigits: 2})} m²</td>
+                <td class="gs-cell-editable" data-col="month" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.month || '—')}</td>
+                <td class="gs-cell-editable" data-col="year" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.year || '—')}</td>
+                <td class="gs-cell-editable" data-col="ownerTgId" data-id="${id}" data-type="text" title="2 marta bosing" style="font-family: var(--gs-mono); font-size:11.5px;">${escapeHtml(k.ownerTgId || '')}</td>
+                <td class="gs-cell-editable" data-col="staffName" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.staffName || '—')}</td>
+                <td class="gs-cell-editable" data-col="currentStep" data-id="${id}" data-type="select-step" title="2 marta bosing" style="text-align:center;">
+                    <span style="font-weight:700; background:rgba(2,132,199,0.1); color:#0284c7; padding:2px 8px; border-radius:6px;">Bosqich ${k.currentStep || 1}</span>
                 </td>
-                <td class="gs-cell-editable" data-col="status" data-id="${k.id}" data-type="select-kv-status" title="2 marta bosing tahrirlash uchun">
+                <td class="gs-cell-editable" data-col="status" data-id="${id}" data-type="select-kv-status" title="2 marta bosing">
                     <span class="gs-status-badge ${badgeClass}">${escapeHtml(statusStr)}</span>
                 </td>
                 <td style="text-align:center;">
                     <div class="gs-row-actions" style="justify-content:center;">
-                        <button class="gs-act-btn gs-act-btn-del" onclick="deleteKvadratPrompt(${k.id}, '${escapeHtml(k.order_name)}')" title="O'chirish (SQLite)">🗑</button>
+                        <button class="gs-act-btn gs-act-btn-del" onclick="deleteKvadratPrompt(${id}, '${escapeHtml(k.orderName || '')}')" title="O'chirish">🗑</button>
                     </div>
                 </td>
             </tr>
@@ -552,6 +552,7 @@ function renderKvadratlarTable() {
 
     updateStatsBar(items.length, 0, 0, totalM2);
 }
+
 
 // ─────────────────────────────────────────────────────────────
 // 3. Hodimlar (Xodimlar & Huquqlar)
@@ -810,7 +811,7 @@ function startCellEdit(td) {
         const rec = SheetsApp.data.records.find(r => String(r.id) === String(rowId));
         if (rec) currentRawVal = rec[colName] ?? rec[snakeToCamel(colName)] ?? '';
     } else if (SheetsApp.activeTab === 'Kvadratlar') {
-        const kv = SheetsApp.data.kvadratlar.find(k => String(k.id) === String(rowId));
+        const kv = SheetsApp.data.kvadratlar.find(k => String(k.rowId || k.id) === String(rowId));
         if (kv) currentRawVal = kv[colName] ?? '';
     } else if (SheetsApp.activeTab === 'Hodimlar') {
         const emp = SheetsApp.data.employees.find(e => String(e.telegram_id || e.tgId) === String(rowId));
@@ -965,20 +966,24 @@ async function commitCellEdit(td) {
             }
         }
     } else if (SheetsApp.activeTab === 'Kvadratlar') {
-        const payload = {
-            rowId: parseInt(rowId, 10)
-        };
-        if (colName === 'total_m2') payload.totalM2 = newVal;
-        else if (colName === 'order_no') payload.no = newVal;
-        else if (colName === 'order_name') payload.orderName = newVal;
-        else if (colName === 'staff_name') payload.staffName = newVal;
-        else if (colName === 'current_step') payload.currentStep = newVal;
+        const payload = { rowId: parseInt(rowId, 10) };
+        // colName endi camelCase: date, no, orderName, totalM2, month, year, ownerTgId, staffName, currentStep, status
+        if (colName === 'totalM2') payload.totalM2 = newVal;
+        else if (colName === 'no') payload.no = newVal;
+        else if (colName === 'orderName') payload.orderName = newVal;
+        else if (colName === 'staffName') payload.staffName = newVal;
+        else if (colName === 'currentStep') payload.currentStep = newVal;
+        else if (colName === 'date') payload.sana = newVal;
+        else if (colName === 'month') payload.month = newVal;
+        else if (colName === 'year') payload.year = newVal;
+        else if (colName === 'ownerTgId') payload.ownerTgId = newVal;
         else payload[colName] = newVal;
 
         res = await apiRequest('kvadrat_edit', payload);
 
         if (res && res.success) {
-            const kv = SheetsApp.data.kvadratlar.find(k => String(k.id) === String(rowId));
+            // rowId yoki id orqali topish
+            const kv = SheetsApp.data.kvadratlar.find(k => String(k.rowId || k.id) === String(rowId));
             if (kv) kv[colName] = newVal;
         }
     } else if (SheetsApp.activeTab === 'Hodimlar') {
@@ -1609,9 +1614,84 @@ function toggleTheme() {
 }
 
 function returnToApp() {
-    if (window.parent && window.parent !== window) {
+    const tg = window.Telegram?.WebApp;
+    if (tg && tg.openLink) {
+        // Telegram WebApp ichida — bot linkiga qaytish
+        tg.close();
+    } else if (window.parent && window.parent !== window) {
         window.parent.location.href = 'index.html';
     } else {
         window.location.href = 'index.html';
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// XAVFSIZLIK TEKSHIRUVI — Ochiq internetdan himoya
+// Faqat: Telegram WebApp initData YOKI localStorage'da admin ID
+// ─────────────────────────────────────────────────────────────
+function checkAccessGuard() {
+    const tg = window.Telegram?.WebApp;
+
+    // Telegram WebApp orqali kelgan — initData bor
+    if (tg && tg.initData && tg.initData.length > 10) {
+        return true;
+    }
+
+    // URL orqali tgId berilgan (masalan: ?tgId=2112012311)
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('tgId') && params.get('tgId').length > 5) {
+        localStorage.setItem('admin_sheets_tg_id', params.get('tgId'));
+        return true;
+    }
+
+    // LocalStorage da saqlangan ID
+    const storedId = localStorage.getItem('admin_sheets_tg_id');
+    if (storedId && storedId.length > 5) {
+        return true;
+    }
+
+    // Localhost / 127.0.0.1 da ishlaytgan bo'lsa (dev rejim)
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '') {
+        return true;
+    }
+
+    // Ochiq internetda — kirish so'raladi
+    showAccessDenied();
+    return false;
+}
+
+function showAccessDenied() {
+    document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;">
+            <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px;max-width:400px;width:90%;text-align:center;">
+                <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+                <h2 style="color:#f1f5f9;font-size:20px;margin:0 0 10px;">Kirish taqiqlangan</h2>
+                <p style="color:#94a3b8;font-size:14px;margin:0 0 24px;line-height:1.6;">
+                    Ushbu sahifa faqat Telegram WebApp orqali yoki administratorlik huquqi bilan ochilishi mumkin.
+                </p>
+                <div style="margin-bottom:20px;">
+                    <input type="text" id="guardTgIdInput" placeholder="Telegram ID kiriting..."
+                        style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#f1f5f9;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
+                    <button onclick="guardLogin()" 
+                        style="width:100%;padding:12px;border-radius:8px;background:#0f9d58;color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;">
+                        ✅ Kirish
+                    </button>
+                </div>
+                <p style="color:#475569;font-size:11px;margin:0;">
+                    @ishhaqitestbot orqali Telegram WebApp ni oching
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+function guardLogin() {
+    const inp = document.getElementById('guardTgIdInput');
+    if (!inp || !inp.value.trim()) return alert('Telegram ID kiriting!');
+    const id = inp.value.trim();
+    if (!/^\d{5,12}$/.test(id)) return alert('Noto\'g\'ri format! Faqat raqamlar (5-12 ta)');
+    localStorage.setItem('admin_sheets_tg_id', id);
+    window.location.reload();
+}
+

@@ -908,6 +908,17 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminSettingsArea') { loadGlobalSettingsUI(); }
 }
 
+// GSheet Jadval sahifasini Telegram WebApp da yoki brauzerda ochish
+function openAdminSheets() {
+    const adminSheetsUrl = (window.location.origin || 'https://ish.cabix.website') + '/admin_sheets.html';
+    const tg = window.Telegram?.WebApp;
+    if (tg && typeof tg.openLink === 'function') {
+        tg.openLink(adminSheetsUrl);
+    } else {
+        window.open(adminSheetsUrl, '_blank');
+    }
+}
+
 function toggleRate() {
     const isUsd = document.getElementById('currency').value === 'USD';
     document.getElementById('rateDiv').classList.toggle('hidden', !isUsd);
