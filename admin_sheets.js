@@ -71,32 +71,40 @@ window.initSheetsApp = function() {
 
 // Telegram yoki Desktop Auth aniqlash
 function initAuth() {
-    // 1. Agar index.html ichida bo'lsa (global o'zgaruvchilar mavjud)
-    if (typeof myTgId !== 'undefined' && myTgId) {
-        SheetsApp.auth.telegramId = String(myTgId);
-        SheetsApp.auth.username = (typeof myName !== 'undefined' && myName) ? myName : 'iRealBy_3D';
-        SheetsApp.auth.role = (typeof myRole !== 'undefined' && myRole) ? myRole : 'SUPER_ADMIN';
-        SheetsApp.auth.isSuperAdmin = (myRole === 'SuperAdmin' || String(myTgId) === '2112012311');
-        SheetsApp.auth.canEdit = true;
-        SheetsApp.auth.canDelete = true;
-        if (typeof tgInitData !== 'undefined' && tgInitData) {
-            SheetsApp.auth.initData = tgInitData;
-        }
+    let initData = '';
+
+    // 1. Hash dan (#tgWebAppData=...)
+    if (window.location.hash.includes('tgWebAppData=')) {
+        try {
+            const hashStr = window.location.hash.substring(1);
+            const hashParams = new URLSearchParams(hashStr);
+            initData = hashParams.get('tgWebAppData') || '';
+        } catch(e) {}
     }
 
-    // 2. Telegram WebApp obyekti orqali
-    const tg = window.Telegram?.WebApp;
+    // 2. Telegram WebApp obyekti orqali (o'zi yoki ota oyna orqali)
+    const tg = window.Telegram?.WebApp || (window.parent && window.parent !== window ? window.parent.Telegram?.WebApp : null);
     if (tg) {
-        tg.expand();
+        tg.expand && tg.expand();
         tg.setHeaderColor && tg.setHeaderColor('#0F172A');
-        if (tg.initData) {
-            SheetsApp.auth.initData = tg.initData;
+        if (tg.initData && !initData) {
+            initData = tg.initData;
         }
         if (tg.initDataUnsafe?.user?.id) {
             SheetsApp.auth.telegramId = String(tg.initDataUnsafe.user.id);
             SheetsApp.auth.username = tg.initDataUnsafe.user.username || 
                 `${tg.initDataUnsafe.user.first_name || ''} ${tg.initDataUnsafe.user.last_name || ''}`.trim() || 'Foydalanuvchi';
         }
+    }
+
+    if (initData) {
+        SheetsApp.auth.initData = initData;
+    }
+
+    // 3. URL parametrlari orqali tekshirish
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('tgId') && !SheetsApp.auth.telegramId) {
+        SheetsApp.auth.telegramId = params.get('tgId');
     }
 
     // Foydalanuvchi nomi qoidasi: Agar iRealBy_3D bo'lsa
@@ -1724,18 +1732,23 @@ function returnToApp() {
 // Faqat: Telegram WebApp (initData) YOKI index.html ichida
 // ─────────────────────────────────────────────────────────────
 function checkAccessGuard() {
-    // 1. Agar index.html ichida embed rejimda bo'lsa
-    if (typeof myTgId !== 'undefined' && myTgId) {
+    // 1. Iframe ichida bo'lsa (index.html ichidagi embed)
+    if (window.parent && window.parent !== window) {
         return true;
     }
 
-    // 2. Localhost / 127.0.0.1 da ishlayotgan bo'lsa (ishlab chiqish rejimi)
+    // 2. Hash orqali Telegram WebApp auth ma'lumotlari uzatilgan bo'lsa
+    if (window.location.hash.includes('tgWebAppData=') && window.location.hash.length > 20) {
+        return true;
+    }
+
+    // 3. Localhost / 127.0.0.1 da ishlayotgan bo'lsa (ishlab chiqish rejimi)
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1' || host === '') {
         return true;
     }
 
-    // 3. Telegram WebApp orqali ochilgan — initData mavjud
+    // 4. Telegram WebApp orqali ochilgan — initData mavjud
     const tg = window.Telegram?.WebApp;
     if (tg && tg.initData && tg.initData.length > 10) {
         return true;

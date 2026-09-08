@@ -907,15 +907,25 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
     if (areaId === 'adminSettingsArea') { loadGlobalSettingsUI(); }
     if (areaId === 'adminSheetsArea') {
-        if (typeof initSheetsApp === 'function') {
-            initSheetsApp();
+        const iframe = document.getElementById('adminSheetsIframe');
+        if (iframe) {
+            const tg = window.Telegram?.WebApp;
+            const initData = tg?.initData || (typeof tgInitData !== 'undefined' ? tgInitData : '');
+            const tgId = (typeof myTgId !== 'undefined' && myTgId) ? myTgId : (tg?.initDataUnsafe?.user?.id || '2112012311');
+            const targetUrl = `admin_sheets.html?tgId=${encodeURIComponent(tgId)}&v=2.2.0#tgWebAppData=${encodeURIComponent(initData)}`;
+            if (iframe.src === 'about:blank' || !iframe.src || iframe.src.endsWith('about:blank')) {
+                iframe.src = targetUrl;
+            }
         }
     }
 }
 
 // GSheet Jadval sahifasini to'liq ekranda ochish
 function openAdminSheetsFullscreen() {
-    window.location.href = 'admin_sheets.html';
+    const tg = window.Telegram?.WebApp;
+    const initData = tg?.initData || (typeof tgInitData !== 'undefined' ? tgInitData : '');
+    const tgId = (typeof myTgId !== 'undefined' && myTgId) ? myTgId : (tg?.initDataUnsafe?.user?.id || '2112012311');
+    window.location.href = `admin_sheets.html?tgId=${encodeURIComponent(tgId)}&v=2.2.0#tgWebAppData=${encodeURIComponent(initData)}`;
 }
 
 function openAdminSheets() {

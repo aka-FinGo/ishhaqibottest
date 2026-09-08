@@ -41,13 +41,11 @@
     --gs-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-* {
+.gs-body-reset * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
-body {
+body.gs-standalone-body {
     font-family: var(--gs-font);
     background: var(--gs-bg);
     color: var(--gs-text);
@@ -56,6 +54,8 @@ body {
     flex-direction: column;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
 }
 
 /* ── Yuqori sarlavha va boshqaruv (Top Header) ─────────────── */
