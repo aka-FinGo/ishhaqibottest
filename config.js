@@ -1,4 +1,6 @@
-const API_URL = "/api";
+const API_URL = (window.location.hostname === 'ish.cabix.website' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? '/api'
+  : 'https://ish.cabix.website/api';
 
 const tg = window.Telegram.WebApp;
 tg.expand();
