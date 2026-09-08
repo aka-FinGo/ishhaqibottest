@@ -7,7 +7,7 @@
 
 // ── Global Boshqaruv Holati (State) ─────────────────────────
 const SheetsApp = {
-    activeTab: 'dataSheet', // 'dataSheet' | 'Kvadratlar' | 'Hodimlar' | 'Sozlamalar'
+    activeTab: 'dataSheet', // 'dataSheet' | 'Kvadratlar' | 'Hodimlar' | 'Sozlamalar' | 'AI_Providers'
     isLoaded: false,
     auth: {
         telegramId: '', // Telegram orqali aniqlanadi (xavfsizlik uchun default bo'sh)
@@ -23,6 +23,7 @@ const SheetsApp = {
         kvadratlar: [],
         employees: [],
         settings: [],
+        aiProviders: [],
         workflowSteps: [],
         positions: []
     },
@@ -244,6 +245,25 @@ async function loadAllData() {
                     { key: 'WORKFLOW_STRICT_MODE', value: setRes.settings?.workflowStrictMode ? '1' : '0' }
                 ];
             }
+
+            // AI_PROVIDERS_CONFIG ni alohida ustunlar uchun parse qilish
+            const aiSetting = SheetsApp.data.settings.find(s => s.key === 'AI_PROVIDERS_CONFIG');
+            if (aiSetting && aiSetting.value) {
+                try {
+                    const parsed = JSON.parse(aiSetting.value);
+                    SheetsApp.data.aiProviders = Array.isArray(parsed) ? parsed : (parsed.all || []);
+                } catch(e) {
+                    SheetsApp.data.aiProviders = [];
+                }
+            } else {
+                // Agar global_settings da bo'lmasa, ai_get_config orqali tekshirish
+                try {
+                    const aiRes = await apiRequest('ai_get_config');
+                    if (aiRes && aiRes.success && aiRes.config) {
+                        SheetsApp.data.aiProviders = aiRes.config.all || [];
+                    }
+                } catch(e) {}
+            }
         }
 
         updateTabBadges();
@@ -266,11 +286,13 @@ function updateTabBadges() {
     const bKv = document.getElementById('badgeKvadratlar');
     const bEmp = document.getElementById('badgeHodimlar');
     const bSet = document.getElementById('badgeSettings');
+    const bAi = document.getElementById('badgeAIProviders');
 
     if (bRecords) bRecords.textContent = SheetsApp.data.records.length;
     if (bKv) bKv.textContent = SheetsApp.data.kvadratlar.length;
     if (bEmp) bEmp.textContent = SheetsApp.data.employees.length;
-    if (bSet) bSet.textContent = SheetsApp.data.settings.length;
+    if (bSet) bSet.textContent = SheetsApp.data.settings.filter(s => s.key !== 'AI_PROVIDERS_CONFIG').length;
+    if (bAi) bAi.textContent = SheetsApp.data.aiProviders.length;
 }
 
 // ── Tabni almashtirish ──────────────────────────────────────
@@ -407,6 +429,9 @@ function renderActiveTable() {
             break;
         case 'Sozlamalar':
             renderSettingsTable();
+            break;
+        case 'AI_Providers':
+            renderAIProvidersTable();
             break;
     }
 }
@@ -738,7 +763,8 @@ function renderSettingsTable() {
     const tbody = document.getElementById('gsTbody');
     if (!thead || !tbody) return;
 
-    let items = [...SheetsApp.data.settings];
+    // AI_PROVIDERS_CONFIG ni oddiy sozlamalar jadvalidan ajratamiz (chunki u ulkan JSON va alohida AI varag'ida ustunlar bo'yicha ko'rsatiladi)
+    let items = SheetsApp.data.settings.filter(s => s.key !== 'AI_PROVIDERS_CONFIG');
 
     // Qidiruv
     const search = SheetsApp.filters.search.toLowerCase().trim();
@@ -768,13 +794,33 @@ function renderSettingsTable() {
         'REMINDER_TEXT': "Xodimlarga eslatma yuborishdagi standart xabar matni"
     };
 
+    let aiBanner = `
+        <tr style="background: rgba(14,165,233,0.08); border-bottom: 2px solid rgba(14,165,233,0.3);">
+            <td class="gs-col-row-num" style="background: rgba(14,165,233,0.15); font-weight:bold; color:#0284c7;">AI</td>
+            <td style="font-family: var(--gs-mono); font-weight:800; color: #0284c7;">🤖 AI_PROVIDERS_CONFIG</td>
+            <td>
+                <span class="gs-badge" style="background:rgba(2,132,199,0.15); color:#0284c7; font-weight:700; padding:3px 8px; border-radius:6px;">
+                    ${SheetsApp.data.aiProviders.length} ta provayder sozlangan
+                </span>
+            </td>
+            <td style="color: var(--gs-text); font-size:12px;">
+                AI provayderlar (Groq, Gemini, OpenRouter, Ollama) alohida ustunlarga ajratilgan maxsus varaqda boshqariladi.
+            </td>
+            <td style="text-align:center;">
+                <button class="gs-btn gs-btn-primary" onclick="switchSheet('AI_Providers')" style="font-size:11px; white-space:nowrap;">
+                    Ochish ➔
+                </button>
+            </td>
+        </tr>
+    `;
+
     if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--gs-text-muted);">Sozlamalar topilmadi</td></tr>`;
+        tbody.innerHTML = aiBanner + `<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--gs-text-muted);">Boshqa sozlamalar topilmadi</td></tr>`;
         updateStatsBar(0);
         return;
     }
 
-    tbody.innerHTML = items.map((s, idx) => {
+    tbody.innerHTML = aiBanner + items.map((s, idx) => {
         const desc = DESCRIPTIONS[s.key] || 'Tizimning global sozlama parametri';
         const isBool = (s.value === '1' || s.value === '0');
 
@@ -802,6 +848,218 @@ function renderSettingsTable() {
     updateStatsBar(items.length);
 }
 
+// ─────────────────────────────────────────────────────────────
+// 5. AI Provayderlar (AI_PROVIDERS_CONFIG — Alohida Ustunlar)
+// ─────────────────────────────────────────────────────────────
+function renderAIProvidersTable() {
+    const thead = document.getElementById('gsThead');
+    const tbody = document.getElementById('gsTbody');
+    if (!thead || !tbody) return;
+
+    let items = [...(SheetsApp.data.aiProviders || [])];
+
+    // Qidiruv
+    const search = SheetsApp.filters.search.toLowerCase().trim();
+    if (search) {
+        items = items.filter(p => {
+            return (p.provider && p.provider.toLowerCase().includes(search)) ||
+                   (p.model && p.model.toLowerCase().includes(search)) ||
+                   (p.baseURL && p.baseURL.toLowerCase().includes(search));
+        });
+    }
+
+    // Priority bo'yicha saralash
+    items.sort((a, b) => (Number(a.priority) || 99) - (Number(b.priority) || 99));
+
+    thead.innerHTML = `
+        <tr>
+            <th class="gs-col-row-num">#</th>
+            <th style="width: 140px;">🤖 Provayder</th>
+            <th style="width: 200px;">🧠 Model</th>
+            <th style="width: 180px;">🔑 API Kalit</th>
+            <th style="width: 90px; text-align:center;">⭐ Tartib</th>
+            <th style="width: 110px; text-align:center;">⚡ Holat</th>
+            <th style="width: 240px;">🌐 Base URL</th>
+            <th>📝 Tizim Ko'rsatmasi (Prompt)</th>
+            <th style="text-align:center; width: 130px;">⚙️ Amallar</th>
+        </tr>
+    `;
+
+    if (!items.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align:center; padding: 40px; color: var(--gs-text-muted);">
+                    <div style="font-size:28px; margin-bottom:8px;">🤖</div>
+                    Hozircha AI provayderlar kiritilmagan.<br>
+                    <button class="gs-btn gs-btn-primary" style="margin-top:12px;" onclick="openAddModal()">➕ Yangi AI Provayder qo'shish</button>
+                </td>
+            </tr>
+        `;
+        updateStatsBar(0);
+        return;
+    }
+
+    tbody.innerHTML = items.map((p, idx) => {
+        const maskedKey = p.apiKey ? (p.apiKey.length > 12 ? p.apiKey.substring(0, 6) + '...' + p.apiKey.substring(p.apiKey.length - 4) : '••••••••') : '<i style="color:var(--gs-red);">Yo\'q</i>';
+        const isActive = !!p.isActive;
+        const promptPreview = p.customPrompt ? (p.customPrompt.length > 45 ? escapeHtml(p.customPrompt.substring(0, 45)) + '...' : escapeHtml(p.customPrompt)) : '<i style="color:var(--gs-text-muted);">Standart prompt</i>';
+
+        return `
+            <tr data-ai-provider="${escapeHtml(p.provider)}">
+                <td class="gs-col-row-num">${idx + 1}</td>
+                <td style="font-weight:800; color:var(--gs-green-dark); font-size:13px;">
+                    🤖 ${escapeHtml(p.provider)}
+                </td>
+                <td style="font-family:var(--gs-mono); font-weight:600; color:var(--gs-text);">
+                    ${escapeHtml(p.model || '—')}
+                </td>
+                <td style="font-family:var(--gs-mono); font-size:12px;">
+                    <code>${maskedKey}</code>
+                </td>
+                <td style="text-align:center; font-weight:700;">
+                    <span class="gs-badge" style="background:rgba(2,132,199,0.1); color:#0284c7; padding:2px 8px; border-radius:6px;">
+                        ${p.priority || (idx + 1)}
+                    </span>
+                </td>
+                <td style="text-align:center;">
+                    <span class="gs-status-badge ${isActive ? 'gs-badge-tasdiqlandi' : 'gs-badge-rad'}" 
+                          style="cursor:pointer;" 
+                          title="Holatni almashtirish uchun bosing"
+                          onclick="toggleAIProviderActive('${escapeHtml(p.provider)}')">
+                        ${isActive ? 'Faol ✅' : 'Nofaol ❌'}
+                    </span>
+                </td>
+                <td style="font-size:12px; color:var(--gs-text-muted); font-family:var(--gs-mono);" title="${escapeHtml(p.baseURL || '')}">
+                    ${escapeHtml(p.baseURL ? (p.baseURL.length > 30 ? p.baseURL.substring(0, 27) + '...' : p.baseURL) : '—')}
+                </td>
+                <td style="font-size:12px; color:var(--gs-text-muted);">
+                    ${promptPreview}
+                </td>
+                <td style="text-align:center; white-space:nowrap;">
+                    <button class="gs-btn" onclick="openEditAIProviderModal('${escapeHtml(p.provider)}')" title="Tahrirlash">✏️</button>
+                    <button class="gs-btn" style="color:var(--gs-red);" onclick="deleteAIProvider('${escapeHtml(p.provider)}')" title="O'chirish">🗑</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    updateStatsBar(items.length);
+}
+
+async function toggleAIProviderActive(providerName) {
+    const prov = SheetsApp.data.aiProviders.find(p => p.provider === providerName);
+    if (!prov) return;
+    prov.isActive = !prov.isActive;
+    await saveAIProvidersToDB();
+}
+
+async function deleteAIProvider(providerName) {
+    if (!confirm(`Haqiqatan ham "${providerName}" AI provayderini o'chirmoqchimisiz?`)) return;
+    SheetsApp.data.aiProviders = SheetsApp.data.aiProviders.filter(p => p.provider !== providerName);
+    await saveAIProvidersToDB();
+    showToast(`"${providerName}" o'chirildi ✅`);
+}
+
+async function saveAIProvidersToDB() {
+    showStatus('💾 SQLite AI_PROVIDERS_CONFIG saqlanmoqda...');
+    setSyncIndicator(true);
+    const activeList = SheetsApp.data.aiProviders.filter(p => p.isActive && p.apiKey);
+    activeList.sort((a, b) => (Number(a.priority) || 99) - (Number(b.priority) || 99));
+
+    const payload = {
+        all: SheetsApp.data.aiProviders,
+        active: activeList
+    };
+
+    const res = await apiRequest('set_global_setting', {
+        key: 'AI_PROVIDERS_CONFIG',
+        value: JSON.stringify(payload)
+    });
+
+    setSyncIndicator(false);
+    if (res && res.success) {
+        showToast('AI Provayderlar konfiguratsiyasi SQLite ga saqlandi ✅');
+        showStatus('SQLite WAL Baza: Sinxronlangan');
+        updateTabBadges();
+        renderActiveTable();
+    } else {
+        showToast(`Xatolik: ${res.error || 'Saqlab bo\'lmadi'} ❌`, true);
+    }
+}
+
+function openEditAIProviderModal(providerName) {
+    const p = SheetsApp.data.aiProviders.find(x => x.provider === providerName);
+    if (!p) return;
+
+    const modal = document.getElementById('gsAddModal');
+    const title = document.getElementById('gsModalTitle');
+    const body = document.getElementById('gsModalBody');
+    if (!modal || !body) return;
+
+    modal.style.display = 'flex';
+    title.textContent = `✏️ AI Provayder: ${p.provider}`;
+
+    body.innerHTML = `
+        <form id="gsEditAIForm" onsubmit="submitSaveAIProvider(event, '${escapeHtml(p.provider)}')">
+            <div class="gs-form-group">
+                <label>Provayder Nomi:</label>
+                <input type="text" id="editAiProviderName" class="gs-form-input" value="${escapeHtml(p.provider)}" readonly style="opacity:0.8; font-weight:700;">
+            </div>
+            <div class="gs-form-group">
+                <label>Model Nomi:</label>
+                <input type="text" id="editAiModel" class="gs-form-input" value="${escapeHtml(p.model || '')}" placeholder="groq/compound, gemini-2.5-flash..." required>
+            </div>
+            <div class="gs-form-group">
+                <label>API Kalit (API Key):</label>
+                <input type="text" id="editAiKey" class="gs-form-input" value="${escapeHtml(p.apiKey || '')}" placeholder="sk-... yoki gsk_...">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="gs-form-group" style="flex:1;">
+                    <label>Tartib (Priority):</label>
+                    <select id="editAiPriority" class="gs-form-select">
+                        ${[1,2,3,4,5,6,7,8,9,10].map(num => `<option value="${num}" ${p.priority == num ? 'selected' : ''}>${num}${num === 1 ? ' (Birlamchi)' : ''}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="gs-form-group" style="flex:1;">
+                    <label>Holat (Faollik):</label>
+                    <select id="editAiActive" class="gs-form-select">
+                        <option value="1" ${p.isActive ? 'selected' : ''}>Faol ✅</option>
+                        <option value="0" ${!p.isActive ? 'selected' : ''}>Nofaol ❌</option>
+                    </select>
+                </div>
+            </div>
+            <div class="gs-form-group">
+                <label>Base URL (API Manzili):</label>
+                <input type="text" id="editAiBaseUrl" class="gs-form-input" value="${escapeHtml(p.baseURL || '')}" placeholder="https://api...">
+            </div>
+            <div class="gs-form-group">
+                <label>Tizim Ko'rsatmasi (System Prompt):</label>
+                <textarea id="editAiPrompt" class="gs-form-textarea" rows="3" placeholder="Sen kuchli AI yordamchisisan...">${escapeHtml(p.customPrompt || '')}</textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button type="button" class="gs-btn" onclick="closeAddModal()">Bekor qilish</button>
+                <button type="submit" class="gs-btn gs-btn-primary">💾 SQLite ga saqlash</button>
+            </div>
+        </form>
+    `;
+}
+
+async function submitSaveAIProvider(e, originalProviderName) {
+    e.preventDefault();
+    const prov = SheetsApp.data.aiProviders.find(p => p.provider === originalProviderName);
+    if (!prov) return;
+
+    prov.model = document.getElementById('editAiModel').value.trim();
+    prov.apiKey = document.getElementById('editAiKey').value.trim();
+    prov.priority = parseInt(document.getElementById('editAiPriority').value, 10) || 1;
+    prov.isActive = document.getElementById('editAiActive').value === '1';
+    prov.baseURL = document.getElementById('editAiBaseUrl').value.trim();
+    prov.customPrompt = document.getElementById('editAiPrompt').value;
+
+    closeAddModal();
+    await saveAIProvidersToDB();
+}
+
 // ── Status Bar (Pastki statistika paneli) ───────────────────
 function updateStatsBar(count, totalUZS = 0, totalUSD = 0, totalM2 = 0) {
     const statsEl = document.getElementById('gsStatsGroup');
@@ -817,6 +1075,12 @@ function updateStatsBar(count, totalUZS = 0, totalUSD = 0, totalM2 = 0) {
     } else if (SheetsApp.activeTab === 'Kvadratlar') {
         html += `
             <div class="gs-stat-item">Jami Maydon: <b style="color:#0284c7;">${totalM2.toLocaleString('uz-UZ', {minimumFractionDigits: 1, maximumFractionDigits: 2})} m²</b></div>
+        `;
+    } else if (SheetsApp.activeTab === 'AI_Providers') {
+        const activeCount = SheetsApp.data.aiProviders.filter(p => p.isActive).length;
+        html += `
+            <div class="gs-stat-item">Faol provayderlar: <b style="color:var(--gs-green-dark);">${activeCount} ta</b></div>
+            <div class="gs-stat-item">Nofaol: <b style="color:var(--gs-text-muted);">${SheetsApp.data.aiProviders.length - activeCount} ta</b></div>
         `;
     }
 
@@ -1273,7 +1537,9 @@ async function deleteHodimPrompt(tgId, username) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // YANGI QATOR QO'SHISH MODALI (ADD ROW MODAL)
+// Barcha maydonlar avtomatik moslashuvchan <select> dropdown
 // ─────────────────────────────────────────────────────────────
 function openAddModal() {
     const modal = document.getElementById('gsAddModal');
@@ -1285,8 +1551,24 @@ function openAddModal() {
 
     if (SheetsApp.activeTab === 'dataSheet') {
         title.textContent = '➕ Yangi Moliyaviy Yozuv Qo\'shish (dataSheet)';
-        const empOptions = SheetsApp.data.employees.map(e => 
-            `<option value="${e.telegram_id}">${escapeHtml(e.username)} (${e.telegram_id})</option>`
+        const empOptions = (SheetsApp.data.employees || []).map(e => 
+            `<option value="${e.telegram_id}">${escapeHtml(e.username || 'Xodim')} (${escapeHtml(e.lavozim || 'Xodim')}) - ID:${e.telegram_id}</option>`
+        ).join('');
+
+        // Mavjud va standart davrlar (Oylar) ro'yxati
+        const UZ_MONTH_NAMES = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+        const curDate = new Date();
+        const generatedPeriods = [];
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(curDate.getFullYear(), curDate.getMonth() - i, 1);
+            generatedPeriods.push(`${UZ_MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`);
+        }
+        // Records jadvalidagi mavjud boshqa davrlarni ham qo'shamiz
+        const existingPeriods = [...new Set((SheetsApp.data.records || []).map(r => r.action_period || r.actionPeriod).filter(Boolean))];
+        const allPeriodOptions = [...new Set([...generatedPeriods, ...existingPeriods])];
+
+        const periodOptionsHtml = allPeriodOptions.map((p, idx) => 
+            `<option value="${escapeHtml(p)}" ${idx === 0 ? 'selected' : ''}>${escapeHtml(p)}</option>`
         ).join('');
 
         body.innerHTML = `
@@ -1296,30 +1578,44 @@ function openAddModal() {
                     <input type="date" id="addRecDate" class="gs-form-input" value="${new Date().toISOString().slice(0,10)}" required>
                 </div>
                 <div class="gs-form-group">
-                    <label>Hodimni tanlang:</label>
+                    <label>Hodimni tanlang (Xodimlar bazasidan):</label>
                     <select id="addRecTgId" class="gs-form-select" required>
-                        ${empOptions}
+                        ${empOptions || '<option value="">Hodimlar mavjud emas</option>'}
                     </select>
                 </div>
-                <div class="gs-form-group">
-                    <label>Summa (UZS):</label>
-                    <input type="number" id="addRecUzs" class="gs-form-input" placeholder="0" value="0">
+                <div style="display:flex; gap:10px;">
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Summa (UZS):</label>
+                        <input type="number" id="addRecUzs" class="gs-form-input" placeholder="0" value="0">
+                    </div>
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Summa (USD):</label>
+                        <input type="number" id="addRecUsd" class="gs-form-input" placeholder="0" value="0">
+                    </div>
                 </div>
                 <div class="gs-form-group">
-                    <label>Summa (USD):</label>
-                    <input type="number" id="addRecUsd" class="gs-form-input" placeholder="0" value="0">
-                </div>
-                <div class="gs-form-group">
-                    <label>Kurs:</label>
+                    <label>Valyuta kursi (USD -> UZS):</label>
                     <input type="number" id="addRecRate" class="gs-form-input" placeholder="12600" value="12600">
                 </div>
                 <div class="gs-form-group">
-                    <label>Davr (Masalan: Mart 2026):</label>
-                    <input type="text" id="addRecPeriod" class="gs-form-input" placeholder="Mart 2026">
+                    <label>Hisob davri (Oy va Yil):</label>
+                    <select id="addRecPeriodSelect" class="gs-form-select" onchange="toggleCustomPeriod(this.value)">
+                        ${periodOptionsHtml}
+                        <option value="__custom__">✍️ Boshqa davr yozish...</option>
+                    </select>
+                    <input type="text" id="addRecPeriodCustom" class="gs-form-input" placeholder="Masalan: Sentabr 2026" style="display:none; margin-top:6px;">
                 </div>
                 <div class="gs-form-group">
-                    <label>Izoh:</label>
-                    <textarea id="addRecComment" class="gs-form-textarea" rows="2" placeholder="Izoh..."></textarea>
+                    <label>Holati (Status):</label>
+                    <select id="addRecStatus" class="gs-form-select">
+                        <option value="Tasdiqlandi" selected>Tasdiqlandi ✅</option>
+                        <option value="Kutilmoqda">Kutilmoqda ⏳</option>
+                        <option value="Rad etildi">Rad etildi ❌</option>
+                    </select>
+                </div>
+                <div class="gs-form-group">
+                    <label>Izoh / Maqsad:</label>
+                    <textarea id="addRecComment" class="gs-form-textarea" rows="2" placeholder="Oylik, avans yoki mukofot..."></textarea>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
                     <button type="button" class="gs-btn" onclick="closeAddModal()">Bekor qilish</button>
@@ -1331,8 +1627,55 @@ function openAddModal() {
         title.textContent = '➕ Yangi Buyurtma Qo\'shish (Kvadratlar)';
         const curDate = new Date();
         const curYear = String(curDate.getFullYear());
-        const curMonthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
-        const curMonth = curMonthNames[curDate.getMonth()];
+        const curMonthNum = String(curDate.getMonth() + 1).padStart(2, '0');
+        const curMonthCode = '_' + curMonthNum;
+
+        // Navbatdagi buyurtma raqamini hisoblash
+        let nextNo = 1;
+        if (SheetsApp.data.kvadratlar && SheetsApp.data.kvadratlar.length) {
+            const numbers = SheetsApp.data.kvadratlar.map(k => parseInt(k.no || k.order_no, 10)).filter(n => !isNaN(n));
+            if (numbers.length) nextNo = Math.max(...numbers) + 1;
+        }
+
+        // Oylar tanlovi
+        const MONTHS_OPTIONS = [
+            { code: '_01', label: '01 - Yanvar' },
+            { code: '_02', label: '02 - Fevral' },
+            { code: '_03', label: '03 - Mart' },
+            { code: '_04', label: '04 - Aprel' },
+            { code: '_05', label: '05 - May' },
+            { code: '_06', label: '06 - Iyun' },
+            { code: '_07', label: '07 - Iyul' },
+            { code: '_08', label: '08 - Avgust' },
+            { code: '_09', label: '09 - Sentabr' },
+            { code: '_10', label: '10 - Oktabr' },
+            { code: '_11', label: '11 - Noyabr' },
+            { code: '_12', label: '12 - Dekabr' }
+        ];
+
+        const monthSelectHtml = MONTHS_OPTIONS.map(m => 
+            `<option value="${m.code}" ${m.code === curMonthCode ? 'selected' : ''}>${m.label}</option>`
+        ).join('');
+
+        // Yillar tanlovi
+        const yearsList = [curDate.getFullYear() + 1, curDate.getFullYear(), curDate.getFullYear() - 1, curDate.getFullYear() - 2];
+        const yearSelectHtml = yearsList.map(y => 
+            `<option value="${y}" ${String(y) === curYear ? 'selected' : ''}>${y}</option>`
+        ).join('');
+
+        // Xodimlar tanlovi
+        const staffOptionsHtml = (SheetsApp.data.employees || []).map(e => 
+            `<option value="${escapeHtml(e.username || '')}" ${String(e.telegram_id) === String(SheetsApp.auth.telegramId) ? 'selected' : ''}>${escapeHtml(e.username || '')} (${escapeHtml(e.lavozim || 'Xodim')})</option>`
+        ).join('');
+
+        // Bosqichlar tanlovi
+        const stepOptionsHtml = (SheetsApp.data.workflowSteps && SheetsApp.data.workflowSteps.length)
+            ? SheetsApp.data.workflowSteps.map(s => `<option value="${s.step_index || s.index || 1}">${s.step_index || s.index || 1} - ${escapeHtml(s.action_label || s.position_name || s.action || 'Bosqich')}</option>`).join('')
+            : `
+                <option value="1">1 - Loyihachi</option>
+                <option value="2">2 - Qadoqlovchi</option>
+                <option value="3">3 - Yig'uvchi</option>
+            `;
 
         body.innerHTML = `
             <form id="gsAddForm" onsubmit="submitAddKvadrat(event)">
@@ -1340,28 +1683,59 @@ function openAddModal() {
                     <label>Sana (YYYY-MM-DD):</label>
                     <input type="date" id="addKvDate" class="gs-form-input" value="${curDate.toISOString().slice(0,10)}" required>
                 </div>
-                <div class="gs-form-group">
-                    <label>Buyurtma raqami (№):</label>
-                    <input type="text" id="addKvNo" class="gs-form-input" placeholder="Masalan: 1045" required>
-                </div>
-                <div class="gs-form-group">
-                    <label>Buyurtma Nomi:</label>
-                    <input type="text" id="addKvName" class="gs-form-input" placeholder="Masalan: Oshxona mebeli" required>
-                </div>
-                <div class="gs-form-group">
-                    <label>Maydon (m²):</label>
-                    <input type="number" step="0.01" id="addKvM2" class="gs-form-input" placeholder="0.00" required>
-                </div>
-                <div class="gs-form-group">
-                    <label>Oy va Yil:</label>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="addKvMonth" class="gs-form-input" value="${curMonth}" style="flex:1;">
-                        <input type="text" id="addKvYear" class="gs-form-input" value="${curYear}" style="flex:1;">
+                <div style="display:flex; gap:10px;">
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Buyurtma raqami (№):</label>
+                        <input type="text" id="addKvNo" class="gs-form-input" value="${nextNo}" placeholder="1045" required>
+                    </div>
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Maydon (m²):</label>
+                        <input type="number" step="0.01" id="addKvM2" class="gs-form-input" placeholder="0.00" required>
                     </div>
                 </div>
                 <div class="gs-form-group">
-                    <label>Xodim nomi:</label>
-                    <input type="text" id="addKvStaff" class="gs-form-input" value="${escapeHtml(SheetsApp.auth.username)}">
+                    <label>Buyurtma Nomi / Mijoz:</label>
+                    <input type="text" id="addKvName" class="gs-form-input" placeholder="Masalan: Oshxona mebeli (Mijoz)" required>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Oy (Oylar tanlovi):</label>
+                        <select id="addKvMonth" class="gs-form-select">
+                            ${monthSelectHtml}
+                        </select>
+                    </div>
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Yil:</label>
+                        <select id="addKvYear" class="gs-form-select">
+                            ${yearSelectHtml}
+                        </select>
+                    </div>
+                </div>
+                <div class="gs-form-group">
+                    <label>Mas'ul Xodim (Mavjud xodimlar):</label>
+                    <select id="addKvStaffSelect" class="gs-form-select" onchange="toggleCustomKvStaff(this.value)">
+                        ${staffOptionsHtml}
+                        <option value="__custom__">✍️ Boshqa xodim nomini yozish...</option>
+                    </select>
+                    <input type="text" id="addKvStaffCustom" class="gs-form-input" placeholder="Xodim ismi..." style="display:none; margin-top:6px;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Boshlang'ich Bosqich:</label>
+                        <select id="addKvStep" class="gs-form-select">
+                            ${stepOptionsHtml}
+                        </select>
+                    </div>
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Holat (Status):</label>
+                        <select id="addKvStatus" class="gs-form-select">
+                            <option value="yangi" selected>Yangi (yangi)</option>
+                            <option value="Jarayonda">Jarayonda</option>
+                            <option value="Kesishga berildi">Kesishga berildi</option>
+                            <option value="Qadoqlandi">Qadoqlandi</option>
+                            <option value="Yakunlandi">Yakunlandi</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
                     <button type="button" class="gs-btn" onclick="closeAddModal()">Bekor qilish</button>
@@ -1371,20 +1745,47 @@ function openAddModal() {
         `;
     } else if (SheetsApp.activeTab === 'Hodimlar') {
         title.textContent = '➕ Yangi Xodim Qo\'shish (Hodimlar)';
+
+        // Mavjud lavozimlar ro'yxati
+        const knownPositions = ['Loyihachi', 'Qadoqlovchi', "Yig'uvchi", "Loyihachi,Yig'uvchi,Qadoqlovchi", 'Usta', 'Kesish', 'Kromka', 'Boshqaruvchi'];
+        if (Array.isArray(SheetsApp.data.positions)) {
+            SheetsApp.data.positions.forEach(p => {
+                const name = p.position_name || p.name;
+                if (name && !knownPositions.includes(name)) knownPositions.push(name);
+            });
+        }
+        (SheetsApp.data.employees || []).forEach(e => {
+            if (e.lavozim && !knownPositions.includes(e.lavozim)) knownPositions.push(e.lavozim);
+        });
+
+        const lavozimOptionsHtml = knownPositions.map(l => 
+            `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`
+        ).join('');
+
+        // Mavjud guruhlar ro'yxati
+        const knownGroups = ['1-guruh', '2-guruh', '3-guruh', 'A-guruh', 'B-guruh'];
+        (SheetsApp.data.employees || []).forEach(e => {
+            if (e.guruh && !knownGroups.includes(e.guruh)) knownGroups.push(e.guruh);
+        });
+
+        const guruhOptionsHtml = knownGroups.map(g => 
+            `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`
+        ).join('');
+
         body.innerHTML = `
             <form id="gsAddForm" onsubmit="submitAddHodim(event)">
                 <div class="gs-form-group">
-                    <label>Telegram ID:</label>
+                    <label>Telegram ID (Faqat raqamlar):</label>
                     <input type="text" id="addEmpTgId" class="gs-form-input" placeholder="Masalan: 123456789" required>
                 </div>
                 <div class="gs-form-group">
-                    <label>Ism / Foydalanuvchi:</label>
+                    <label>Ism / Familiya (Foydalanuvchi):</label>
                     <input type="text" id="addEmpName" class="gs-form-input" placeholder="Masalan: Azizbek" required>
                 </div>
                 <div class="gs-form-group">
-                    <label>Rol:</label>
+                    <label>Rol (Tizimdagi darajasi):</label>
                     <select id="addEmpRole" class="gs-form-select">
-                        <option value="EMPLOYEE">EMPLOYEE (Oddiy xodim)</option>
+                        <option value="EMPLOYEE" selected>EMPLOYEE (Oddiy xodim)</option>
                         <option value="STAFF">STAFF (Usta)</option>
                         <option value="BRIGADIR">BRIGADIR (Brigadir)</option>
                         <option value="BUGALTER">BUGALTER (Bugalter)</option>
@@ -1394,12 +1795,30 @@ function openAddModal() {
                     </select>
                 </div>
                 <div class="gs-form-group">
-                    <label>Lavozimlar (vergul bilan):</label>
-                    <input type="text" id="addEmpLavozim" class="gs-form-input" placeholder="Kesish, Krovka, Qadoqlash">
+                    <label>Lavozim (Mavjud lavozimlar):</label>
+                    <select id="addEmpLavozimSelect" class="gs-form-select" onchange="toggleCustomEmpLavozim(this.value)">
+                        ${lavozimOptionsHtml}
+                        <option value="__custom__">✍️ Boshqa lavozim yozish...</option>
+                    </select>
+                    <input type="text" id="addEmpLavozimCustom" class="gs-form-input" placeholder="Masalan: Kesish, Krovka" style="display:none; margin-top:6px;">
                 </div>
-                <div class="gs-form-group">
-                    <label>Guruh:</label>
-                    <input type="text" id="addEmpGuruh" class="gs-form-input" placeholder="A guruh">
+                <div style="display:flex; gap:10px;">
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Guruh:</label>
+                        <select id="addEmpGuruhSelect" class="gs-form-select" onchange="toggleCustomEmpGuruh(this.value)">
+                            <option value="">[ Guruhsiz ]</option>
+                            ${guruhOptionsHtml}
+                            <option value="__custom__">✍️ Yangi guruh yozish...</option>
+                        </select>
+                        <input type="text" id="addEmpGuruhCustom" class="gs-form-input" placeholder="Masalan: 1-guruh" style="display:none; margin-top:6px;">
+                    </div>
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Guruh Sardorimi?</label>
+                        <select id="addEmpSardor" class="gs-form-select">
+                            <option value="0" selected>Yo'q (0)</option>
+                            <option value="1">Ha (1 - Sardor ⭐)</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
                     <button type="button" class="gs-btn" onclick="closeAddModal()">Bekor qilish</button>
@@ -1412,12 +1831,80 @@ function openAddModal() {
         body.innerHTML = `
             <form id="gsAddForm" onsubmit="submitAddSetting(event)">
                 <div class="gs-form-group">
-                    <label>Kalit (Key):</label>
-                    <input type="text" id="addSetKey" class="gs-form-input" placeholder="PARAMETR_NOMI" required>
+                    <label>Sozlama parametri (Kalit):</label>
+                    <select id="addSetKeySelect" class="gs-form-select" onchange="handleSettingKeyChange(this.value)">
+                        <option value="ONLY_BUGALTER_ADD">ONLY_BUGALTER_ADD (Faqat bugalter qo'shishi)</option>
+                        <option value="DISABLE_EMP_EDIT_DELETE">DISABLE_EMP_EDIT_DELETE (Tahrir/o'chirishni taqiqlash)</option>
+                        <option value="NOTIFY_DIRECTOR">NOTIFY_DIRECTOR (Direktorga bildirishnoma)</option>
+                        <option value="WORKFLOW_STRICT_MODE">WORKFLOW_STRICT_MODE (Qat'iy oqim rejimi)</option>
+                        <option value="REMINDER_TEXT">REMINDER_TEXT (Eslatma xabari matni)</option>
+                        <option value="__custom__">✍️ Yangi parametr kiritish...</option>
+                    </select>
+                    <input type="text" id="addSetKeyCustom" class="gs-form-input" placeholder="PARAMETR_NOMI" style="display:none; margin-top:6px;">
                 </div>
                 <div class="gs-form-group">
                     <label>Qiymat (Value):</label>
-                    <input type="text" id="addSetVal" class="gs-form-input" placeholder="1 yoki matn" required>
+                    <select id="addSetValSelect" class="gs-form-select" onchange="handleSettingValChange(this.value)">
+                        <option value="1" selected>1 (Faol / Ha ✅)</option>
+                        <option value="0">0 (O'chiq / Yo'q ❌)</option>
+                        <option value="__text__">✍️ Matn kiritish...</option>
+                    </select>
+                    <input type="text" id="addSetValText" class="gs-form-input" placeholder="Qiymatni kiriting..." style="display:none; margin-top:6px;">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                    <button type="button" class="gs-btn" onclick="closeAddModal()">Bekor qilish</button>
+                    <button type="submit" class="gs-btn gs-btn-primary">💾 SQLite ga saqlash</button>
+                </div>
+            </form>
+        `;
+    } else if (SheetsApp.activeTab === 'AI_Providers') {
+        title.textContent = '➕ Yangi AI Provayder Qo\'shish';
+        body.innerHTML = `
+            <form id="gsAddForm" onsubmit="submitAddAIProvider(event)">
+                <div class="gs-form-group">
+                    <label>Provayder Nomi:</label>
+                    <select id="addAiProviderSelect" class="gs-form-select" onchange="handleAiProviderChange(this.value)" required>
+                        <option value="Groq" selected>Groq (Tezkor Llama 3.3)</option>
+                        <option value="Gemini">Gemini (Google 2.5 Flash)</option>
+                        <option value="OpenRouter">OpenRouter (Universal)</option>
+                        <option value="OpenAI">OpenAI (ChatGPT)</option>
+                        <option value="DeepSeek">DeepSeek (V3 / R1)</option>
+                        <option value="Anthropic">Anthropic (Claude)</option>
+                        <option value="Ollama">Ollama (Lokal / VPS)</option>
+                        <option value="__custom__">✍️ Boshqa provayder yozish...</option>
+                    </select>
+                    <input type="text" id="addAiProviderCustom" class="gs-form-input" placeholder="Provayder nomi..." style="display:none; margin-top:6px;">
+                </div>
+                <div class="gs-form-group">
+                    <label>Model Nomi:</label>
+                    <input type="text" id="addAiModel" class="gs-form-input" value="groq/compound" placeholder="groq/compound, gpt-4o..." required>
+                </div>
+                <div class="gs-form-group">
+                    <label>API Kalit (API Key):</label>
+                    <input type="password" id="addAiKey" class="gs-form-input" placeholder="sk-... yoki gsk_..." required>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Tartib (Priority):</label>
+                        <select id="addAiPriority" class="gs-form-select">
+                            ${[1,2,3,4,5,6,7,8,9,10].map(num => `<option value="${num}" ${num === (SheetsApp.data.aiProviders.length + 1) ? 'selected' : ''}>${num}${num === 1 ? ' (Birlamchi)' : ''}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="gs-form-group" style="flex:1;">
+                        <label>Holat (Faollik):</label>
+                        <select id="addAiActive" class="gs-form-select">
+                            <option value="1" selected>Faol ✅</option>
+                            <option value="0">Nofaol ❌</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="gs-form-group">
+                    <label>Base URL:</label>
+                    <input type="text" id="addAiUrl" class="gs-form-input" value="https://api.groq.com/openai/v1/chat/completions" placeholder="https://...">
+                </div>
+                <div class="gs-form-group">
+                    <label>Tizim Ko'rsatmasi (System Prompt):</label>
+                    <textarea id="addAiPrompt" class="gs-form-textarea" rows="3" placeholder="Sen Aristokrat hisobot va tahlil AI yordamchisisan..."></textarea>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
                     <button type="button" class="gs-btn" onclick="closeAddModal()">Bekor qilish</button>
@@ -1428,11 +1915,70 @@ function openAddModal() {
     }
 }
 
+// ── Modallardagi dinamik select/input almashtiruvchilari ─────────
+function toggleCustomPeriod(val) {
+    const cust = document.getElementById('addRecPeriodCustom');
+    if (cust) cust.style.display = (val === '__custom__') ? 'block' : 'none';
+}
+
+function toggleCustomKvStaff(val) {
+    const cust = document.getElementById('addKvStaffCustom');
+    if (cust) cust.style.display = (val === '__custom__') ? 'block' : 'none';
+}
+
+function toggleCustomEmpLavozim(val) {
+    const cust = document.getElementById('addEmpLavozimCustom');
+    if (cust) cust.style.display = (val === '__custom__') ? 'block' : 'none';
+}
+
+function toggleCustomEmpGuruh(val) {
+    const cust = document.getElementById('addEmpGuruhCustom');
+    if (cust) cust.style.display = (val === '__custom__') ? 'block' : 'none';
+}
+
+function handleSettingKeyChange(val) {
+    const cust = document.getElementById('addSetKeyCustom');
+    if (cust) cust.style.display = (val === '__custom__') ? 'block' : 'none';
+}
+
+function handleSettingValChange(val) {
+    const cust = document.getElementById('addSetValText');
+    if (cust) cust.style.display = (val === '__text__') ? 'block' : 'none';
+}
+
+function handleAiProviderChange(val) {
+    const customInp = document.getElementById('addAiProviderCustom');
+    const modelInp = document.getElementById('addAiModel');
+    const urlInp = document.getElementById('addAiUrl');
+
+    if (val === '__custom__') {
+        if (customInp) customInp.style.display = 'block';
+        return;
+    }
+    if (customInp) customInp.style.display = 'none';
+
+    const PRESETS = {
+        'Groq': { model: 'groq/compound', url: 'https://api.groq.com/openai/v1/chat/completions' },
+        'Gemini': { model: 'gemini-2.5-flash', url: 'https://generativelanguage.googleapis.com/v1beta/models/' },
+        'OpenRouter': { model: 'google/gemma-4-31b-it:free', url: 'https://openrouter.ai/api/v1/chat/completions' },
+        'OpenAI': { model: 'gpt-4o', url: 'https://api.openai.com/v1/chat/completions' },
+        'DeepSeek': { model: 'deepseek-chat', url: 'https://api.deepseek.com/chat/completions' },
+        'Anthropic': { model: 'claude-3-5-sonnet-20241022', url: 'https://api.anthropic.com/v1/messages' },
+        'Ollama': { model: 'gpt-oss:20b-cloud', url: 'https://ollama.com/api/v1/chat/completions' }
+    };
+
+    if (PRESETS[val]) {
+        if (modelInp) modelInp.value = PRESETS[val].model;
+        if (urlInp) urlInp.value = PRESETS[val].url;
+    }
+}
+
 function closeAddModal() {
     const modal = document.getElementById('gsAddModal');
     if (modal) modal.style.display = 'none';
 }
 
+// ── Submit Handlers ──────────────────────────────────────────
 async function submitAddRecord(e) {
     e.preventDefault();
     const date = document.getElementById('addRecDate').value;
@@ -1440,10 +1986,16 @@ async function submitAddRecord(e) {
     const amountUZS = Number(document.getElementById('addRecUzs').value || 0);
     const amountUSD = Number(document.getElementById('addRecUsd').value || 0);
     const rate = Number(document.getElementById('addRecRate').value || 12600);
-    const actionPeriod = document.getElementById('addRecPeriod').value;
+    
+    const periodSel = document.getElementById('addRecPeriodSelect').value;
+    const actionPeriod = (periodSel === '__custom__') 
+        ? (document.getElementById('addRecPeriodCustom').value.trim() || 'Joriy davr') 
+        : periodSel;
+
+    const status = document.getElementById('addRecStatus')?.value || 'Tasdiqlandi';
     const comment = document.getElementById('addRecComment').value;
 
-    const emp = SheetsApp.data.employees.find(x => String(x.telegram_id) === String(targetTgId));
+    const emp = (SheetsApp.data.employees || []).find(x => String(x.telegram_id) === String(targetTgId));
     const empName = emp ? emp.username : 'Xodim';
 
     showStatus('💾 SQLite records jadvaliga yozilmoqda...');
@@ -1457,11 +2009,12 @@ async function submitAddRecord(e) {
         amountUSD,
         rate,
         actionPeriod,
-        comment
+        comment,
+        status
     });
 
     if (res && res.success) {
-        showToast('Yangi yozuv SQLite bazasida saqlandi ✅');
+        showToast('Yangi moliyaviy yozuv SQLite bazasida saqlandi ✅');
         loadAllData();
     } else {
         showToast(`Xatolik: ${res.error || 'Qo\'shib bo\'lmadi'} ❌`, true);
@@ -1476,7 +2029,14 @@ async function submitAddKvadrat(e) {
     const totalM2 = Number(document.getElementById('addKvM2').value || 0);
     const month = document.getElementById('addKvMonth').value;
     const year = document.getElementById('addKvYear').value;
-    const staffName = document.getElementById('addKvStaff').value;
+
+    const staffSel = document.getElementById('addKvStaffSelect').value;
+    const staffName = (staffSel === '__custom__') 
+        ? (document.getElementById('addKvStaffCustom').value.trim() || SheetsApp.auth.username || 'Xodim') 
+        : staffSel;
+
+    const currentStep = parseInt(document.getElementById('addKvStep')?.value, 10) || 1;
+    const status = document.getElementById('addKvStatus')?.value || 'yangi';
 
     showStatus('💾 SQLite kvadratlar jadvaliga yozilmoqda...');
     closeAddModal();
@@ -1488,7 +2048,9 @@ async function submitAddKvadrat(e) {
         totalM2,
         month,
         year,
-        staffName
+        staffName,
+        currentStep,
+        status
     });
 
     if (res && res.success) {
@@ -1504,8 +2066,18 @@ async function submitAddHodim(e) {
     const tgId = document.getElementById('addEmpTgId').value.trim();
     const username = document.getElementById('addEmpName').value.trim();
     const role = document.getElementById('addEmpRole').value;
-    const lavozim = document.getElementById('addEmpLavozim').value.trim();
-    const guruh = document.getElementById('addEmpGuruh').value.trim();
+
+    const lavSel = document.getElementById('addEmpLavozimSelect').value;
+    const lavozim = (lavSel === '__custom__') 
+        ? document.getElementById('addEmpLavozimCustom').value.trim() 
+        : lavSel;
+
+    const gurSel = document.getElementById('addEmpGuruhSelect').value;
+    const guruh = (gurSel === '__custom__') 
+        ? document.getElementById('addEmpGuruhCustom').value.trim() 
+        : gurSel;
+
+    const isSardor = parseInt(document.getElementById('addEmpSardor').value, 10) || 0;
 
     showStatus('💾 SQLite employees jadvaliga yozilmoqda...');
     closeAddModal();
@@ -1515,7 +2087,8 @@ async function submitAddHodim(e) {
         username,
         role,
         lavozim,
-        guruh
+        guruh,
+        isSardor
     });
 
     if (res && res.success) {
@@ -1528,8 +2101,20 @@ async function submitAddHodim(e) {
 
 async function submitAddSetting(e) {
     e.preventDefault();
-    const key = document.getElementById('addSetKey').value.trim();
-    const value = document.getElementById('addSetVal').value.trim();
+    const keySel = document.getElementById('addSetKeySelect').value;
+    const key = (keySel === '__custom__') 
+        ? document.getElementById('addSetKeyCustom').value.trim().toUpperCase() 
+        : keySel;
+
+    const valSel = document.getElementById('addSetValSelect').value;
+    const value = (valSel === '__text__') 
+        ? document.getElementById('addSetValText').value.trim() 
+        : valSel;
+
+    if (!key) {
+        showToast('Sozlama kaliti kiritilmadi ❌', true);
+        return;
+    }
 
     showStatus('💾 SQLite global_settings jadvaliga yozilmoqda...');
     closeAddModal();
@@ -1542,6 +2127,35 @@ async function submitAddSetting(e) {
     } else {
         showToast(`Xatolik: ${res.error || 'Qo\'shib bo\'lmadi'} ❌`, true);
     }
+}
+
+async function submitAddAIProvider(e) {
+    e.preventDefault();
+    const provSel = document.getElementById('addAiProviderSelect').value;
+    const provider = (provSel === '__custom__') 
+        ? (document.getElementById('addAiProviderCustom').value.trim() || 'CustomAI') 
+        : provSel;
+
+    const model = document.getElementById('addAiModel').value.trim();
+    const apiKey = document.getElementById('addAiKey').value.trim();
+    const priority = parseInt(document.getElementById('addAiPriority').value, 10) || 1;
+    const isActive = document.getElementById('addAiActive').value === '1';
+    const baseURL = document.getElementById('addAiUrl').value.trim();
+    const customPrompt = document.getElementById('addAiPrompt').value;
+
+    closeAddModal();
+
+    // Agar bu provayder mavjud bo'lsa yangilaymiz, aks holda qo'shamiz
+    const existingIdx = SheetsApp.data.aiProviders.findIndex(p => p.provider.toLowerCase() === provider.toLowerCase());
+    const newObj = { provider, model, apiKey, priority, isActive, baseURL, customPrompt };
+
+    if (existingIdx >= 0) {
+        SheetsApp.data.aiProviders[existingIdx] = newObj;
+    } else {
+        SheetsApp.data.aiProviders.push(newObj);
+    }
+
+    await saveAIProvidersToDB();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1716,16 +2330,66 @@ function toggleTheme() {
 }
 
 function returnToApp() {
-    const tg = window.Telegram?.WebApp;
-    if (tg && tg.openLink) {
-        // Telegram WebApp ichida — bot linkiga qaytish
-        tg.close();
-    } else if (window.parent && window.parent !== window) {
+    // 1. Agar iframe ichida bo'lsa
+    if (window.parent && window.parent !== window) {
+        // Agar katta ekranda bo'lsa, avval kichik ekranga qaytaradi
+        const parentArea = window.parent.document?.getElementById('adminSheetsArea');
+        if (parentArea && parentArea.classList.contains('sheets-is-fullscreen')) {
+            if (typeof window.parent.toggleAdminSheetsFullscreen === 'function') {
+                window.parent.toggleAdminSheetsFullscreen();
+                return;
+            }
+        }
+        // Asosiy ilovaning boshqaruv paneliga o'tish
+        if (typeof window.parent.switchView === 'function') {
+            window.parent.switchView('dashboard');
+            return;
+        }
+        if (typeof window.parent.switchAdminSub === 'function') {
+            const el = window.parent.document.getElementById('adminSubNavReport');
+            if (el) window.parent.switchAdminSub('adminReportArea', el);
+            return;
+        }
         window.parent.location.href = 'index.html';
+        return;
+    }
+    // 2. Standalone rejimda
+    window.location.href = 'index.html';
+}
+
+function toggleSheetsFullscreenFromInside() {
+    if (window.parent && window.parent !== window && typeof window.parent.toggleAdminSheetsFullscreen === 'function') {
+        window.parent.toggleAdminSheetsFullscreen();
     } else {
-        window.location.href = 'index.html';
+        // Standalone rejimda brauzer fullscreen API
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+            updateScreenButtonLabel(true);
+        } else {
+            document.exitFullscreen().catch(() => {});
+            updateScreenButtonLabel(false);
+        }
     }
 }
+
+function updateScreenButtonLabel(isFull) {
+    const btn = document.getElementById('btnInsideScreenToggle');
+    if (!btn) return;
+    if (isFull) {
+        btn.innerHTML = '🗗 Kichik ekran';
+        btn.title = 'Kichik ekran rejimiga qaytish';
+        btn.style.borderColor = '#eab308';
+        btn.style.color = '#eab308';
+        btn.style.background = 'rgba(234,179,8,0.15)';
+    } else {
+        btn.innerHTML = '⛶ Katta ekran';
+        btn.title = 'To\'liq katta ekranga yoyish';
+        btn.style.borderColor = '#10b981';
+        btn.style.color = '#10b981';
+        btn.style.background = 'rgba(16,185,129,0.15)';
+    }
+}
+window.updateScreenButtonLabel = updateScreenButtonLabel;
 
 // ─────────────────────────────────────────────────────────────
 // XAVFSIZLIK TEKSHIRUVI — Ochiq internetdan himoya

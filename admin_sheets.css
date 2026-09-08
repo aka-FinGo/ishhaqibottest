@@ -627,3 +627,13 @@ body.gs-standalone-body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+.gs-modal-box.gs-modal-lg {
+    max-width: 680px;
+}
+
+.gs-form-select option {
+    background: var(--gs-surface);
+    color: var(--gs-text);
+    padding: 6px;
+}

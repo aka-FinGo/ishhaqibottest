@@ -920,16 +920,54 @@ async function switchAdminSub(areaId, btn) {
     }
 }
 
-// GSheet Jadval sahifasini to'liq ekranda ochish
+// GSheet Jadval sahifasini Katta / Kichik ekran qilish (Toggle)
+function toggleAdminSheetsFullscreen() {
+    const area = document.getElementById('adminSheetsArea');
+    const iframe = document.getElementById('adminSheetsIframe');
+    const btn = document.getElementById('btnToggleSheetsSize');
+    if (!area || !iframe) return;
+
+    const isFull = area.classList.toggle('sheets-is-fullscreen');
+    if (isFull) {
+        area.style.position = 'fixed';
+        area.style.top = '0';
+        area.style.left = '0';
+        area.style.width = '100vw';
+        area.style.height = '100vh';
+        area.style.zIndex = '99999';
+        area.style.background = 'var(--bg, #0f172a)';
+        area.style.padding = '8px';
+        area.style.boxSizing = 'border-box';
+        iframe.style.height = 'calc(100vh - 55px)';
+        if (btn) btn.innerHTML = '🗗 Kichik ekran';
+    } else {
+        area.style.position = '';
+        area.style.top = '';
+        area.style.left = '';
+        area.style.width = '';
+        area.style.height = '';
+        area.style.zIndex = '';
+        area.style.background = '';
+        area.style.padding = '';
+        area.style.boxSizing = '';
+        iframe.style.height = '75vh';
+        if (btn) btn.innerHTML = '⛶ Katta ekran';
+    }
+
+    try {
+        if (iframe.contentWindow && typeof iframe.contentWindow.updateScreenButtonLabel === 'function') {
+            iframe.contentWindow.updateScreenButtonLabel(isFull);
+        }
+    } catch(e) {}
+}
+window.toggleAdminSheetsFullscreen = toggleAdminSheetsFullscreen;
+
 function openAdminSheetsFullscreen() {
-    const tg = window.Telegram?.WebApp;
-    const initData = tg?.initData || (typeof tgInitData !== 'undefined' ? tgInitData : '');
-    const tgId = (typeof myTgId !== 'undefined' && myTgId) ? myTgId : (tg?.initDataUnsafe?.user?.id || '2112012311');
-    window.location.href = `admin_sheets.html?tgId=${encodeURIComponent(tgId)}&v=2.2.0#tgWebAppData=${encodeURIComponent(initData)}`;
+    toggleAdminSheetsFullscreen();
 }
 
 function openAdminSheets() {
-    openAdminSheetsFullscreen();
+    toggleAdminSheetsFullscreen();
 }
 
 function toggleRate() {
