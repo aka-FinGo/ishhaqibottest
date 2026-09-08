@@ -883,7 +883,7 @@ async function switchAdminSub(areaId, btn) {
         showToastMsg('❌ Faqat SuperAdmin uchun', true); return;
     }
 
-    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea', 'adminSettingsArea'].forEach(id => {
+    ['adminHodimlarArea', 'adminWorkflowArea', 'adminPositionsArea', 'adminNotifyArea', 'adminServiceArea', 'adminAIArea', 'adminSettingsArea', 'adminSheetsArea'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
     });
     document.querySelectorAll('.admin-sub-btn').forEach(b => b.classList.remove('active'));

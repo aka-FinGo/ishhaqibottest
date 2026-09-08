@@ -1,0 +1,629 @@
+/* ============================================================
+   admin_sheets.css — Google Sheets Uslubidagi Admin Panel Stillari
+   Aristokrat Ish Haqi & Kvadratlar
+   ============================================================ */
+
+:root {
+    --gs-green: #0f9d58;
+    --gs-green-dark: #0b8043;
+    --gs-green-light: #e6f4ea;
+    --gs-header-bg: #f8f9fa;
+    --gs-grid-border: #e2e8f0;
+    --gs-cell-hover: #f1f5f9;
+    --gs-cell-active: #e0f2fe;
+    --gs-cell-border-active: #0284c7;
+    --gs-row-header-bg: #f1f5f9;
+    --gs-row-header-color: #64748b;
+    --gs-text: #1e293b;
+    --gs-text-muted: #64748b;
+    --gs-surface: #ffffff;
+    --gs-bg: #f8fafc;
+    --gs-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --gs-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --gs-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+[data-theme="dark"] {
+    --gs-green: #10b981;
+    --gs-green-dark: #059669;
+    --gs-green-light: rgba(16, 185, 129, 0.15);
+    --gs-header-bg: #1e293b;
+    --gs-grid-border: #334155;
+    --gs-cell-hover: #1e293b;
+    --gs-cell-active: #0f172a;
+    --gs-cell-border-active: #38bdf8;
+    --gs-row-header-bg: #0f172a;
+    --gs-row-header-color: #94a3b8;
+    --gs-text: #f1f5f9;
+    --gs-text-muted: #94a3b8;
+    --gs-surface: #1e293b;
+    --gs-bg: #0f172a;
+    --gs-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--gs-font);
+    background: var(--gs-bg);
+    color: var(--gs-text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Yuqori sarlavha va boshqaruv (Top Header) ─────────────── */
+.gs-topbar {
+    background: var(--gs-surface);
+    border-bottom: 1px solid var(--gs-grid-border);
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    z-index: 50;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.gs-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gs-logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--gs-green);
+    color: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 6px rgba(15, 157, 88, 0.3);
+}
+
+.gs-title-wrap h1 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--gs-text);
+    line-height: 1.2;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gs-db-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--gs-green-light);
+    color: var(--gs-green-dark);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.gs-db-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--gs-green);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--gs-green);
+    animation: gs-pulse 2s infinite;
+}
+
+@keyframes gs-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.gs-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 1px solid var(--gs-grid-border);
+    background: var(--gs-surface);
+    color: var(--gs-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    font-family: inherit;
+}
+
+.gs-btn:hover {
+    background: var(--gs-cell-hover);
+    border-color: var(--gs-text-muted);
+}
+
+.gs-btn-primary {
+    background: var(--gs-green);
+    color: #ffffff;
+    border-color: var(--gs-green-dark);
+}
+
+.gs-btn-primary:hover {
+    background: var(--gs-green-dark);
+    color: #ffffff;
+}
+
+/* ── Varaqlar paneli (Sheet Tabs) ─────────────────────────── */
+.gs-tabs-bar {
+    background: var(--gs-surface);
+    border-bottom: 1px solid var(--gs-grid-border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 4px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.gs-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gs-text-muted);
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.gs-tab:hover {
+    color: var(--gs-text);
+    background: var(--gs-cell-hover);
+}
+
+.gs-tab.active {
+    color: var(--gs-green);
+    border-bottom-color: var(--gs-green);
+    font-weight: 800;
+    background: var(--gs-green-light);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.gs-tab-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.06);
+    color: inherit;
+}
+
+/* ── Formula va Filtrlar paneli (Toolbar) ─────────────────── */
+.gs-toolbar {
+    background: var(--gs-bg);
+    border-bottom: 1px solid var(--gs-grid-border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.gs-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gs-search-input {
+    height: 32px;
+    padding: 0 10px 0 28px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--gs-grid-border);
+    border-radius: 6px;
+    background: var(--gs-surface);
+    color: var(--gs-text);
+    width: 220px;
+    outline: none;
+    font-family: inherit;
+}
+
+.gs-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.gs-search-icon {
+    position: absolute;
+    left: 8px;
+    font-size: 12px;
+    color: var(--gs-text-muted);
+    pointer-events: none;
+}
+
+.gs-select {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--gs-grid-border);
+    border-radius: 6px;
+    background: var(--gs-surface);
+    color: var(--gs-text);
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ── Asosiy Jadval maydoni (DataGrid) ─────────────────────── */
+.gs-grid-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: var(--gs-surface);
+}
+
+.gs-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    min-width: 900px;
+    font-size: 12.5px;
+    font-family: var(--gs-font);
+}
+
+/* Yopishqoq sarlavha (Sticky header) */
+.gs-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--gs-header-bg);
+    color: var(--gs-row-header-color);
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--gs-grid-border);
+    border-right: 1px solid var(--gs-grid-border);
+    z-index: 10;
+    user-select: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.gs-table thead th:hover {
+    background: var(--gs-cell-hover);
+    color: var(--gs-text);
+}
+
+/* Chapdagi qator raqami (Fixed row number column) */
+.gs-col-row-num {
+    position: sticky;
+    left: 0;
+    background: var(--gs-row-header-bg) !important;
+    color: var(--gs-row-header-color);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center !important;
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    border-right: 2px solid var(--gs-grid-border) !important;
+    z-index: 5;
+    user-select: none;
+}
+
+.gs-table thead th.gs-col-row-num {
+    z-index: 20;
+}
+
+/* Kataklar (Cells) */
+.gs-table tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--gs-grid-border);
+    border-right: 1px solid var(--gs-grid-border);
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--gs-text);
+    transition: background 0.1s ease;
+    height: 38px;
+    position: relative;
+}
+
+.gs-table tbody tr:hover td {
+    background: var(--gs-cell-hover);
+}
+
+/* Tahrirlanuvchi katakcha (Editable cell) */
+.gs-cell-editable {
+    cursor: cell;
+}
+
+.gs-cell-editable:hover {
+    box-shadow: inset 0 0 0 1px var(--gs-green);
+}
+
+.gs-cell-editing {
+    padding: 0 !important;
+    background: var(--gs-cell-active) !important;
+    box-shadow: inset 0 0 0 2px var(--gs-cell-border-active) !important;
+    overflow: visible !important;
+    z-index: 15 !important;
+}
+
+.gs-cell-input {
+    width: 100%;
+    height: 100%;
+    min-height: 36px;
+    border: none;
+    outline: none;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    font-family: inherit;
+    background: transparent;
+    color: var(--gs-text);
+    box-sizing: border-box;
+}
+
+/* Flash saqlanish animatsiyasi */
+@keyframes gs-saved-flash {
+    0% { background-color: #86efac; color: #065f46; }
+    100% { background-color: transparent; }
+}
+
+.gs-cell-saved {
+    animation: gs-saved-flash 1.2s ease-out;
+}
+
+@keyframes gs-error-flash {
+    0% { background-color: #fca5a5; color: #991b1b; }
+    100% { background-color: transparent; }
+}
+
+.gs-cell-error {
+    animation: gs-error-flash 1.5s ease-out;
+}
+
+/* ── Chiplar va Formatlash ────────────────────────────────── */
+.gs-num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.gs-amount-uzs {
+    font-weight: 800;
+    color: var(--gs-green-dark);
+}
+
+.gs-amount-usd {
+    font-weight: 800;
+    color: #d97706;
+}
+
+.gs-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: capitalize;
+}
+
+.gs-badge-tasdiqlandi {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.gs-badge-kutilmoqda {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.gs-badge-rad {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.gs-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gs-act-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--gs-grid-border);
+    background: var(--gs-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.1s ease;
+}
+
+.gs-act-btn:hover {
+    background: var(--gs-cell-hover);
+    transform: scale(1.05);
+}
+
+.gs-act-btn-del:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+/* ── Pastki status paneli (Footer / Status Bar) ───────────── */
+.gs-statusbar {
+    background: var(--gs-surface);
+    border-top: 1px solid var(--gs-grid-border);
+    padding: 6px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: var(--gs-text-muted);
+    font-weight: 600;
+}
+
+.gs-stats-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.gs-stat-item b {
+    color: var(--gs-text);
+}
+
+/* ── Toast Xabarnoma (Notification) ───────────────────────── */
+.gs-toast-container {
+    position: fixed;
+    bottom: 40px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.gs-toast {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+    animation: gs-toast-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gs-toast.error {
+    background: #ef4444;
+}
+
+@keyframes gs-toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Modal Oyna ───────────────────────────────────────────── */
+.gs-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: gs-fade-in 0.2s ease;
+}
+
+.gs-modal-box {
+    background: var(--gs-surface);
+    border: 1px solid var(--gs-grid-border);
+    border-radius: 14px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--gs-shadow);
+    padding: 20px;
+}
+
+.gs-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--gs-grid-border);
+}
+
+.gs-modal-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gs-text);
+}
+
+.gs-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--gs-text-muted);
+}
+
+.gs-form-group {
+    margin-bottom: 12px;
+}
+
+.gs-form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gs-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.gs-form-input, .gs-form-select, .gs-form-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid var(--gs-grid-border);
+    border-radius: 8px;
+    background: var(--gs-bg);
+    color: var(--gs-text);
+    outline: none;
+    font-family: inherit;
+}
+
+.gs-form-input:focus, .gs-form-select:focus, .gs-form-textarea:focus {
+    border-color: var(--gs-green);
+    background: var(--gs-surface);
+}
+
+@keyframes gs-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

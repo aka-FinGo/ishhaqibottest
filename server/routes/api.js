@@ -540,22 +540,29 @@ async function handleAdminEdit(body, tgId, auth) {
   const amtUZS = (body.amountUZS !== undefined) ? Number(body.amountUZS) : ((body.amount_uzs !== undefined) ? Number(body.amount_uzs) : Number(rec.amount_uzs || 0));
   const amtUSD = (body.amountUSD !== undefined) ? Number(body.amountUSD) : ((body.amount_usd !== undefined) ? Number(body.amount_usd) : Number(rec.amount_usd || 0));
   const rateVal = (body.rate !== undefined) ? Number(body.rate) : Number(rec.rate || 0);
+  const targetTgId = String(body.telegramId || body.telegram_id || rec.telegram_id || '');
+  const dateVal = String(body.date || rec.date);
+  const nameVal = String(body.name || rec.name);
+  const commentVal = String(body.comment ?? rec.comment ?? '');
+  const periodVal = String(body.actionPeriod ?? body.action_period ?? rec.action_period ?? '');
+  const statusVal = String(body.status || rec.status || 'Tasdiqlandi');
 
   db.prepare(`
     UPDATE records SET
-      name = ?, amount_uzs = ?, amount_usd = ?, rate = ?,
+      name = ?, telegram_id = ?, amount_uzs = ?, amount_usd = ?, rate = ?,
       comment = ?, date = ?, action_period = ?, status = ?,
       actor_tg_id = ?, actor_name = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(
-    String(body.name || rec.name),
+    nameVal,
+    targetTgId,
     amtUZS,
     amtUSD,
     rateVal,
-    String(body.comment ?? rec.comment ?? ''),
-    String(body.date || rec.date),
-    String(body.actionPeriod ?? body.action_period ?? rec.action_period ?? ''),
-    String(body.status || rec.status || 'Tasdiqlandi'),
+    commentVal,
+    dateVal,
+    periodVal,
+    statusVal,
     String(tgId),
     String(auth.username || ''),
     id
@@ -805,18 +812,30 @@ async function handleDeleteHodim(targetTgId) {
 }
 
 function getGlobalSettingsAll() {
+  const { db, getSetting } = require('../db');
+  const rows = db.prepare('SELECT key, value FROM global_settings ORDER BY key ASC').all();
+  const rawMap = {};
+  rows.forEach(r => { rawMap[r.key] = r.value; });
   return {
     onlyBugalterAdd:      getSetting('ONLY_BUGALTER_ADD',      '0') === '1',
     disableEmpEditDelete: getSetting('DISABLE_EMP_EDIT_DELETE', '0') === '1',
     notifyDirector:       getSetting('NOTIFY_DIRECTOR',         '0') === '1',
-    workflowStrictMode:   getSetting('WORKFLOW_STRICT_MODE',    '0') === '1'
+    workflowStrictMode:   getSetting('WORKFLOW_STRICT_MODE',    '0') === '1',
+    allList: rows,
+    ...rawMap
   };
 }
 
 function setGlobalSettingHandler(key, val) {
   const { setSetting } = require('../db');
   if (!key) return { success: false, error: 'key topilmadi' };
-  setSetting(String(key), val ? '1' : '0');
+  let valStr;
+  if (typeof val === 'boolean') {
+    valStr = val ? '1' : '0';
+  } else {
+    valStr = String(val ?? '');
+  }
+  setSetting(String(key), valStr);
   return { success: true };
 }
 
@@ -938,7 +957,7 @@ async function handleKvadratAdd(body, auth, actorTgId) {
 
 async function handleKvadratEdit(body, auth, actorTgId) {
   const { db } = require('../db');
-  const rowId = parseInt(body.rowId, 10);
+  const rowId = parseInt(body.rowId || body.id, 10);
   if (!rowId) return { success: false, error: "Buyurtma topilmadi" };
 
   const existing = db.prepare('SELECT * FROM kvadratlar WHERE id = ?').get(rowId);
@@ -948,18 +967,21 @@ async function handleKvadratEdit(body, auth, actorTgId) {
   const canEdit = auth.isSuperAdmin || (auth.isAdmin && auth.permissions?.canEdit) || (isOwner && auth.permissions?.canEdit !== false);
   if (!canEdit) return { success: false, error: "Sizda buyurtmani tahrirlash ruxsati yo'q!" };
 
-  const totalM2 = Number(body.totalM2) || existing.total_m2;
-  const orderNo = String(body.no || existing.order_no || '').trim();
-  const orderName = String(body.orderName || existing.order_name || '').trim();
-  const staffName = body.staffName || existing.staff_name;
+  const totalM2 = (body.totalM2 !== undefined) ? Number(body.totalM2) : existing.total_m2;
+  const orderNo = String(body.no ?? existing.order_no ?? '').trim();
+  const orderName = String(body.orderName ?? existing.order_name ?? '').trim();
+  const staffName = String(body.staffName ?? existing.staff_name ?? '');
   const monthStr = body.month ? normalizeKvMonth(body.month) : existing.oy;
   const yearStr = body.year ? String(body.year) : existing.yil;
+  const dateStr = String(body.date || body.sana || existing.sana || '');
+  const statusStr = String(body.status || existing.status || 'yangi');
+  const currentStep = body.currentStep !== undefined ? Number(body.currentStep) : existing.current_step;
 
   db.prepare(`
     UPDATE kvadratlar
-    SET total_m2 = ?, order_no = ?, order_name = ?, staff_name = ?, oy = ?, yil = ?, updated_at = CURRENT_TIMESTAMP
+    SET total_m2 = ?, order_no = ?, order_name = ?, staff_name = ?, oy = ?, yil = ?, sana = ?, status = ?, current_step = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(totalM2, orderNo, orderName, staffName, monthStr, yearStr, rowId);
+  `).run(totalM2, orderNo, orderName, staffName, monthStr, yearStr, dateStr, statusStr, currentStep, rowId);
 
   return { success: true };
 }

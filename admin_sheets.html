@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aristokrat — Boshqaruv Jadvali (SQLite Google Sheets)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Google Sheets Uslubidagi Stillar -->
+    <link rel="stylesheet" href="admin_sheets.css?v=2.0.1">
+
+    <!-- Tashqi kutubxonalar -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <!-- ── Yuqori boshqaruv paneli (Top Header) ────────────────── -->
+    <header class="gs-topbar">
+        <div class="gs-brand">
+            <div class="gs-logo-icon">📊</div>
+            <div class="gs-title-wrap">
+                <h1>
+                    Aristokrat Ish Haqi & Kvadratlar
+                    <span class="gs-db-badge">
+                        <span class="gs-db-dot" id="gsDbDot"></span>
+                        SQLite DB
+                    </span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="gs-topbar-actions">
+            <span id="gsUserBadge" style="font-size: 12px; font-weight: 700; color: var(--gs-text-muted); margin-right: 8px;">
+                👤 iRealBy_3D
+            </span>
+            <button class="gs-btn gs-btn-primary" onclick="openAddModal()" title="Yangi qator qo'shish">
+                ➕ Qator qo'shish
+            </button>
+            <button class="gs-btn" onclick="loadAllData()" title="SQLite bazasidan yangilash">
+                🔄 Yangilash
+            </button>
+            <button class="gs-btn" onclick="exportToExcel()" title="Joriy varaqni Excel (xlsx) formatida yuklab olish">
+                📥 Excel
+            </button>
+            <button class="gs-btn" onclick="toggleTheme()" title="Mavzuni almashtirish (Qorong'u / Yorug')">
+                🌓
+            </button>
+            <button class="gs-btn" onclick="returnToApp()" title="Asosiy WebApp sahifasiga qaytish">
+                📱 Ilova
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Varaqlar paneli (Google Sheets Tabs Bar) ─────────────── -->
+    <nav class="gs-tabs-bar">
+        <div class="gs-tab active" data-tab="dataSheet" onclick="switchSheet('dataSheet')">
+            <span>📊 dataSheet (Moliya)</span>
+            <span class="gs-tab-count" id="badgeRecords">0</span>
+        </div>
+        <div class="gs-tab" data-tab="Kvadratlar" onclick="switchSheet('Kvadratlar')">
+            <span>📐 Kvadratlar (Buyurtmalar)</span>
+            <span class="gs-tab-count" id="badgeKvadratlar">0</span>
+        </div>
+        <div class="gs-tab" data-tab="Hodimlar" onclick="switchSheet('Hodimlar')">
+            <span>👥 Hodimlar (Xodimlar & Huquqlar)</span>
+            <span class="gs-tab-count" id="badgeHodimlar">0</span>
+        </div>
+        <div class="gs-tab" data-tab="Sozlamalar" onclick="switchSheet('Sozlamalar')">
+            <span>⚙️ Sozlamalar (Tizim)</span>
+            <span class="gs-tab-count" id="badgeSettings">0</span>
+        </div>
+    </nav>
+
+    <!-- ── Qidiruv va Filtrlar paneli (Toolbar) ─────────────────── -->
+    <div class="gs-toolbar">
+        <div class="gs-toolbar-left">
+            <div class="gs-search-wrap">
+                <span class="gs-search-icon">🔍</span>
+                <input type="text" id="gsSearchInput" class="gs-search-input" placeholder="Jadvaldan qidirish...">
+            </div>
+            <div id="gsDynamicFilters" style="display: flex; gap: 8px; align-items: center;">
+                <!-- JavaScript orqali faol varaqqa mos filtrlar yuklanadi -->
+            </div>
+        </div>
+        <div style="font-size: 11.5px; color: var(--gs-text-muted); font-weight: 600;">
+            💡 <i>Katakchani 2 marta bosing va tahrirlang. Enter bossangiz, SQLite ga avtomatik saqlanadi.</i>
+        </div>
+    </div>
+
+    <!-- ── Asosiy Jadval Maydoni (DataGrid) ─────────────────────── -->
+    <main class="gs-grid-container" id="gsGridContainer">
+        <table class="gs-table" id="gsTable">
+            <thead id="gsThead">
+                <!-- Dinamik ustun sarlavhalari -->
+            </thead>
+            <tbody id="gsTbody">
+                <!-- Dinamik qatorlar -->
+            </tbody>
+        </table>
+    </main>
+
+    <!-- ── Pastki Status Paneli (Status / Footer Bar) ───────────── -->
+    <footer class="gs-statusbar">
+        <div id="gsStatusText">
+            SQLite WAL Baza: Sinxronlangan
+        </div>
+        <div class="gs-stats-group" id="gsStatsGroup">
+            <!-- Dinamik yig'indilar va statistika -->
+        </div>
+    </footer>
+
+    <!-- ── Yangi Qator Qo'shish Modali (Add Row Modal) ─────────── -->
+    <div class="gs-modal-backdrop" id="gsAddModal" style="display: none;">
+        <div class="gs-modal-box">
+            <div class="gs-modal-header">
+                <div class="gs-modal-title" id="gsModalTitle">➕ Yangi Qator Qo'shish</div>
+                <button class="gs-modal-close" onclick="closeAddModal()">✕</button>
+            </div>
+            <div id="gsModalBody">
+                <!-- Dinamik forma -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Bildirishnomalar (Toast Container) ───────────────────── -->
+    <div class="gs-toast-container" id="gsToastContainer"></div>
+
+    <!-- ── Asosiy Skript ────────────────────────────────────────── -->
+    <script src="admin_sheets.js?v=2.0.1"></script>
+</body>
+</html>

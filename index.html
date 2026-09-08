@@ -412,6 +412,9 @@
                 }
             </style>
             <div id="adminNav">
+                <button class="admin-sub-btn" id="adminNavSheets" onclick="switchAdminSub('adminSheetsArea',this)">
+                    <span class="btn-icon">📊</span><span class="btn-text">GSheet Jadval</span>
+                </button>
                 <button class="admin-sub-btn active" id="adminNavHodimlar" onclick="switchAdminSub('adminHodimlarArea',this)">
                     <span class="btn-icon">👥</span><span class="btn-text">Xodimlar</span>
                 </button>
@@ -624,6 +627,30 @@
                     </div>
                     
 
+                </div>
+            </div>
+
+            <!-- ── GSheet Jadval — SQLite Admin Panel ─────────────── -->
+            <div id="adminSheetsArea" class="hidden">
+                <div class="card" style="padding:16px; margin-bottom:15px; background: linear-gradient(135deg, rgba(15,157,88,0.08), rgba(0,0,0,0)); border: 1px solid rgba(15,157,88,0.3);">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                        <div style="width:44px;height:44px;background:var(--gs-green,#0f9d58);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 12px rgba(15,157,88,0.3);">📊</div>
+                        <div>
+                            <div style="font-size:15px;font-weight:800;color:#0f9d58;">Google Sheets Uslubidagi Boshqaruv Jadvali</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">SQLite bazasidagi barcha ma'lumotlarni ko'ring va tahrirlang</div>
+                        </div>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;line-height:1.6;">
+                        To'liq ekranda, jadval uslubida <b>records</b>, <b>kvadratlar</b>, <b>employees</b> va <b>global_settings</b> jadvallarini ko'ring.
+                        Har qanday katakchani <b>2 marta bosib</b> tahrirlang — o'zgarishlar darhol SQLite ga saqlanadi!
+                    </p>
+                    <a href="admin_sheets.html" target="_blank"
+                       style="display:inline-flex;align-items:center;gap:8px;background:#0f9d58;color:#fff;font-weight:800;font-size:14px;padding:12px 22px;border-radius:10px;text-decoration:none;box-shadow:0 4px 12px rgba(15,157,88,0.3);">
+                        📊 GSheet Jadvalini ochish (To'liq ekran)
+                    </a>
+                    <div style="margin-top:12px;font-size:11.5px;color:var(--text-muted);">
+                        💡 Telegram WebApp ichida to'liq ekran sahifasida ochiladi
+                    </div>
                 </div>
             </div>
 
