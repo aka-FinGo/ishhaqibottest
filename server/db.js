@@ -209,15 +209,12 @@ function getEmployee(tgId) {
   const isAdmin      = isSuperAdmin || role === 'ADMIN' || row.admin === 1;
   const isBugalter   = !isSuperAdmin && role === 'BUGALTER';
 
-  const permissions = isSuperAdmin
-    ? { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true }
-    : {
-        canViewAll:  row.can_view_all  === 1,
-        canEdit:     row.can_edit      === 1,
-        canDelete:   row.can_delete    === 1,
-        canExport:   row.can_export    === 1,
-        canViewDash: row.can_view_dash === 1
-      };
+  const canAdd       = isSuperAdmin ? true : (row.can_add === 1);
+  const canViewAll   = isSuperAdmin ? true : (row.can_view_all  === 1);
+  const canEdit      = isSuperAdmin ? true : (row.can_edit      === 1);
+  const canDelete    = isSuperAdmin ? true : (row.can_delete    === 1);
+  const canExport    = isSuperAdmin ? true : (row.can_export    === 1);
+  const canViewDash  = isSuperAdmin ? true : (row.can_view_dash === 1);
 
   // positions — stored in lavozim field (comma-separated for multi-position support)
   const positions = row.lavozim
@@ -225,21 +222,35 @@ function getEmployee(tgId) {
     : [];
 
   return {
-    telegram_id:  row.telegram_id,
+    tgId:         String(row.telegram_id),
+    id:           String(row.telegram_id),
+    telegram_id:  String(row.telegram_id),
     username:     row.username,
-    canAdd:       isSuperAdmin ? true : (row.can_add === 1),
+    name:         row.username,
+    canAdd,
+    canViewAll,
+    canEdit,
+    canDelete,
+    canExport,
+    canViewDash,
     role:         _roleLabelFromKey(isSuperAdmin ? 'SUPER_ADMIN' : role),
     roleKey:      isSuperAdmin ? 'SUPER_ADMIN' : role,
     isSuperAdmin,
     isDirektor,
     isAdmin,
     isBugalter,
-    permissions,
+    permissions: {
+      canViewAll,
+      canEdit,
+      canDelete,
+      canExport,
+      canViewDash
+    },
     positions,
     group:        row.guruh || '',
+    guruh:        row.guruh || '',
     isSardor:     row.is_sardor === 1,
-    lavozim:      row.lavozim  || '',
-    guruh:        row.guruh    || ''
+    lavozim:      row.lavozim  || ''
   };
 }
 
@@ -252,28 +263,47 @@ function getAllEmployees() {
   return rows.map(row => {
     const role = _normalizeRole(row.role);
     const isSuperAdmin = row.super_admin === 1 || role === 'SUPER_ADMIN';
+    const canAdd       = isSuperAdmin ? true : (row.can_add === 1);
+    const canViewAll   = isSuperAdmin ? true : (row.can_view_all === 1);
+    const canEdit      = isSuperAdmin ? true : (row.can_edit === 1);
+    const canDelete    = isSuperAdmin ? true : (row.can_delete === 1);
+    const canExport    = isSuperAdmin ? true : (row.can_export === 1);
+    const canViewDash  = isSuperAdmin ? true : (row.can_view_dash === 1);
+    const positions    = row.lavozim
+      ? String(row.lavozim).split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
     return {
-      tgId:        row.telegram_id,
+      tgId:        String(row.telegram_id),
+      id:          String(row.telegram_id),
+      telegram_id: String(row.telegram_id),
       username:    row.username,
+      name:        row.username,
       role:        _roleLabelFromKey(isSuperAdmin ? 'SUPER_ADMIN' : role),
       roleKey:     isSuperAdmin ? 'SUPER_ADMIN' : role,
-      canAdd:      isSuperAdmin ? true : (row.can_add === 1),
-      isSuperAdmin,
-      isDirektor:  !isSuperAdmin && (role === 'DIRECTOR' || row.direktor === 1),
-      isAdmin:     isSuperAdmin || role === 'ADMIN' || row.admin === 1,
-      isBugalter:  !isSuperAdmin && role === 'BUGALTER',
+      roleLabel:   _roleLabelFromKey(isSuperAdmin ? 'SUPER_ADMIN' : role),
+      canAdd:      canAdd ? 1 : 0,
+      canViewAll:  canViewAll ? 1 : 0,
+      canEdit:     canEdit ? 1 : 0,
+      canDelete:   canDelete ? 1 : 0,
+      canExport:   canExport ? 1 : 0,
+      canViewDash: canViewDash ? 1 : 0,
+      isSuperAdmin: isSuperAdmin ? 1 : 0,
+      isDirektor:  (!isSuperAdmin && (role === 'DIRECTOR' || row.direktor === 1)) ? 1 : 0,
+      isAdmin:     (isSuperAdmin || role === 'ADMIN' || row.admin === 1) ? 1 : 0,
+      isBugalter:  (!isSuperAdmin && role === 'BUGALTER') ? 1 : 0,
+      positions,
       lavozim:     row.lavozim  || '',
+      group:       row.guruh    || '',
       guruh:       row.guruh    || '',
-      isSardor:    row.is_sardor === 1,
-      permissions: isSuperAdmin
-        ? { canViewAll: true, canEdit: true, canDelete: true, canExport: true, canViewDash: true }
-        : {
-            canViewAll:  row.can_view_all  === 1,
-            canEdit:     row.can_edit      === 1,
-            canDelete:   row.can_delete    === 1,
-            canExport:   row.can_export    === 1,
-            canViewDash: row.can_view_dash === 1
-          }
+      isSardor:    row.is_sardor === 1 ? 1 : 0,
+      permissions: {
+        canViewAll,
+        canEdit,
+        canDelete,
+        canExport,
+        canViewDash
+      }
     };
   });
 }

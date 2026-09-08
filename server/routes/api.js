@@ -389,19 +389,45 @@ async function handleInit(tgId, auth, data) {
     ORDER BY id DESC
   `).all(String(tgId)).map(r => ({
     rowId:        r.id,
-    telegramId:   r.telegram_id,
+    id:           r.id,
+    telegramId:   String(r.telegram_id || ''),
+    telegram_id:  String(r.telegram_id || ''),
     name:         r.name,
-    amountUZS:    r.amount_uzs,
-    amountUSD:    r.amount_usd,
-    rate:         r.rate,
+    amountUZS:    Number(r.amount_uzs) || 0,
+    amount_uzs:   Number(r.amount_uzs) || 0,
+    amountUSD:    Number(r.amount_usd) || 0,
+    amount_usd:   Number(r.amount_usd) || 0,
+    rate:         Number(r.rate) || 0,
     comment:      r.comment || '',
-    date:         r.date,
+    date:         r.date || '',
     actionPeriod: r.action_period || '',
+    action_period: r.action_period || '',
     status:       r.status || 'Tasdiqlandi'
   }));
 
-  const workflowConfig = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
-  const allPositions   = db.prepare('SELECT * FROM positions ORDER BY position_name ASC').all();
+  const workflowRaw = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
+  const workflowConfig = workflowRaw.map(s => ({
+    index:         s.step_index,
+    step_index:    s.step_index,
+    position:      s.position_name,
+    position_name: s.position_name,
+    action:        s.action_label,
+    action_label:  s.action_label,
+    status:        s.status_label,
+    status_label:  s.status_label,
+    isStart:       s.is_start === 1,
+    is_start:      s.is_start === 1,
+    isEnd:         s.is_end === 1,
+    is_end:        s.is_end === 1
+  }));
+
+  const posRaw = db.prepare('SELECT * FROM positions ORDER BY position_name ASC').all();
+  const allPositions = posRaw.map(p => ({
+    id:            p.id,
+    name:          p.position_name,
+    position_name: p.position_name,
+    icon:          p.icon || '💼'
+  }));
   const employeeList   = getAllEmployees();
 
   return {
@@ -440,11 +466,35 @@ async function handleAdminInit(tgId, auth) {
   if (!isAllowed) return { success: false, error: "Admin ruxsati yo'q!" };
 
   const { db } = require('../db');
+  const posRaw = db.prepare('SELECT * FROM positions ORDER BY position_name ASC').all();
+  const positions = posRaw.map(p => ({
+    id:            p.id,
+    name:          p.position_name,
+    position_name: p.position_name,
+    icon:          p.icon || '💼'
+  }));
+
+  const wfRaw = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
+  const workflowSteps = wfRaw.map(s => ({
+    index:         s.step_index,
+    step_index:    s.step_index,
+    position:      s.position_name,
+    position_name: s.position_name,
+    action:        s.action_label,
+    action_label:  s.action_label,
+    status:        s.status_label,
+    status_label:  s.status_label,
+    isStart:       s.is_start === 1,
+    is_start:      s.is_start === 1,
+    isEnd:         s.is_end === 1,
+    is_end:        s.is_end === 1
+  }));
+
   return {
     success:         true,
     employees:       getAllEmployees(),
-    positions:       db.prepare('SELECT * FROM positions ORDER BY position_name ASC').all(),
-    workflowSteps:   db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all(),
+    positions:       positions,
+    workflowSteps:   workflowSteps,
     isWorkflowStrict: getSetting('WORKFLOW_STRICT_MODE', '0') === '1'
   };
 }
@@ -454,7 +504,30 @@ async function handleAdminGetAll(body, auth) {
   const rows = db.prepare(`
     SELECT * FROM records WHERE is_deleted = 0 ORDER BY id DESC
   `).all();
-  return { success: true, data: rows };
+  const mapped = rows.map(r => ({
+    rowId:         r.id,
+    id:            r.id,
+    name:          r.name,
+    telegramId:    String(r.telegram_id || ''),
+    telegram_id:   String(r.telegram_id || ''),
+    amountUZS:     Number(r.amount_uzs) || 0,
+    amount_uzs:    Number(r.amount_uzs) || 0,
+    amountUSD:     Number(r.amount_usd) || 0,
+    amount_usd:    Number(r.amount_usd) || 0,
+    rate:          Number(r.rate) || 0,
+    comment:       r.comment || '',
+    date:          r.date || '',
+    actionPeriod:  r.action_period || '',
+    action_period: r.action_period || '',
+    status:        r.status || 'Tasdiqlandi',
+    actorTgId:     r.actor_tg_id || '',
+    actor_tg_id:   r.actor_tg_id || '',
+    actorName:     r.actor_name || '',
+    actor_name:    r.actor_name || '',
+    createdAt:     r.created_at || '',
+    updatedAt:     r.updated_at || ''
+  }));
+  return { success: true, data: mapped };
 }
 
 async function handleAdminEdit(body, tgId, auth) {
@@ -463,6 +536,11 @@ async function handleAdminEdit(body, tgId, auth) {
   if (!id) return { success: false, error: "rowId topilmadi" };
   const rec = db.prepare('SELECT * FROM records WHERE id = ? AND is_deleted = 0').get(id);
   if (!rec) return { success: false, error: "Yozuv topilmadi" };
+
+  const amtUZS = (body.amountUZS !== undefined) ? Number(body.amountUZS) : ((body.amount_uzs !== undefined) ? Number(body.amount_uzs) : Number(rec.amount_uzs || 0));
+  const amtUSD = (body.amountUSD !== undefined) ? Number(body.amountUSD) : ((body.amount_usd !== undefined) ? Number(body.amount_usd) : Number(rec.amount_usd || 0));
+  const rateVal = (body.rate !== undefined) ? Number(body.rate) : Number(rec.rate || 0);
+
   db.prepare(`
     UPDATE records SET
       name = ?, amount_uzs = ?, amount_usd = ?, rate = ?,
@@ -470,14 +548,14 @@ async function handleAdminEdit(body, tgId, auth) {
       actor_tg_id = ?, actor_name = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(
-    String(body.name    || rec.name),
-    Number(body.amountUZS ?? rec.amount_uzs),
-    Number(body.amountUSD ?? rec.amount_usd),
-    Number(body.rate      ?? rec.rate),
-    String(body.comment   ?? rec.comment   ?? ''),
-    String(body.date      || rec.date),
-    String(body.actionPeriod ?? rec.action_period ?? ''),
-    String(body.status    || rec.status),
+    String(body.name || rec.name),
+    amtUZS,
+    amtUSD,
+    rateVal,
+    String(body.comment ?? rec.comment ?? ''),
+    String(body.date || rec.date),
+    String(body.actionPeriod ?? body.action_period ?? rec.action_period ?? ''),
+    String(body.status || rec.status || 'Tasdiqlandi'),
     String(tgId),
     String(auth.username || ''),
     id
@@ -633,25 +711,49 @@ async function handleSelfDelete(body, tgId, auth) {
 }
 
 async function handleAddHodim(body) {
-  const { db } = require('../db');
-  const { normalizeRole, resolveEmployeeAccess } = require('../auth');
+  const { db, getEmployee } = require('../db');
+  const { normalizeRole, resolveEmployeeAccess, isConfigSuperAdmin } = require('../auth');
 
-  const tgId    = String(body.tgId    || body.telegramId || '').trim();
+  const tgId     = String(body.tgId || body.telegramId || '').trim();
   const username = String(body.username || '').trim();
-  const role    = normalizeRole(body.role || 'EMPLOYEE', null);
+  const role     = normalizeRole(body.role || 'EMPLOYEE', null);
 
-  if (!tgId)    return { success: false, error: "TelegramId kiritilmagan" };
+  if (!tgId)     return { success: false, error: "TelegramId kiritilmagan" };
   if (!username) return { success: false, error: "Username kiritilmagan" };
 
-  const access = resolveEmployeeAccess({
+  const existing = getEmployee(tgId);
+  const isSuper  = isConfigSuperAdmin(tgId) || role === 'SUPER_ADMIN' || (existing && existing.isSuperAdmin);
+
+  // Fallback defaults from role
+  const accessDefaults = resolveEmployeeAccess({
     telegram_id: tgId,
-    role,
-    super_admin:   role === 'SUPER_ADMIN' ? 1 : 0,
-    direktor:      role === 'DIRECTOR'    ? 1 : 0,
-    admin:         role === 'ADMIN'       ? 1 : 0,
-    can_add:       1,
-    can_view_all:  0, can_edit: 0, can_delete: 0, can_export: 0, can_view_dash: 0
+    role: isSuper ? 'SUPER_ADMIN' : role,
+    super_admin: isSuper ? 1 : 0,
+    direktor:    role === 'DIRECTOR' ? 1 : 0,
+    admin:       role === 'ADMIN' ? 1 : 0,
+    can_add:     1,
+    can_view_all: 0, can_edit: 0, can_delete: 0, can_export: 0, can_view_dash: 0
   });
+
+  const canAdd      = isSuper ? 1 : (body.canAdd !== undefined ? (body.canAdd ? 1 : 0) : (existing ? (existing.canAdd ? 1 : 0) : (accessDefaults.canAdd ? 1 : 0)));
+  const canViewAll  = isSuper ? 1 : (body.canViewAll !== undefined ? (body.canViewAll ? 1 : 0) : (existing ? (existing.canViewAll ? 1 : 0) : (accessDefaults.permissions.canViewAll ? 1 : 0)));
+  const canEdit     = isSuper ? 1 : (body.canEdit !== undefined ? (body.canEdit ? 1 : 0) : (existing ? (existing.canEdit ? 1 : 0) : (accessDefaults.permissions.canEdit ? 1 : 0)));
+  const canDelete   = isSuper ? 1 : (body.canDelete !== undefined ? (body.canDelete ? 1 : 0) : (existing ? (existing.canDelete ? 1 : 0) : (accessDefaults.permissions.canDelete ? 1 : 0)));
+  const canExport   = isSuper ? 1 : (body.canExport !== undefined ? (body.canExport ? 1 : 0) : (existing ? (existing.canExport ? 1 : 0) : (accessDefaults.permissions.canExport ? 1 : 0)));
+  const canViewDash = isSuper ? 1 : (body.canViewDash !== undefined ? (body.canViewDash ? 1 : 0) : (existing ? (existing.canViewDash ? 1 : 0) : (accessDefaults.permissions.canViewDash ? 1 : 0)));
+
+  // lavozim (positions)
+  let lavozimStr = '';
+  if (Array.isArray(body.positions)) {
+    lavozimStr = body.positions.join(',');
+  } else if (body.lavozim !== undefined) {
+    lavozimStr = String(body.lavozim);
+  } else if (existing) {
+    lavozimStr = existing.lavozim || '';
+  }
+
+  const guruhStr = body.guruh !== undefined ? String(body.guruh) : (body.group !== undefined ? String(body.group) : (existing ? existing.guruh : ''));
+  const isSardorVal = body.isSardor !== undefined ? (body.isSardor ? 1 : 0) : (existing ? (existing.isSardor ? 1 : 0) : 0);
 
   try {
     db.prepare(`
@@ -671,19 +773,19 @@ async function handleAddHodim(body) {
         is_sardor=excluded.is_sardor, updated_at=CURRENT_TIMESTAMP
     `).run(
       tgId, username,
-      access.canAdd       ? 1 : 0,
-      access.isSuperAdmin ? 1 : 0,
-      access.isDirektor   ? 1 : 0,
-      (access.isAdmin && !access.isSuperAdmin) ? 1 : 0,
-      access.permissions.canViewAll  ? 1 : 0,
-      access.permissions.canEdit     ? 1 : 0,
-      access.permissions.canDelete   ? 1 : 0,
-      access.permissions.canExport   ? 1 : 0,
-      access.permissions.canViewDash ? 1 : 0,
-      access.roleKey,
-      String(body.lavozim || ''),
-      String(body.guruh   || ''),
-      body.isSardor ? 1 : 0
+      canAdd,
+      isSuper ? 1 : 0,
+      (!isSuper && role === 'DIRECTOR') ? 1 : 0,
+      (isSuper || role === 'ADMIN') ? 1 : 0,
+      canViewAll,
+      canEdit,
+      canDelete,
+      canExport,
+      canViewDash,
+      isSuper ? 'SUPER_ADMIN' : role,
+      lavozimStr,
+      guruhStr,
+      isSardorVal
     );
     return { success: true };
   } catch (e) {
@@ -816,6 +918,9 @@ async function handleKvadratAdd(body, auth, actorTgId) {
     orderNo = String((maxRow?.maxId || 0) + 1);
   }
 
+  const firstStep = db.prepare('SELECT status_label FROM workflow_steps ORDER BY step_index ASC LIMIT 1').get();
+  const initialStatus = firstStep?.status_label || 'yangi';
+
   const initialLog = JSON.stringify([{
     step: 1,
     uid: String(actorTgId),
@@ -825,8 +930,8 @@ async function handleKvadratAdd(body, auth, actorTgId) {
 
   const info = db.prepare(`
     INSERT INTO kvadratlar (sana, order_no, oy, yil, total_m2, order_name, staff_name, owner_tg_id, current_step, status, workflow_logs)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'yangi', ?)
-  `).run(dateStr, orderNo, monthStr, yearStr, totalM2, orderName, staffName, String(actorTgId), initialLog);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+  `).run(dateStr, orderNo, monthStr, yearStr, totalM2, orderName, staffName, String(actorTgId), initialStatus, initialLog);
 
   return { success: true, rowId: Number(info.lastInsertRowid) };
 }
@@ -1001,7 +1106,20 @@ async function handleForceReassignStep(body, auth) {
 
 async function handleWorkflowGetConfig() {
   const { db } = require('../db');
-  const steps = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all();
+  const steps = db.prepare('SELECT * FROM workflow_steps ORDER BY step_index ASC').all().map(s => ({
+    index:         s.step_index,
+    step_index:    s.step_index,
+    position:      s.position_name,
+    position_name: s.position_name,
+    action:        s.action_label,
+    action_label:  s.action_label,
+    status:        s.status_label,
+    status_label:  s.status_label,
+    isStart:       s.is_start === 1,
+    is_start:      s.is_start === 1,
+    isEnd:         s.is_end === 1,
+    is_end:        s.is_end === 1
+  }));
   return { success: true, config: steps };
 }
 
@@ -1017,12 +1135,12 @@ async function handleWorkflowSaveConfig(steps, auth) {
   `);
   steps.forEach((s, idx) => {
     stmt.run(
-      idx + 1,
+      s.index || s.step_index || (idx + 1),
       String(s.position || s.position_name || '').trim(),
       String(s.action || s.action_label || '').trim(),
       String(s.status || s.status_label || '').trim(),
-      s.isStart ? 1 : 0,
-      s.isEnd ? 1 : 0
+      (s.isStart || s.is_start) ? 1 : 0,
+      (s.isEnd || s.is_end) ? 1 : 0
     );
   });
 
@@ -1040,9 +1158,10 @@ async function handleWorkflowSaveSettings(body, auth) {
 async function handlePositionsGetAll() {
   const { db } = require('../db');
   const positions = db.prepare('SELECT * FROM positions ORDER BY position_name ASC').all().map(p => ({
-    id: p.id,
-    name: p.position_name,
-    icon: p.icon || '💼'
+    id:            p.id,
+    name:          p.position_name,
+    position_name: p.position_name,
+    icon:          p.icon || '💼'
   }));
   return { success: true, positions };
 }
@@ -1055,8 +1174,9 @@ async function handlePositionsSaveAll(positions, auth) {
   db.exec('DELETE FROM positions;');
   const stmt = db.prepare('INSERT OR IGNORE INTO positions (position_name, icon) VALUES (?, ?)');
   positions.forEach(p => {
-    if (p.name && p.name.trim()) {
-      stmt.run(p.name.trim(), p.icon || '💼');
+    const posName = String(p.name || p.position_name || '').trim();
+    if (posName) {
+      stmt.run(posName, p.icon || '💼');
     }
   });
 
