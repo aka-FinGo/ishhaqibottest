@@ -3,7 +3,18 @@
    Barcha inline stillar components.css klasslariga ko'chirildi.
    Mavzu (standart / dark) avtomatik ishlaydi.
    --------------------------------------------------------------- */
+
+/* HTML escape xavfsizligi */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function showDetailModal(r, mode) {
+    if (!r) return;
+
     const uzs    = Number(r.amountUZS) || 0;
     const usd    = Number(r.amountUSD) || 0;
     const rowId  = Number(r.rowId) || 0;
@@ -47,34 +58,29 @@ function showDetailModal(r, mode) {
     let actionBtns = '';
     // Tahrirlash va o'chirish huquqlari:
     // Faqat SuperAdmin uchun cheksiz huquq.
-    // Boshqa har qanday xodim (Bugalter, Admin, Direktor, Employee) uchun
+    // Boshqa xodimlar (Bugalter, Admin, Direktor, Employee) uchun
     // Google Sheets jadvalida (canEdit va canDelete ustunlarida) ruxsat berilgan bo'lsagina tugmalar chiqadi!
     const isSuperAdmin = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
     const hasEditPerm = Boolean(typeof myPermissions !== 'undefined' && myPermissions && myPermissions.canEdit);
     const hasDeletePerm = Boolean(typeof myPermissions !== 'undefined' && myPermissions && myPermissions.canDelete);
 
-    const canEd = isSuperAdmin || hasEditPerm;
-    const canDel = isSuperAdmin || hasDeletePerm;
+    const isPrivileged = typeof myRole !== 'undefined' && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Direktor' || myRole === 'Bugalter');
+    const isOwner = Boolean(typeof telegramId !== 'undefined' && telegramId && r && r.telegramId && String(r.telegramId) === String(telegramId));
+    
+    const canEditAll = isSuperAdmin || (isPrivileged && hasEditPerm);
+    const canDeleteAll = isSuperAdmin || (isPrivileged && hasDeletePerm);
+
+    const canEd = canEditAll || (hasEditPerm && isOwner);
+    const canDel = canDeleteAll || (hasDeletePerm && isOwner);
 
     if (mode === 'admin' || mode === true) {
-        if (isOwner) {
-            const editBtn = canEd
-                ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
-                : '';
-            const delBtn = canDel
-                ? `<button class="dm-act-btn dm-act-btn--del" title="O'chirish" onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
-                : '';
-            actionBtns = (editBtn || delBtn) ? `<div class="dm-act-row">${editBtn}${delBtn}</div>` : '';
-        } else {
-            /* Boshqalarning amallari */
-            const editBtn = canEd
-                ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
-                : '';
-            const delBtn = canDel
-                ? `<button class="dm-act-btn dm-act-btn--del" title="O'chirish" onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
-                : '';
-            actionBtns = (editBtn || delBtn) ? `<div class="dm-act-row">${editBtn}${delBtn}</div>` : '';
-        }
+        const editBtn = canEd
+            ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openEdit(${rowId})">✏️</button>`
+            : '';
+        const delBtn = canDel
+            ? `<button class="dm-act-btn dm-act-btn--del" title="O'chirish" onclick="closeDetailModal();deleteRecord(${rowId})">🗑</button>`
+            : '';
+        actionBtns = (editBtn || delBtn) ? `<div class="dm-act-row">${editBtn}${delBtn}</div>` : '';
     } else if (mode === 'self') {
         const editBtn = canEd
             ? `<button class="dm-act-btn dm-act-btn--edit" title="Tahrirlash" onclick="closeDetailModal();openSelfEdit(${rowId})">✏️</button>`
@@ -142,37 +148,54 @@ function showDetailModal(r, mode) {
     }
 
     /* Modal ichidagi kontent */
-    document.getElementById('detailModalBody').innerHTML = `
-        <div class="modal-drag"></div>
+    const detailModalBodyEl = document.getElementById('detailModalBody');
+    if (detailModalBodyEl) {
+        detailModalBodyEl.innerHTML = `
+            <div class="modal-drag"></div>
 
-        <div class="dm-top-row">
-            <div style="display:flex; align-items:center;">
-                <div class="dm-badge ${badgeClass}">${badgeLabel}</div>
-                ${statusBadge}
+            <div class="dm-top-row">
+                <div style="display:flex; align-items:center;">
+                    <div class="dm-badge ${badgeClass}">${badgeLabel}</div>
+                    ${statusBadge}
+                </div>
+                ${actionBtns}
             </div>
-            ${actionBtns}
-        </div>
 
-        <div class="dm-body-header">
-            <h2 class="dm-title">${safeComment}</h2>
-            <div class="dm-date-row">
-                <span class="dm-date-chip">📅 ${safeDate}</span>
-                ${periodChip}
+            <div class="dm-body-header">
+                <h2 class="dm-title">${safeComment}</h2>
+                <div class="dm-date-row">
+                    <span class="dm-date-chip">📅 ${safeDate}</span>
+                    ${periodChip}
+                </div>
             </div>
-        </div>
 
-        ${editHistoryBlock}
+            ${editHistoryBlock}
 
-        <div class="dm-amounts">
-            ${amountsBlock}
-        </div>
+            <div class="dm-amounts">
+                ${amountsBlock}
+            </div>
 
-        <button class="dm-close-btn" onclick="closeDetailModal()">✕ Yopish</button>
-    `;
+            <button class="dm-close-btn" onclick="closeDetailModal()">✕ Yopish</button>
+        `;
+    }
 
-    document.getElementById('detailModal').classList.remove('hidden');
+    const modalEl = document.getElementById('detailModal');
+    if (modalEl) {
+        modalEl.classList.remove('hidden');
+        if (!modalEl.dataset.backdropAttached) {
+            modalEl.dataset.backdropAttached = 'true';
+            modalEl.addEventListener('click', (e) => {
+                if (e.target === modalEl) {
+                    closeDetailModal();
+                }
+            });
+        }
+    }
 }
 
 function closeDetailModal() {
-    document.getElementById('detailModal').classList.add('hidden');
+    const modalEl = document.getElementById('detailModal');
+    if (modalEl) {
+        modalEl.classList.add('hidden');
+    }
 }
