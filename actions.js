@@ -188,14 +188,18 @@ async function saveEdit(){
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    const canGlobalEdit = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
-    if (!canGlobalEdit || (!myPermissions.canEdit && myRole !== 'SuperAdmin')) {
+    const isPrivilegedRole = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor');
+    const hasExplicitEdit = Boolean(myPermissions && myPermissions.canEdit);
+    const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+
+    const canEditAllowed = myRole === 'SuperAdmin' || hasExplicitEdit || isPrivilegedRole || (!isGlobalRestricted);
+    if (!canEditAllowed) {
         showToastMsg("❌ Sizda tahrirlash ruxsati yo'q!", true);
         return;
     }
 
-    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
-    const canEditAll = isAdmin && myPermissions.canEdit;
+    const isAdmin = isPrivilegedRole;
+    const canEditAll = (isAdmin && myPermissions.canEdit) || myRole === 'SuperAdmin';
     const isOwner = String(r.telegramId) === String(telegramId);
 
     if (!canEditAll && !isOwner) {
@@ -306,14 +310,18 @@ async function deleteRecord(rowId) {
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    const canGlobalDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
-    if (!canGlobalDelete || (!myPermissions.canDelete && myRole !== 'SuperAdmin')) {
+    const isPrivilegedRole = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor');
+    const hasExplicitDelete = Boolean(myPermissions && myPermissions.canDelete);
+    const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+
+    const canDeleteAllowed = myRole === 'SuperAdmin' || hasExplicitDelete || isPrivilegedRole || (!isGlobalRestricted);
+    if (!canDeleteAllowed) {
         showToastMsg("❌ Sizda o'chirish ruxsati yo'q!", true);
         return;
     }
 
-    const isAdmin = myRole === 'Admin' || myRole === 'SuperAdmin' || myRole === 'Direktor' || myRole === 'Bugalter';
-    const canDeleteAll = isAdmin && myPermissions.canDelete;
+    const isAdmin = isPrivilegedRole;
+    const canDeleteAll = (isAdmin && myPermissions.canDelete) || myRole === 'SuperAdmin';
     const isOwner = String(r.telegramId) === String(telegramId);
 
     if (!canDeleteAll && !isOwner) {
@@ -346,13 +354,17 @@ async function deleteOwnRecord(rowId) {
     const r = findRecordByRowId(rowId);
     if (!r) return;
 
-    const canGlobalDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
-    if (!canGlobalDelete || (!myPermissions.canDelete && myRole !== 'SuperAdmin')) {
+    const isPrivilegedRole = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor');
+    const hasExplicitDelete = Boolean(myPermissions && myPermissions.canDelete);
+    const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+
+    const canDeleteAllowed = myRole === 'SuperAdmin' || hasExplicitDelete || isPrivilegedRole || (!isGlobalRestricted);
+    if (!canDeleteAllowed) {
         showToastMsg("❌ Sizda o'chirish ruxsati yo'q!", true);
         return;
     }
 
-    if (String(r.telegramId) !== String(telegramId)) {
+    if (String(r.telegramId) !== String(telegramId) && myRole !== 'SuperAdmin') {
         showToastMsg("❌ Siz faqat o'zingiz kiritgan ma'lumotni o'chira olasiz", true);
         return;
     }

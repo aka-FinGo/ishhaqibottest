@@ -47,10 +47,14 @@ function showDetailModal(r, mode) {
     let actionBtns = '';
     const isOwner = String(r.telegramId) === String(telegramId);
     
-    // Tahrirlash va o'chirish huquqlari (SuperAdmin uchun doim ruxsat, boshqalar uchun global taqiq yo'q bo'lsa va individual ruxsat berilgan bo'lsa)
-    const canGlobalEditDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || myRole === 'SuperAdmin';
-    const canEd = (myRole === 'SuperAdmin') || (canGlobalEditDelete && !!(myPermissions && myPermissions.canEdit));
-    const canDel = (myRole === 'SuperAdmin') || (canGlobalEditDelete && !!(myPermissions && myPermissions.canDelete));
+    // Tahrirlash va o'chirish huquqlari (SuperAdmin, Admin, Bugalter yoki alohida ruxsat berilgan xodimlar uchun to'liq ruxsat)
+    const isPrivilegedRole = (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor');
+    const hasExplicitEdit = Boolean(myPermissions && myPermissions.canEdit);
+    const hasExplicitDelete = Boolean(myPermissions && myPermissions.canDelete);
+    const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+
+    const canEd = (myRole === 'SuperAdmin') || hasExplicitEdit || isPrivilegedRole || (!isGlobalRestricted);
+    const canDel = (myRole === 'SuperAdmin') || hasExplicitDelete || isPrivilegedRole || (!isGlobalRestricted);
 
     if (mode === 'admin' || mode === true) {
         if (isOwner) {

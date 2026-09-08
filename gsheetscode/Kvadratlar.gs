@@ -254,15 +254,16 @@ function kvadratEdit(data, auth, actorTgId) {
 
     // Ruxsatni tekshirish
     var globalSettings = getGlobalSettings_();
-    if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+    var isPrivileged = auth.isSuperAdmin || auth.isAdmin || auth.isBugalter || auth.isDirector || (auth.permissions && auth.permissions.canEdit);
+    if (globalSettings.disableEmpEditDelete && !isPrivileged) {
       return { success: false, error: "Buyurtmalarni tahrirlash taqiqlangan!" };
     }
-    if (!auth.isSuperAdmin && !auth.permissions.canEdit) {
+    if (!isPrivileged) {
       return { success: false, error: "Sizda buyurtmalarni tahrirlash ruxsati yo'q!" };
     }
-    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || auth.isBugalter;
     var isOwner = ownerTgId === String(actorTgId);
-    var canEditAll = isAdmin && auth.permissions.canEdit;
+    var canEditAll = (isAdmin && auth.permissions.canEdit) || auth.isSuperAdmin;
 
     if (!auth.isSuperAdmin && !canEditAll && !isOwner) {
       return { success: false, error: "Siz faqat o'zingiz kiritgan buyurtmani tahrirlashingiz mumkin!" };
@@ -346,15 +347,16 @@ function kvadratDelete(data, auth, actorTgId) {
 
     // Ruxsatni tekshirish
     var globalSettings = getGlobalSettings_();
-    if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+    var isPrivileged = auth.isSuperAdmin || auth.isAdmin || auth.isBugalter || auth.isDirector || (auth.permissions && auth.permissions.canDelete);
+    if (globalSettings.disableEmpEditDelete && !isPrivileged) {
       return { success: false, error: "Buyurtmalarni o'chirish taqiqlangan!" };
     }
-    if (!auth.isSuperAdmin && !auth.permissions.canDelete) {
+    if (!isPrivileged) {
       return { success: false, error: "Sizda buyurtmalarni o'chirish ruxsati yo'q!" };
     }
-    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || auth.isBugalter;
     var isOwner = ownerTgId === String(actorTgId);
-    var canDeleteAll = isAdmin && auth.permissions.canDelete;
+    var canDeleteAll = (isAdmin && auth.permissions.canDelete) || auth.isSuperAdmin;
 
     if (!auth.isSuperAdmin && !canDeleteAll && !isOwner) {
       return { success: false, error: "Siz faqat o'zingiz kiritgan buyurtmani o'chira olasiz!" };

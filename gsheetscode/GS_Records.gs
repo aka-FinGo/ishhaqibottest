@@ -127,10 +127,11 @@ function adminGetAll(options) {
 function selfEditRecord(data, actorTgId) {
   var auth = checkUserRoles(actorTgId);
   var globalSettings = getGlobalSettings_();
-  if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+  var isPrivileged = auth.isSuperAdmin || auth.isAdmin || auth.isBugalter || auth.isDirector || (auth.permissions && auth.permissions.canEdit);
+  if (globalSettings.disableEmpEditDelete && !isPrivileged) {
     return { success: false, error: "Xodimlar uchun tahrirlash va o'chirish taqiqlangan!" };
   }
-  if (!auth.isSuperAdmin && !auth.permissions.canEdit) {
+  if (!isPrivileged) {
     return { success: false, error: "Sizda tahrirlash ruxsati yo'q!" };
   }
   var rowId = Number(data.rowId);
@@ -143,9 +144,9 @@ function selfEditRecord(data, actorTgId) {
     if (isDeletedRow_(rowData)) return { success: false, error: "Ushbu amal o'chirib yuborilgan." };
     
     // Ruxsatni tekshirish
-    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || auth.isBugalter;
     var isOwner = String(rowData[DATA_COL.TG_ID]) === String(actorTgId);
-    var canEditAll = isAdmin && auth.permissions.canEdit;
+    var canEditAll = (isAdmin && auth.permissions.canEdit) || auth.isSuperAdmin;
 
     if (!canEditAll && !isOwner) {
        return { success: false, error: "Siz faqat o'zingiz kiritgan amallarni tahrirlashingiz mumkin!" };
@@ -169,10 +170,11 @@ function selfEditRecord(data, actorTgId) {
 function selfDeleteRecord(rowId, actorTgId, reason) {
   var auth = checkUserRoles(actorTgId);
   var globalSettings = getGlobalSettings_();
-  if (globalSettings.disableEmpEditDelete && !auth.isSuperAdmin && !auth.isAdmin) {
+  var isPrivileged = auth.isSuperAdmin || auth.isAdmin || auth.isBugalter || auth.isDirector || (auth.permissions && auth.permissions.canDelete);
+  if (globalSettings.disableEmpEditDelete && !isPrivileged) {
     return { success: false, error: "Xodimlar uchun tahrirlash va o'chirish taqiqlangan!" };
   }
-  if (!auth.isSuperAdmin && !auth.permissions.canDelete) {
+  if (!isPrivileged) {
     return { success: false, error: "Sizda o'chirish ruxsati yo'q!" };
   }
   var rowIdNum = Number(rowId);
@@ -184,9 +186,9 @@ function selfDeleteRecord(rowId, actorTgId, reason) {
     var rowData = dataSheet.getRange(rowIdNum, 1, 1, 9).getValues()[0];
     if (isDeletedRow_(rowData)) return { success: false, error: "Ushbu amal allaqachon o'chirilgan." };
     
-    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector;
+    var isAdmin = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || auth.isBugalter;
     var isOwner = String(rowData[DATA_COL.TG_ID]) === String(actorTgId);
-    var canDeleteAll = isAdmin && auth.permissions.canDelete;
+    var canDeleteAll = (isAdmin && auth.permissions.canDelete) || auth.isSuperAdmin;
 
     if (!canDeleteAll && !isOwner) {
        return { success: false, error: "Siz faqat o'zingiz kiritgan amallarni o'chirishingiz mumkin!" };

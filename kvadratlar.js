@@ -478,10 +478,13 @@ function showKvDetailModal(idx) {
 
         /* ---- Tahrirlash / O'chirish tugmalari ---- */
         const hasPerms = (typeof myPermissions !== 'undefined' && myPermissions);
-        const canGlobalEditDelete = (typeof globalSettings === 'undefined' || !globalSettings.disableEmpEditDelete) || (typeof myRole !== 'undefined' && myRole === 'SuperAdmin');
-        
-        let canEdit = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || (canGlobalEditDelete && hasPerms && !!myPermissions.canEdit);
-        let canDelete = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || (canGlobalEditDelete && hasPerms && !!myPermissions.canDelete);
+        const isPrivilegedRole = (typeof myRole !== 'undefined' && (myRole === 'SuperAdmin' || myRole === 'Admin' || myRole === 'Bugalter' || myRole === 'Direktor'));
+        const hasExplicitEdit = Boolean(hasPerms && myPermissions.canEdit);
+        const hasExplicitDelete = Boolean(hasPerms && myPermissions.canDelete);
+        const isGlobalRestricted = Boolean(typeof globalSettings !== 'undefined' && globalSettings.disableEmpEditDelete);
+
+        let canEdit = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || hasExplicitEdit || isPrivilegedRole || (!isGlobalRestricted);
+        let canDelete = (typeof myRole !== 'undefined' && myRole === 'SuperAdmin') || hasExplicitDelete || isPrivilegedRole || (!isGlobalRestricted);
 
         const buttonsRow = (canEdit || canDelete) ? `
             <div class="kvdm-btn-row">
