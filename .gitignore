@@ -58,10 +58,10 @@ temp/
 # Testing
 coverage/
 .nyc_output/
-
+.agents
 # Project directory (not needed for the main application)
 project/
-
+graphify-out
 # Copy files
 admin — копия.js
 
