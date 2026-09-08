@@ -392,3 +392,53 @@ async function deleteHodim(tgId) {
         showToastMsg('❌ Server xatosi', true);
     }
 }
+
+async function addHodim() {
+    const idEl = document.getElementById('newHodimId');
+    const nameEl = document.getElementById('newHodimName');
+    const statusEl = document.getElementById('hodimStatus');
+    
+    const tgId = idEl ? idEl.value.trim() : '';
+    const username = nameEl ? nameEl.value.trim() : '';
+    
+    if (!tgId || !/^\d+$/.test(tgId)) {
+        showToastMsg("❌ Telegram ID raqamlardan iborat bo'lishi kerak", true);
+        if (statusEl) {
+            statusEl.innerText = "❌ Telegram ID raqamlardan iborat bo'lishi kerak";
+            statusEl.className = 'status-msg text-red';
+        }
+        return;
+    }
+    
+    if (statusEl) {
+        statusEl.innerText = "Qo'shilmoqda...";
+        statusEl.className = 'status-msg';
+    }
+    
+    try {
+        const data = await apiRequest({ action: 'add_hodim', tgId, username: username || null });
+        if (data.success) {
+            showToastMsg("✅ Xodim muvaffaqiyatli qo'shildi!");
+            if (idEl) idEl.value = '';
+            if (nameEl) nameEl.value = '';
+            if (statusEl) {
+                statusEl.innerText = "✅ Xodim muvaffaqiyatli qo'shildi!";
+                statusEl.className = 'status-msg text-green';
+            }
+            loadHodimlar();
+        } else {
+            showToastMsg("❌ " + (data.error || 'Xatolik'), true);
+            if (statusEl) {
+                statusEl.innerText = "❌ " + (data.error || 'Xatolik');
+                statusEl.className = 'status-msg text-red';
+            }
+        }
+    } catch (e) {
+        showToastMsg("❌ Tarmoq xatosi: " + e.message, true);
+        if (statusEl) {
+            statusEl.innerText = "❌ Tarmoq xatosi";
+            statusEl.className = 'status-msg text-red';
+        }
+    }
+}
+

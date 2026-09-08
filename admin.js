@@ -335,3 +335,42 @@ async function toggleGlobalSettingUI(key, value) {
         updateSettingsDOM();
     }
 }
+
+async function runSystemSelfCheck(scope) {
+    const btn = document.getElementById('selfCheckBtnAdmin');
+    const statusEl = document.getElementById('adminServiceStatus');
+    if (btn) btn.disabled = true;
+    if (statusEl) {
+        statusEl.innerText = "⏳ Tizim tekshirilmoqda...";
+        statusEl.className = 'status-msg';
+    }
+    
+    try {
+        const res = await apiRequest({ action: 'system_self_check' });
+        if (res && res.success) {
+            let msg = "✅ Tizim tekshiruvi muvaffaqiyatli o'tdi!\n";
+            if (res.summary) msg += res.summary;
+            if (statusEl) {
+                statusEl.innerText = msg;
+                statusEl.className = 'status-msg text-green';
+            }
+            showToastMsg("✅ Tizim tekshiruvi muvaffaqiyatli!");
+        } else {
+            const err = res && res.error ? res.error : "Xatolik yuz berdi";
+            if (statusEl) {
+                statusEl.innerText = "❌ " + err;
+                statusEl.className = 'status-msg text-red';
+            }
+            showToastMsg("❌ " + err, true);
+        }
+    } catch (e) {
+        if (statusEl) {
+            statusEl.innerText = "❌ Serverga ulanishda xato: " + e.message;
+            statusEl.className = 'status-msg text-red';
+        }
+        showToastMsg("❌ Xatolik: " + e.message, true);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+

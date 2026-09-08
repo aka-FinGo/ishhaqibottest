@@ -1023,7 +1023,7 @@ function startBackgroundSync() {
 
             if (changed.includes('kvadratlar')) {
                 AppCache.remove(AppCache.KEYS.KV_RECORDS);
-                const kvTab = document.getElementById('kvadratlarTab');
+                const kvTab = document.getElementById('kvadratTab');
                 if (kvTab && !kvTab.classList.contains('hidden')) {
                     if (typeof initKvadratTab === 'function') await initKvadratTab();
                 }
