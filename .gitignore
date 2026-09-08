@@ -67,7 +67,8 @@ admin — копия.js
 
 # Test files
 tests/
-
+.alwaysdata
+orginalishhaqitestbot
 # Documentation
 OPTIMIZATSIYA_XULOSA.md
 
