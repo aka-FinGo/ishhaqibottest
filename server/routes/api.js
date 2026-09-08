@@ -6,7 +6,7 @@
 
 const router = require('express').Router();
 const { validateTelegramAuth, checkUserRoles } = require('../auth');
-const { addErrorLog, checkRateLimit, getSetting, getAllEmployees, getEmployee } = require('../db');
+const { addErrorLog, checkRateLimit, getSetting, setSetting, getAllEmployees, getEmployee } = require('../db');
 const cfg = require('../config');
 
 // Write actions requiring sequential processing (mirrors LockService logic)
@@ -192,6 +192,47 @@ router.post('/', async (req, res) => {
 
       case 'positions_save_all':
         result = await handlePositionsSaveAll(body.positions, auth);
+        break;
+
+      // ---- Notifications & Reminders ----
+      case 'get_reminder_text':
+        result = { success: true, text: getSetting('REMINDER_TEXT', "⚠️ Eslatma!\nKompaniya kelajagi uchun olgan avans va oyliklaringizni botga o'z vaqtida yozib qo'yishingizni so'raymiz! Yordamingiz uchun rahmat! )") };
+        break;
+
+      case 'set_reminder_text':
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
+        setSetting('REMINDER_TEXT', String(body.text || ''));
+        result = { success: true, text: body.text };
+        break;
+
+      case 'get_director_notify':
+        result = { success: true, enabled: getSetting('NOTIFY_DIRECTOR', '1') === '1' };
+        break;
+
+      case 'set_director_notify':
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
+        setSetting('NOTIFY_DIRECTOR', body.enabled ? '1' : '0');
+        result = { success: true };
+        break;
+
+      // ---- AI Agent Configuration ----
+      case 'ai_get_config':
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin AI sozlamalarini ko'ra oladi" });
+        const rawAi = getSetting('AI_PROVIDERS_CONFIG', '{"all":[],"active":[]}');
+        try {
+          result = { success: true, config: JSON.parse(rawAi) };
+        } catch (e) {
+          result = { success: true, config: { all: [], active: [] } };
+        }
+        break;
+
+      case 'ai_save_config':
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin AI sozlamalarini o'zgartira oladi" });
+        const cfgList = Array.isArray(body.config) ? body.config : [];
+        const activeProviders = cfgList.filter(p => p.isActive && p.apiKey);
+        activeProviders.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+        setSetting('AI_PROVIDERS_CONFIG', JSON.stringify({ all: cfgList, active: activeProviders }));
+        result = { success: true };
         break;
 
       case 'system_self_check':
