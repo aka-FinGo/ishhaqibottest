@@ -1,7 +1,4 @@
-// ============================================================
-// config.js — Frontend sozlamalari
-// ============================================================
-const API_URL = "https://script.google.com/macros/s/AKfycbwwCfiCjL6Nvi3uXw6gfLkrXJrV30SS7YKoeQbnzJj0wXieWjTHrcn9vtPBtvonFQa4RA/exec";
+const API_URL = "/api";
 
 const tg = window.Telegram.WebApp;
 tg.expand();
