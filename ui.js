@@ -906,17 +906,20 @@ async function switchAdminSub(areaId, btn) {
     if (areaId === 'adminServiceArea') { setNotifyStatus('', false, 'admin_service'); }
     if (areaId === 'adminAIArea' && typeof loadAIConfig === 'function') { loadAIConfig(); }
     if (areaId === 'adminSettingsArea') { loadGlobalSettingsUI(); }
+    if (areaId === 'adminSheetsArea') {
+        if (typeof initSheetsApp === 'function') {
+            initSheetsApp();
+        }
+    }
 }
 
-// GSheet Jadval sahifasini Telegram WebApp da yoki brauzerda ochish
+// GSheet Jadval sahifasini to'liq ekranda ochish
+function openAdminSheetsFullscreen() {
+    window.location.href = 'admin_sheets.html';
+}
+
 function openAdminSheets() {
-    const adminSheetsUrl = (window.location.origin || 'https://ish.cabix.website') + '/admin_sheets.html';
-    const tg = window.Telegram?.WebApp;
-    if (tg && typeof tg.openLink === 'function') {
-        tg.openLink(adminSheetsUrl);
-    } else {
-        window.open(adminSheetsUrl, '_blank');
-    }
+    openAdminSheetsFullscreen();
 }
 
 function toggleRate() {

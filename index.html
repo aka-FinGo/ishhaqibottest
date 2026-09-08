@@ -19,6 +19,7 @@
     <!-- Komponent stillar (JS fayllaridan ajratilgan) -->
     <link rel="stylesheet" href="components.css?v=1.0.23">
     <link rel="stylesheet" href="ai_chat.css?v=1.0.23">
+    <link rel="stylesheet" href="admin_sheets.css?v=2.2.0">
     <!-- Dinamik mavzu (standart = bo'sh, dark = dark.css) -->
     <link id="dynamic-theme" rel="stylesheet" href="">
 
@@ -632,26 +633,83 @@
 
             <!-- ── GSheet Jadval — SQLite Admin Panel ─────────────── -->
             <div id="adminSheetsArea" class="hidden">
-                <div class="card" style="padding:16px; margin-bottom:15px; background: linear-gradient(135deg, rgba(15,157,88,0.08), rgba(0,0,0,0)); border: 1px solid rgba(15,157,88,0.3);">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-                        <div style="width:44px;height:44px;background:var(--gs-green,#0f9d58);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 12px rgba(15,157,88,0.3);">📊</div>
-                        <div>
-                            <div style="font-size:15px;font-weight:800;color:#0f9d58;">Google Sheets Uslubidagi Boshqaruv Jadvali</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">SQLite bazasidagi barcha ma'lumotlarni ko'ring va tahrirlang</div>
+                <div class="card" style="padding:12px; margin-bottom:15px;">
+                    <!-- Sheets Sarlavha & Tugmalar -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:38px;height:38px;background:var(--gs-green,#0f9d58);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(15,157,88,0.3);">📊</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:800;color:var(--gs-green,#0f9d58);">Boshqaruv Jadvali (SQLite)</div>
+                                <div style="font-size:11px;color:var(--text-muted);">2 marta bosib tahrirlang — SQLite ga saqlanadi</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="gs-btn gs-btn-primary" onclick="openAddModal()" style="font-size:12px; padding:6px 12px;">➕ Qator qo'shish</button>
+                            <button class="gs-btn" onclick="loadAllData()" style="font-size:12px; padding:6px 10px;">🔄</button>
+                            <button class="gs-btn" onclick="exportToExcel()" style="font-size:12px; padding:6px 10px;">📥 Excel</button>
+                            <button class="gs-btn" onclick="openAdminSheetsFullscreen()" style="font-size:12px; padding:6px 10px;" title="To'liq ekranda ochish">⛶ Katta ekran</button>
                         </div>
                     </div>
-                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;line-height:1.6;">
-                        To'liq ekranda, jadval uslubida <b>records</b>, <b>kvadratlar</b>, <b>employees</b> va <b>global_settings</b> jadvallarini ko'ring.
-                        Har qanday katakchani <b>2 marta bosib</b> tahrirlang — o'zgarishlar darhol SQLite ga saqlanadi!
-                    </p>
-                    <button onclick="openAdminSheets()"
-                       style="display:inline-flex;align-items:center;gap:8px;background:#0f9d58;color:#fff;font-weight:800;font-size:14px;padding:12px 22px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(15,157,88,0.3);">
-                        📊 GSheet Jadvalini ochish (To'liq ekran)
-                    </button>
-                    <div style="margin-top:12px;font-size:11.5px;color:var(--text-muted);">
-                        💡 Telegram WebApp ichida to'liq ekran sahifasida ochiladi
+
+                    <!-- 4 ta Sheets varaqlari -->
+                    <nav class="gs-tabs-bar" style="margin-bottom:10px;">
+                        <div class="gs-tab active" data-tab="dataSheet" onclick="switchSheet('dataSheet')">
+                            <span>📊 dataSheet</span>
+                            <span class="gs-tab-count" id="badgeRecords">0</span>
+                        </div>
+                        <div class="gs-tab" data-tab="Kvadratlar" onclick="switchSheet('Kvadratlar')">
+                            <span>📐 Kvadratlar</span>
+                            <span class="gs-tab-count" id="badgeKvadratlar">0</span>
+                        </div>
+                        <div class="gs-tab" data-tab="Hodimlar" onclick="switchSheet('Hodimlar')">
+                            <span>👥 Hodimlar</span>
+                            <span class="gs-tab-count" id="badgeHodimlar">0</span>
+                        </div>
+                        <div class="gs-tab" data-tab="Sozlamalar" onclick="switchSheet('Sozlamalar')">
+                            <span>⚙️ Sozlamalar</span>
+                            <span class="gs-tab-count" id="badgeSettings">0</span>
+                        </div>
+                    </nav>
+
+                    <!-- Qidiruv va Filtrlar -->
+                    <div class="gs-toolbar" style="margin-bottom:10px; padding:8px; border-radius:10px; background:rgba(0,0,0,0.15);">
+                        <div class="gs-toolbar-left" style="width:100%; flex-wrap:wrap; gap:8px;">
+                            <div class="gs-search-wrap" style="flex:1; min-width:140px;">
+                                <span class="gs-search-icon">🔍</span>
+                                <input type="text" id="gsSearchInput" class="gs-search-input" placeholder="Qidirish..." style="height:32px; font-size:12px;">
+                            </div>
+                            <div id="gsDynamicFilters" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Asosiy Jadval Grid -->
+                    <div class="gs-grid-container" id="gsGridContainer" style="max-height:420px; overflow:auto; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+                        <table class="gs-table" id="gsTable">
+                            <thead id="gsThead"></thead>
+                            <tbody id="gsTbody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pastki Status paneli -->
+                    <div class="gs-statusbar" style="margin-top:8px; padding:6px 10px; border-radius:8px; font-size:11px;">
+                        <div id="gsStatusText">SQLite WAL: Tayyor</div>
+                        <div class="gs-stats-group" id="gsStatsGroup"></div>
                     </div>
                 </div>
+
+                <!-- Yangi Qator Qo'shish Modali -->
+                <div class="gs-modal-backdrop" id="gsAddModal" style="display: none;">
+                    <div class="gs-modal-box">
+                        <div class="gs-modal-header">
+                            <div class="gs-modal-title" id="gsModalTitle">➕ Yangi Qator Qo'shish</div>
+                            <button class="gs-modal-close" onclick="closeAddModal()">✕</button>
+                        </div>
+                        <div id="gsModalBody"></div>
+                    </div>
+                </div>
+
+                <!-- Toast Container -->
+                <div class="gs-toast-container" id="gsToastContainer"></div>
             </div>
 
             <div id="adminAIArea" class="hidden">
@@ -1129,24 +1187,25 @@
         </div>
     </div>
 
-        <script defer src="cache.js?v=2.0.0"></script>
-        <script defer src="config.js?v=2.0.0"></script>
-        <script defer src="ui.js?v=2.0.0"></script>
-        <script defer src="employee.js?v=2.0.0"></script>
-        <script defer src="admin.js?v=2.0.0"></script>
-        <script defer src="export.js?v=2.0.0"></script>
-        <script defer src="actions.js?v=2.0.0"></script>
-        <script defer src="dashboard.js?v=2.0.0"></script>
-        <script defer src="detail_modal.js?v=2.0.0"></script>
-        <script defer src="kvadratlar.js?v=2.0.0"></script>
-        <script defer src="dashboard_kv.js?v=2.0.0"></script>
-        <script defer src="dashboard_charts.js?v=2.0.0"></script>
-        <script defer src="roles.js?v=2.0.0"></script>
-        <script defer src="admin_workflow.js?v=2.0.0"></script>
-        <script defer src="admin_positions.js?v=2.0.0"></script>
-        <script defer src="enhanced_admin_list.js?v=2.0.0"></script>
-        <script defer src="admin_notifications.js?v=2.0.0"></script>
-        <script defer src="admin_ai.js?v=2.0.0"></script>
+        <script defer src="cache.js?v=2.2.0"></script>
+        <script defer src="config.js?v=2.2.0"></script>
+        <script defer src="ui.js?v=2.2.0"></script>
+        <script defer src="employee.js?v=2.2.0"></script>
+        <script defer src="admin.js?v=2.2.0"></script>
+        <script defer src="export.js?v=2.2.0"></script>
+        <script defer src="actions.js?v=2.2.0"></script>
+        <script defer src="dashboard.js?v=2.2.0"></script>
+        <script defer src="detail_modal.js?v=2.2.0"></script>
+        <script defer src="kvadratlar.js?v=2.2.0"></script>
+        <script defer src="dashboard_kv.js?v=2.2.0"></script>
+        <script defer src="dashboard_charts.js?v=2.2.0"></script>
+        <script defer src="roles.js?v=2.2.0"></script>
+        <script defer src="admin_workflow.js?v=2.2.0"></script>
+        <script defer src="admin_positions.js?v=2.2.0"></script>
+        <script defer src="enhanced_admin_list.js?v=2.2.0"></script>
+        <script defer src="admin_notifications.js?v=2.2.0"></script>
+        <script defer src="admin_ai.js?v=2.2.0"></script>
+        <script defer src="admin_sheets.js?v=2.2.0"></script>
 </body>
 
 </html>

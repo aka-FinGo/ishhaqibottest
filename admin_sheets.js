@@ -8,13 +8,14 @@
 // ── Global Boshqaruv Holati (State) ─────────────────────────
 const SheetsApp = {
     activeTab: 'dataSheet', // 'dataSheet' | 'Kvadratlar' | 'Hodimlar' | 'Sozlamalar'
+    isLoaded: false,
     auth: {
-        telegramId: '2112012311', // default SuperAdmin iRealBy_3D
-        username: 'iRealBy_3D',
-        role: 'SUPER_ADMIN',
-        isSuperAdmin: true,
-        canEdit: true,
-        canDelete: true,
+        telegramId: '', // Telegram orqali aniqlanadi (xavfsizlik uchun default bo'sh)
+        username: '',
+        role: 'EMPLOYEE',
+        isSuperAdmin: false,
+        canEdit: false,
+        canDelete: false,
         initData: ''
     },
     data: {
@@ -43,16 +44,47 @@ const SheetsApp = {
 
 // ── Boshlang'ich Sozlash (Init) ─────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // Avval xavfsizlik tekshiruvi — ochiq internetdan himoya
-    if (!checkAccessGuard()) return;
-    initAuth();
-    initTheme();
-    setupEventListeners();
-    loadAllData();
+    const isStandalone = window.location.pathname.includes('admin_sheets.html');
+    if (isStandalone) {
+        // Mustaqil sahifa: ochiq internetdan himoya qilish
+        if (!checkAccessGuard()) return;
+        initAuth();
+        initTheme();
+        setupEventListeners();
+        loadAllData();
+    } else {
+        // index.html ichida embed rejimida: event listenerlarni tayyorlash
+        initTheme();
+        setupEventListeners();
+    }
 });
+
+// WebApp ichidan chaqiriladigan asosiy yuklash funksiyasi
+window.initSheetsApp = function() {
+    initAuth();
+    if (!SheetsApp.isLoaded) {
+        loadAllData();
+    } else {
+        renderActiveTable();
+    }
+};
 
 // Telegram yoki Desktop Auth aniqlash
 function initAuth() {
+    // 1. Agar index.html ichida bo'lsa (global o'zgaruvchilar mavjud)
+    if (typeof myTgId !== 'undefined' && myTgId) {
+        SheetsApp.auth.telegramId = String(myTgId);
+        SheetsApp.auth.username = (typeof myName !== 'undefined' && myName) ? myName : 'iRealBy_3D';
+        SheetsApp.auth.role = (typeof myRole !== 'undefined' && myRole) ? myRole : 'SUPER_ADMIN';
+        SheetsApp.auth.isSuperAdmin = (myRole === 'SuperAdmin' || String(myTgId) === '2112012311');
+        SheetsApp.auth.canEdit = true;
+        SheetsApp.auth.canDelete = true;
+        if (typeof tgInitData !== 'undefined' && tgInitData) {
+            SheetsApp.auth.initData = tgInitData;
+        }
+    }
+
+    // 2. Telegram WebApp obyekti orqali
     const tg = window.Telegram?.WebApp;
     if (tg) {
         tg.expand();
@@ -67,17 +99,10 @@ function initAuth() {
         }
     }
 
-    // URL parametrlari orqali tekshirish
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('tgId')) {
-        SheetsApp.auth.telegramId = params.get('tgId');
-    } else if (localStorage.getItem('admin_sheets_tg_id')) {
-        SheetsApp.auth.telegramId = localStorage.getItem('admin_sheets_tg_id');
-    }
-
     // Foydalanuvchi nomi qoidasi: Agar iRealBy_3D bo'lsa
     if (SheetsApp.auth.telegramId === '2112012311') {
         SheetsApp.auth.username = 'iRealBy_3D';
+        SheetsApp.auth.isSuperAdmin = true;
     }
 
     updateUserUI();
@@ -146,12 +171,55 @@ async function loadAllData() {
         ]);
 
         if (recRes && recRes.success) {
-            SheetsApp.data.records = recRes.data || [];
+            SheetsApp.data.records = (recRes.data || []).map(r => ({
+                id: r.rowId || r.id,
+                rowId: r.rowId || r.id,
+                name: r.name || '',
+                telegram_id: String(r.telegram_id || r.telegramId || ''),
+                telegramId: String(r.telegram_id || r.telegramId || ''),
+                amount_uzs: Number(r.amount_uzs ?? r.amountUZS ?? 0),
+                amountUZS: Number(r.amount_uzs ?? r.amountUZS ?? 0),
+                amount_usd: Number(r.amount_usd ?? r.amountUSD ?? 0),
+                amountUSD: Number(r.amount_usd ?? r.amountUSD ?? 0),
+                rate: Number(r.rate || 0),
+                comment: r.comment || '',
+                date: r.date || '',
+                action_period: r.action_period || r.actionPeriod || '',
+                actionPeriod: r.action_period || r.actionPeriod || '',
+                status: r.status || 'Tasdiqlandi',
+                actor_name: r.actor_name || r.actorName || '',
+                actorName: r.actor_name || r.actorName || ''
+            }));
         }
 
         if (kvRes && kvRes.success) {
-            SheetsApp.data.kvadratlar = kvRes.data || [];
+            SheetsApp.data.kvadratlar = (kvRes.data || []).map(k => ({
+                id: k.rowId || k.id,
+                rowId: k.rowId || k.id,
+                date: k.date || k.sana || '',
+                sana: k.date || k.sana || '',
+                no: k.no || k.order_no || String(k.rowId || k.id || ''),
+                order_no: k.no || k.order_no || String(k.rowId || k.id || ''),
+                orderName: k.orderName || k.order_name || '',
+                order_name: k.orderName || k.order_name || '',
+                totalM2: Number(k.totalM2 ?? k.total_m2 ?? 0),
+                total_m2: Number(k.totalM2 ?? k.total_m2 ?? 0),
+                month: String(k.month || k.oy || ''),
+                oy: String(k.month || k.oy || ''),
+                year: String(k.year || k.yil || ''),
+                yil: String(k.year || k.yil || ''),
+                ownerTgId: String(k.ownerTgId || k.owner_tg_id || ''),
+                owner_tg_id: String(k.ownerTgId || k.owner_tg_id || ''),
+                staffName: k.staffName || k.staff_name || '',
+                staff_name: k.staffName || k.staff_name || '',
+                currentStep: Number(k.currentStep ?? k.current_step ?? 1),
+                current_step: Number(k.currentStep ?? k.current_step ?? 1),
+                status: k.status || 'yangi',
+                logs: k.logs || []
+            }));
         }
+
+        SheetsApp.isLoaded = true;
 
         if (empRes && empRes.success) {
             SheetsApp.data.employees = empRes.data || [];
@@ -1123,32 +1191,58 @@ async function toggleSettingBool(key, newVal) {
 // O'CHIRISH AMALLARI (DELETE)
 // ─────────────────────────────────────────────────────────────
 async function deleteRecordPrompt(id, name) {
-    if (!confirm(`Haqiqatan ham #${id} — "${name}" moliyaviy yozuvini o'chirmoqchimisiz? (SQLite records)`)) return;
+    const numId = parseInt(id, 10);
+    if (!numId || isNaN(numId)) {
+        showToast("Xatolik: Yozuv ID aniqlanmadi ❌", true);
+        return;
+    }
+    if (!confirm(`Haqiqatan ham #${numId} — "${name}" moliyaviy yozuvini o'chirmoqchimisiz? (SQLite records)`)) return;
 
     showStatus(`🗑 SQLite yozuvi o'chirilmoqda...`);
-    const res = await apiRequest('admin_delete', { rowId: id });
+    const res = await apiRequest('admin_delete', { rowId: numId });
     if (res && res.success) {
-        SheetsApp.data.records = SheetsApp.data.records.filter(r => r.id !== id);
+        SheetsApp.data.records = SheetsApp.data.records.filter(r => String(r.rowId || r.id) !== String(numId));
         updateTabBadges();
         renderActiveTable();
-        showToast(`Yozuv #${id} o'chirildi ✅`);
+        showToast(`Yozuv #${numId} o'chirildi ✅`);
         showStatus('SQLite WAL Baza: Sinxronlangan');
+        // Asosiy WebApp kesh va jadvallari bilan sinxronlash
+        if (typeof fullRecords !== 'undefined') {
+            fullRecords = fullRecords.filter(r => String(r.rowId || r.id) !== String(numId));
+            if (typeof renderReportTable === 'function') renderReportTable();
+        }
+        if (typeof AppCache !== 'undefined' && AppCache.KEYS?.RECORDS) {
+            AppCache.set(AppCache.KEYS.RECORDS, SheetsApp.data.records);
+        }
     } else {
         showToast(`Xatolik: ${res.error || 'O\'chirib bo\'lmadi'} ❌`, true);
     }
 }
 
 async function deleteKvadratPrompt(id, orderName) {
-    if (!confirm(`Haqiqatan ham #${id} — "${orderName}" buyurtmasini o'chirmoqchimisiz? (SQLite kvadratlar)`)) return;
+    const numId = parseInt(id, 10);
+    if (!numId || isNaN(numId)) {
+        showToast("Xatolik: Buyurtma ID aniqlanmadi ❌", true);
+        return;
+    }
+    if (!confirm(`Haqiqatan ham #${numId} — "${orderName}" buyurtmasini o'chirmoqchimisiz? (SQLite kvadratlar)`)) return;
 
     showStatus(`🗑 SQLite buyurtmasi o'chirilmoqda...`);
-    const res = await apiRequest('kvadrat_delete', { rowId: id });
+    const res = await apiRequest('kvadrat_delete', { rowId: numId });
     if (res && res.success) {
-        SheetsApp.data.kvadratlar = SheetsApp.data.kvadratlar.filter(k => k.id !== id);
+        SheetsApp.data.kvadratlar = SheetsApp.data.kvadratlar.filter(k => String(k.rowId || k.id) !== String(numId));
         updateTabBadges();
         renderActiveTable();
-        showToast(`Buyurtma #${id} o'chirildi ✅`);
+        showToast(`Buyurtma #${numId} o'chirildi ✅`);
         showStatus('SQLite WAL Baza: Sinxronlangan');
+        // Asosiy WebApp kesh va jadvallari bilan sinxronlash
+        if (typeof kvFullRecords !== 'undefined') {
+            kvFullRecords = kvFullRecords.filter(k => String(k.rowId || k.id) !== String(numId));
+            if (typeof renderKvadratList === 'function') renderKvadratList(kvFullRecords);
+        }
+        if (typeof AppCache !== 'undefined' && AppCache.KEYS?.KV_RECORDS) {
+            AppCache.set(AppCache.KEYS.KV_RECORDS, SheetsApp.data.kvadratlar);
+        }
     } else {
         showToast(`Xatolik: ${res.error || 'O\'chirib bo\'lmadi'} ❌`, true);
     }
@@ -1465,16 +1559,16 @@ function exportToExcel() {
         }));
     } else if (SheetsApp.activeTab === 'Kvadratlar') {
         dataToExport = SheetsApp.data.kvadratlar.map(k => ({
-            "ID": k.id,
-            "Sana": k.sana,
-            "Buyurtma №": k.order_no,
-            "Buyurtma Nomi": k.order_name,
-            "Maydon (m²)": k.total_m2 || 0,
-            "Oy": k.oy,
-            "Yil": k.yil,
-            "Mulkdor ID": k.owner_tg_id,
-            "Xodim": k.staff_name,
-            "Bosqich": k.current_step || 1,
+            "ID": k.rowId || k.id,
+            "Sana": k.date || k.sana || '',
+            "Buyurtma №": k.no || k.order_no || '',
+            "Buyurtma Nomi": k.orderName || k.order_name || '',
+            "Maydon (m²)": k.totalM2 ?? k.total_m2 ?? 0,
+            "Oy": k.month || k.oy || '',
+            "Yil": k.year || k.yil || '',
+            "Mulkdor ID": k.ownerTgId || k.owner_tg_id || '',
+            "Xodim": k.staffName || k.staff_name || '',
+            "Bosqich": k.currentStep ?? k.current_step ?? 1,
             "Holat": k.status || 'yangi'
         }));
     } else if (SheetsApp.activeTab === 'Hodimlar') {
@@ -1627,71 +1721,51 @@ function returnToApp() {
 
 // ─────────────────────────────────────────────────────────────
 // XAVFSIZLIK TEKSHIRUVI — Ochiq internetdan himoya
-// Faqat: Telegram WebApp initData YOKI localStorage'da admin ID
+// Faqat: Telegram WebApp (initData) YOKI index.html ichida
 // ─────────────────────────────────────────────────────────────
 function checkAccessGuard() {
-    const tg = window.Telegram?.WebApp;
-
-    // Telegram WebApp orqali kelgan — initData bor
-    if (tg && tg.initData && tg.initData.length > 10) {
+    // 1. Agar index.html ichida embed rejimda bo'lsa
+    if (typeof myTgId !== 'undefined' && myTgId) {
         return true;
     }
 
-    // URL orqali tgId berilgan (masalan: ?tgId=2112012311)
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('tgId') && params.get('tgId').length > 5) {
-        localStorage.setItem('admin_sheets_tg_id', params.get('tgId'));
-        return true;
-    }
-
-    // LocalStorage da saqlangan ID
-    const storedId = localStorage.getItem('admin_sheets_tg_id');
-    if (storedId && storedId.length > 5) {
-        return true;
-    }
-
-    // Localhost / 127.0.0.1 da ishlaytgan bo'lsa (dev rejim)
+    // 2. Localhost / 127.0.0.1 da ishlayotgan bo'lsa (ishlab chiqish rejimi)
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1' || host === '') {
         return true;
     }
 
-    // Ochiq internetda — kirish so'raladi
+    // 3. Telegram WebApp orqali ochilgan — initData mavjud
+    const tg = window.Telegram?.WebApp;
+    if (tg && tg.initData && tg.initData.length > 10) {
+        return true;
+    }
+
+    // Ochiq internetda to'g'ridan-to'g'ri ochilgan — kirish mutlaqo taqiqlanadi!
     showAccessDenied();
     return false;
 }
 
 function showAccessDenied() {
     document.body.innerHTML = `
-        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;">
-            <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px;max-width:400px;width:90%;text-align:center;">
-                <div style="font-size:48px;margin-bottom:16px;">🔒</div>
-                <h2 style="color:#f1f5f9;font-size:20px;margin:0 0 10px;">Kirish taqiqlangan</h2>
-                <p style="color:#94a3b8;font-size:14px;margin:0 0 24px;line-height:1.6;">
-                    Ushbu sahifa faqat Telegram WebApp orqali yoki administratorlik huquqi bilan ochilishi mumkin.
-                </p>
-                <div style="margin-bottom:20px;">
-                    <input type="text" id="guardTgIdInput" placeholder="Telegram ID kiriting..."
-                        style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#f1f5f9;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
-                    <button onclick="guardLogin()" 
-                        style="width:100%;padding:12px;border-radius:8px;background:#0f9d58;color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;">
-                        ✅ Kirish
-                    </button>
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:'Plus Jakarta Sans',sans-serif;color:#fff;padding:20px;box-sizing:border-box;">
+            <div style="background:#1e293b;border:1px solid #334155;border-radius:20px;padding:36px;max-width:440px;width:100%;text-align:center;box-shadow:0 25px 50px rgba(0,0,0,0.6);">
+                <div style="width:72px;height:72px;background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;">
+                    🔒
                 </div>
-                <p style="color:#475569;font-size:11px;margin:0;">
-                    @ishhaqitestbot orqali Telegram WebApp ni oching
+                <h2 style="color:#f8fafc;font-size:22px;margin:0 0 12px;font-weight:800;letter-spacing:-0.5px;">Kirish Taqiqlangan</h2>
+                <p style="color:#94a3b8;font-size:14px;margin:0 0 24px;line-height:1.6;">
+                    Ushbu boshqaruv jadvali maxfiy ma'lumotlarni o'z ichiga oladi. Sahifaga faqat <b>@ishhaqitestbot</b> Telegram WebApp ilovasi orqali kirish mumkin.
                 </p>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid #334155;border-radius:12px;padding:14px;margin-bottom:24px;text-align:left;font-size:12px;color:#64748b;line-height:1.5;">
+                    🛡️ <b>Xavfsizlik protokoli:</b> Telegram OAuth va HMAC-SHA256 imzosi tekshirilmagan ochiq brauzer so'rovlari bloklanadi.
+                </div>
+                <a href="https://t.me/ishhaqitestbot" 
+                   style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg, #0284c7, #0ea5e9);color:#fff;text-decoration:none;font-size:15px;font-weight:700;box-shadow:0 8px 20px rgba(14,165,233,0.3);box-sizing:border-box;">
+                    🤖 Telegram Botga O'tish
+                </a>
             </div>
         </div>
     `;
-}
-
-function guardLogin() {
-    const inp = document.getElementById('guardTgIdInput');
-    if (!inp || !inp.value.trim()) return alert('Telegram ID kiriting!');
-    const id = inp.value.trim();
-    if (!/^\d{5,12}$/.test(id)) return alert('Noto\'g\'ri format! Faqat raqamlar (5-12 ta)');
-    localStorage.setItem('admin_sheets_tg_id', id);
-    window.location.reload();
 }
 
