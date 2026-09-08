@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // server/telegram.js — Telegram Bot API (Node.js)
 // Port of gsheetscode/Telegram.gs using node-fetch
 // ============================================================
@@ -130,15 +130,25 @@ async function sendExcelToUser(tgId, buffer, fileName) {
   const config = getConfig();
   const url = 'https://api.telegram.org/bot' + config.BOT_TOKEN + '/sendDocument';
   try {
+    const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer, 'base64');
     if (FormData) {
       const form = new FormData();
       form.append('chat_id', String(tgId));
       form.append('caption', '\u{1F4CA} ' + fileName);
-      form.append('document', buffer, { filename: fileName, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      form.append('document', buf, { filename: fileName, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const res = await _fetch(url, { method: 'POST', body: form, headers: form.getHeaders ? form.getHeaders() : {} });
       return await res.json();
+    } else if (typeof global.FormData !== 'undefined' && typeof Blob !== 'undefined') {
+      const form = new global.FormData();
+      form.append('chat_id', String(tgId));
+      form.append('caption', '\u{1F4CA} ' + fileName);
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      form.append('document', blob, fileName);
+      const nativeFetch = global.fetch || _fetch;
+      const res = await nativeFetch(url, { method: 'POST', body: form });
+      return await res.json();
     }
-    return { ok: false, description: 'form-data module not available' };
+    return { ok: false, description: 'FormData not available' };
   } catch (err) { console.error('[sendExcelToUser]', err.message); return { ok: false, description: err.message }; }
 }
 

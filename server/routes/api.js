@@ -7,15 +7,24 @@
 const router = require('express').Router();
 const { validateTelegramAuth, checkUserRoles } = require('../auth');
 const { addErrorLog, checkRateLimit, getSetting, setSetting, getAllEmployees, getEmployee } = require('../db');
+const { 
+  sendExcelToUser, 
+  sendTelegramNotification, 
+  sendApprovalRequest, 
+  sendApprovalToBugalters, 
+  sendSalaryReminderToUser, 
+  sendAvansRequestNotification,
+  tgSendMessage
+} = require('../telegram');
 const cfg = require('../config');
 
 // Write actions requiring sequential processing (mirrors LockService logic)
 const WRITE_ACTIONS = new Set([
   'add','admin_edit','admin_delete','self_edit','self_delete',
-  'add_hodim','update_hodim','delete_hodim',
+  'add_hodim','update_hodim','delete_hodim','saveUser','deleteUser',
   'kvadrat_add','kvadrat_edit','kvadrat_delete','kvadrat_claim','kvadrat_revert',
   'force_reassign_step','workflow_save_config','positions_save_all',
-  'ai_save_config','ai_run_report','set_global_setting'
+  'ai_save_config','ai_run_report','set_global_setting','request_avans'
 ]);
 
 // Rate limit seconds per action (mirrors getRateLimitSeconds_() from Code.gs)
@@ -23,9 +32,10 @@ function getRateLimitSec(action) {
   if (!cfg.RATE_LIMIT_ENABLED) return 0;
   const a = String(action || '');
   if (['add','admin_edit','admin_delete','self_edit','self_delete',
-       'add_hodim','update_hodim','delete_hodim',
-       'send_user_reminder','send_inactive_reminders','set_reminder_text'].includes(a)) return 2;
-  if (a === 'export_to_bot') return 5;
+       'add_hodim','update_hodim','delete_hodim','saveUser','deleteUser',
+       'send_user_reminder','send_inactive_reminders','set_reminder_text',
+       'request_avans'].includes(a)) return 2;
+  if (a === 'export_to_bot') return 3;
   return 0;
 }
 
@@ -128,6 +138,51 @@ router.post('/', async (req, res) => {
         result = await handleDeleteHodim(body.tgId);
         break;
 
+      case 'saveUser': {
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
+        const formData = body.data || {};
+        const targetId = String(body.userId || formData.telegram_id || formData.tgId || '').trim();
+        const uName = String(formData.name || formData.username || '').trim();
+        const uRole = formData.role || 'EMPLOYEE';
+        const uLavozim = formData.position || formData.lavozim || '';
+        const uGuruh = formData.guruh || formData.group || '';
+        const uIsSardor = formData.isSardor ? 1 : 0;
+        result = await handleAddHodim({
+          tgId: targetId,
+          username: uName,
+          role: uRole,
+          lavozim: uLavozim,
+          guruh: uGuruh,
+          isSardor: uIsSardor
+        });
+        break;
+      }
+
+      case 'deleteUser': {
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
+        const targetId = String(body.userId || body.tgId || '').trim();
+        result = await handleDeleteHodim(targetId);
+        break;
+      }
+
+      // ---- Export & Reports ----
+      case 'export_to_bot': {
+        const exportScope = String(body.scope || 'self').toLowerCase();
+        let canExport = false;
+        if (exportScope === 'all') {
+          canExport = auth.isSuperAdmin || (auth.permissions && auth.permissions.canViewAll && auth.permissions.canExport);
+        } else {
+          canExport = auth.isSuperAdmin || auth.inList;
+        }
+        if (!canExport) return res.json({ success: false, error: "Excel eksport qilish ruxsati yo'q!" });
+        const base64 = body.base64;
+        if (!base64) return res.json({ success: false, error: "Hisobot fayli topilmadi" });
+        const fileName = body.fileName || `Hisobot_${Date.now()}.xlsx`;
+        const tgRes = await sendExcelToUser(tgId, base64, fileName);
+        result = { success: !!tgRes.ok, error: tgRes.description };
+        break;
+      }
+
       // ---- Global settings ----
       case 'get_global_settings':
         if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin sozlamalarni ko'ra oladi" });
@@ -195,6 +250,44 @@ router.post('/', async (req, res) => {
         break;
 
       // ---- Notifications & Reminders ----
+      case 'list_notify_users':
+        if (!(auth.isSuperAdmin || auth.isAdmin)) return res.json({ success: false, error: "Ruxsat yo'q!" });
+        result = { success: true, data: getAllEmployees() };
+        break;
+
+      case 'get_inactive_users':
+        if (!(auth.isSuperAdmin || auth.isAdmin)) return res.json({ success: false, error: "Ruxsat yo'q!" });
+        result = getInactiveUsersHandler(body.days);
+        break;
+
+      case 'send_user_reminder': {
+        if (!(auth.isSuperAdmin || auth.isAdmin)) return res.json({ success: false, error: "Ruxsat yo'q!" });
+        const targetTgId = String(body.targetTgId || '').trim();
+        const targetUser = getEmployee(targetTgId);
+        const uName = targetUser ? targetUser.username : '';
+        const resTg = await sendSalaryReminderToUser(targetTgId, uName, body.messageText);
+        result = { success: !!resTg.ok, error: resTg.description };
+        break;
+      }
+
+      case 'send_inactive_reminders':
+        if (!(auth.isSuperAdmin || auth.isAdmin)) return res.json({ success: false, error: "Ruxsat yo'q!" });
+        result = await sendInactiveRemindersHandler(body.days, body.messageText);
+        break;
+
+      case 'request_avans': {
+        if (!auth.inList && !auth.isSuperAdmin) return res.json({ success: false, error: "Ruxsat yo'q" });
+        if (auth.roleKey === 'PENDING') return res.json({ success: false, error: "Hisobingiz tasdiqlash jarayonida!" });
+        const amount = Number(body.amount) || 0;
+        if (amount <= 0) return res.json({ success: false, error: "Noto'g'ri summa" });
+        const reason = String(body.reason || '').trim();
+        if (!reason) return res.json({ success: false, error: "Izoh kiritilmagan" });
+        const uName = auth.username || 'Xodim';
+        await sendAvansRequestNotification(uName, amount, reason);
+        result = { success: true, message: "Avans so'rovi yuborildi" };
+        break;
+      }
+
       case 'get_reminder_text':
         result = { success: true, text: getSetting('REMINDER_TEXT', "⚠️ Eslatma!\nKompaniya kelajagi uchun olgan avans va oyliklaringizni botga o'z vaqtida yozib qo'yishingizni so'raymiz! Yordamingiz uchun rahmat! )") };
         break;
@@ -215,7 +308,7 @@ router.post('/', async (req, res) => {
         result = { success: true };
         break;
 
-      // ---- AI Agent Configuration ----
+      // ---- AI Agent Configuration & Chat ----
       case 'ai_get_config':
         if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin AI sozlamalarini ko'ra oladi" });
         const rawAi = getSetting('AI_PROVIDERS_CONFIG', '{"all":[],"active":[]}');
@@ -233,6 +326,15 @@ router.post('/', async (req, res) => {
         activeProviders.sort((a, b) => (a.priority || 99) - (b.priority || 99));
         setSetting('AI_PROVIDERS_CONFIG', JSON.stringify({ all: cfgList, active: activeProviders }));
         result = { success: true };
+        break;
+
+      case 'ai_run_report':
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin AI hisobotini ishga tushura oladi" });
+        result = await handleAIRunReport(auth);
+        break;
+
+      case 'ai_chat':
+        result = await handleAIChat(body, auth, tgId);
         break;
 
       case 'system_self_check':
@@ -321,7 +423,13 @@ async function handleInit(tgId, auth, data) {
     isWorkflowStrict: getSetting('WORKFLOW_STRICT_MODE', '0') === '1',
     data:            userRecords,
     employeeList,
-    globalSettings:  getGlobalSettingsAll()
+    globalSettings:  getGlobalSettingsAll(),
+    dataVersions: {
+      kvadratlar: Date.now(),
+      finance: Date.now(),
+      employees: Date.now(),
+      workflow: Date.now()
+    }
   };
 }
 
@@ -393,23 +501,91 @@ async function handleAdd(body, auth, tgId) {
   if (auth.roleKey === 'PENDING') return { success: false, error: "Hisobingiz tasdiqlash jarayonida!" };
 
   const { db } = require('../db');
-  const name      = String(body.name      || auth.username || '');
+  const targetTgId = String(body.targetTgId || tgId).trim() || String(tgId);
+  const isSelf = (targetTgId === String(tgId));
+  const emp = getEmployee(targetTgId);
+  const displayName = (emp && emp.username) 
+    ? emp.username 
+    : String(body.employeeName || body.name || auth.username || '').replace(/\s*\([^)]*\)\s*$/, '').trim() || `Xodim (${targetTgId})`;
+
   const amountUZS = Number(body.amountUZS || 0);
   const amountUSD = Number(body.amountUSD || 0);
   const rate      = Number(body.rate      || 0);
   const comment   = String(body.comment   || '');
-  const date      = String(body.date      || new Date().toISOString().slice(0,10));
+  const date      = String(body.date      || new Date().toISOString().slice(0, 10));
   const period    = String(body.actionPeriod || '');
-  const status    = String(body.status    || 'Tasdiqlandi');
 
-  if (!name) return { success: false, error: "Ism kiritilmagan" };
+  const isBugalter = auth.isBugalter || auth.isSuperAdmin;
+  let initialStatus = 'Tasdiqlandi';
+  let notifyTarget = null;
+
+  if (isBugalter && !isSelf) {
+    initialStatus = 'Kutilmoqda';
+    notifyTarget = 'employee';
+  } else if (!isBugalter) {
+    initialStatus = 'Kutilmoqda';
+    notifyTarget = 'bugalter';
+  } else {
+    initialStatus = 'Tasdiqlandi';
+    notifyTarget = null;
+  }
 
   const info = db.prepare(`
-    INSERT INTO records (name, telegram_id, amount_uzs, amount_usd, rate, comment, date, action_period, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(name, String(tgId), amountUZS, amountUSD, rate, comment, date, period, status);
+    INSERT INTO records (name, telegram_id, amount_uzs, amount_usd, rate, comment, date, action_period, status, actor_tg_id, actor_name)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(displayName, targetTgId, amountUZS, amountUSD, rate, comment, date, period, initialStatus, String(tgId), String(auth.username || ''));
 
-  return { success: true, rowId: info.lastInsertRowid };
+  const rowId = info.lastInsertRowid;
+
+  // Send Telegram Notifications & Approvals
+  const notifyPayload = {
+    employeeName: displayName,
+    actorName: auth.username || 'Bugalter',
+    amountUZS,
+    amountUSD,
+    rate,
+    comment,
+    date,
+    actionPeriod: period,
+    tgId: targetTgId,
+    actorTgId: tgId,
+    rowId,
+    initialStatus,
+    notifyTarget
+  };
+
+  try {
+    sendTelegramNotification(notifyPayload).catch(e => console.error('[sendTelegramNotification error]', e.message));
+    if (notifyTarget === 'employee') {
+      sendApprovalRequest({
+        tgId: targetTgId,
+        rowId,
+        employeeName: displayName,
+        amountUZS,
+        amountUSD,
+        rate,
+        comment,
+        dateStr: date,
+        actionPeriod: period,
+        actorName: auth.username || 'Bugalter'
+      }).catch(e => console.error('[sendApprovalRequest error]', e.message));
+    } else if (notifyTarget === 'bugalter') {
+      sendApprovalToBugalters({
+        rowId,
+        empName: displayName,
+        uzs: amountUZS,
+        usd: amountUSD,
+        rate,
+        comment,
+        dateStr: date,
+        actionPeriod: period
+      }).catch(e => console.error('[sendApprovalToBugalters error]', e.message));
+    }
+  } catch (notifErr) {
+    console.error('[Add Notification error]', notifErr.message);
+  }
+
+  return { success: true, rowId: Number(rowId) };
 }
 
 async function handleSelfEdit(body, tgId, auth) {
@@ -885,6 +1061,180 @@ async function handlePositionsSaveAll(positions, auth) {
   });
 
   return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Notifications & Inactive Users Handlers
+// ─────────────────────────────────────────────────────────────
+
+function getInactiveUsersHandler(days) {
+  const { db } = require('../db');
+  const threshold = Math.max(1, Math.min(365, parseInt(days, 10) || 14));
+  const employees = getAllEmployees().filter(e => e.canAdd);
+  const now = Date.now();
+  const out = [];
+
+  const latestStmt = db.prepare(`
+    SELECT MAX(created_at) as last_created, MAX(date) as last_date
+    FROM records
+    WHERE telegram_id = ? AND is_deleted = 0
+  `);
+
+  for (const emp of employees) {
+    const row = latestStmt.get(String(emp.tgId));
+    let lastTime = null;
+    let lastDateStr = '';
+    if (row && row.last_created) {
+      lastTime = new Date(row.last_created).getTime();
+      lastDateStr = row.last_date || row.last_created;
+    }
+    const inactiveDays = lastTime ? Math.floor((now - lastTime) / 86400000) : 9999;
+    if (inactiveDays >= threshold) {
+      out.push({
+        tgId: emp.tgId,
+        username: emp.username,
+        role: emp.role,
+        lastActionDate: lastDateStr,
+        inactiveDays
+      });
+    }
+  }
+  return { success: true, data: out };
+}
+
+async function sendInactiveRemindersHandler(days, messageText) {
+  const inactive = getInactiveUsersHandler(days);
+  if (!inactive.success || !inactive.data) return inactive;
+  let sent = 0;
+  for (const u of inactive.data) {
+    const res = await sendSalaryReminderToUser(u.tgId, u.username, messageText);
+    if (res && res.ok) sent++;
+  }
+  return { success: true, sent };
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI Assistant & Chat Handlers
+// ─────────────────────────────────────────────────────────────
+
+async function handleAIChat(data, auth, tgId) {
+  const canUse = auth.isSuperAdmin || auth.isAdmin || auth.isDirector || (auth.roleKey === 'DIRECTOR');
+  if (!canUse) return { success: false, error: "AI chat ruxsati yo'q" };
+
+  const userMessage = String(data.message || '').trim();
+  if (!userMessage) return { success: false, error: "Xabar bo'sh" };
+  if (userMessage.length > 2000) return { success: false, error: "Xabar juda uzun (max 2000 belgi)" };
+
+  let scope = String(data.scope || 'own');
+  const canSeeCompany = auth.isSuperAdmin || auth.isDirector || auth.permissions?.canViewAll;
+  if (scope === 'company' && !canSeeCompany) scope = 'own';
+
+  const history = Array.isArray(data.history) ? data.history.slice(-10) : [];
+  
+  // Build system prompt and context
+  const { db } = require('../db');
+  let contextText = '';
+  if (scope === 'company') {
+    const totalRecs = db.prepare('SELECT COUNT(*) as c, SUM(amount_uzs) as s_uzs, SUM(amount_usd) as s_usd FROM records WHERE is_deleted = 0').get();
+    const kvRecs = db.prepare('SELECT COUNT(*) as c, SUM(total_m2) as s_m2 FROM kvadratlar WHERE is_deleted = 0').get();
+    contextText = `KOMPANIYA MA'LUMOTLARI:\n- Jami yozuvlar: ${totalRecs?.c || 0}\n- Jami xarajat (UZS): ${(totalRecs?.s_uzs || 0).toLocaleString()}\n- Jami xarajat (USD): ${(totalRecs?.s_usd || 0).toLocaleString()}\n- Ishlangan kvadratlar: ${kvRecs?.c || 0} ta, ${(kvRecs?.s_m2 || 0).toFixed(2)} m²`;
+  } else {
+    const myRecs = db.prepare('SELECT COUNT(*) as c, SUM(amount_uzs) as s_uzs, SUM(amount_usd) as s_usd FROM records WHERE telegram_id = ? AND is_deleted = 0').get(String(tgId));
+    contextText = `FOYDALANUVCHI MA'LUMOTLARI:\n- Jami yozuvlar: ${myRecs?.c || 0}\n- Jami (UZS): ${(myRecs?.s_uzs || 0).toLocaleString()}\n- Jami (USD): ${(myRecs?.s_usd || 0).toLocaleString()}`;
+  }
+
+  const todayStr = new Date().toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' });
+  const systemPrompt = `Sen Aristokrat ERP tizimi AI yordamchisisan. Bugun: ${todayStr}. Foydalanuvchi: ${auth.username || 'iRealBy_3D'}, Rol: ${auth.roleKey || 'SUPER_ADMIN'}.\nFaqat o'zbek tilida, professional, qisqa va aniq javob ber.\n${contextText}`;
+
+  // Read AI configuration from db
+  const rawAi = getSetting('AI_PROVIDERS_CONFIG', '{"all":[],"active":[]}');
+  let aiConfig;
+  try { aiConfig = JSON.parse(rawAi); } catch (e) { aiConfig = { active: [] }; }
+
+  const activeProviders = (aiConfig.active && aiConfig.active.length > 0) ? aiConfig.active : (aiConfig.all?.filter(p => p.isActive && p.apiKey) || []);
+  if (!activeProviders.length) {
+    return { success: false, error: "Faol AI provayder sozlanmagan" };
+  }
+
+  const messages = [{ role: 'system', content: systemPrompt }];
+  history.forEach(h => {
+    if (h.role === 'user' || h.role === 'assistant') {
+      messages.push({ role: h.role, content: String(h.content || '') });
+    }
+  });
+  messages.push({ role: 'user', content: userMessage });
+
+  const fetch = global.fetch || require('node-fetch');
+  let lastError = '';
+
+  for (const provider of activeProviders) {
+    try {
+      if (provider.provider === 'Gemini') {
+        const url = `${provider.baseURL || 'https://generativelanguage.googleapis.com/v1beta/models/'}${provider.model || 'gemini-2.5-flash'}:generateContent?key=${provider.apiKey}`;
+        const contents = [];
+        messages.forEach(m => {
+          contents.push({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: (m.role === 'system' ? `[SYSTEM]: ${m.content}\n` : '') + m.content }]
+          });
+        });
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents })
+        });
+        const json = await resp.json();
+        if (!resp.ok) throw new Error(json.error?.message || `HTTP ${resp.status}`);
+        const replyText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (replyText) return { success: true, reply: replyText.trim(), provider: 'Gemini' };
+      } else {
+        // OpenAI-compatible (Groq, OpenRouter, Ollama)
+        const url = provider.baseURL || 'https://api.groq.com/openai/v1/chat/completions';
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${provider.apiKey}`
+          },
+          body: JSON.stringify({
+            model: provider.model,
+            messages,
+            max_tokens: 1024
+          })
+        });
+        const json = await resp.json();
+        if (!resp.ok) throw new Error(json.error?.message || `HTTP ${resp.status}`);
+        const replyText = json.choices?.[0]?.message?.content;
+        if (replyText) return { success: true, reply: replyText.trim(), provider: provider.provider };
+      }
+    } catch (e) {
+      lastError = `${provider.provider}: ${e.message}`;
+      console.warn('[AI Provider Fallback]', lastError);
+    }
+  }
+
+  return { success: false, error: `Barcha provayderlar xato berdi. ${lastError}` };
+}
+
+async function handleAIRunReport(auth) {
+  const { db } = require('../db');
+  const totalRecs = db.prepare('SELECT COUNT(*) as c, SUM(amount_uzs) as s_uzs, SUM(amount_usd) as s_usd FROM records WHERE is_deleted = 0').get();
+  const kvRecs = db.prepare('SELECT COUNT(*) as c, SUM(total_m2) as s_m2 FROM kvadratlar WHERE is_deleted = 0').get();
+  const employees = getAllEmployees();
+
+  const reportPrompt = `Quyidagi korxona ma'lumotlariga asoslanib KUNLIK HISOBOT tayyorla:\n- Jami moliyaviy yozuvlar: ${totalRecs?.c || 0}\n- Jami xarajat (UZS): ${(totalRecs?.s_uzs || 0).toLocaleString()}\n- Jami xarajat (USD): ${(totalRecs?.s_usd || 0).toLocaleString()}\n- Kvadratlar buyurtmalari: ${kvRecs?.c || 0} ta, ${(kvRecs?.s_m2 || 0).toFixed(2)} m²\n- Xodimlar soni: ${employees.length} ta\nTuzilma: 1) Umumiy holat 2) Moliya 3) Ishlab chiqarish 4) Tavsiyalar. Qisqa va lo'nda bo'lsin.`;
+
+  const aiRes = await handleAIChat({ message: reportPrompt, scope: 'company', history: [] }, auth, cfg.SUPER_ADMIN_ID);
+  if (aiRes.success) {
+    const msg = `🤖 <b>AI Kunlik Tahliliy Hisobot (${aiRes.provider})</b>\n\n${aiRes.reply}`;
+    const targetChat = cfg.SUPER_ADMIN_ID || cfg.CHAT_ID;
+    if (targetChat) {
+      await tgSendMessage(targetChat, msg, 'HTML');
+    }
+    return { success: true, message: "AI Hisobot yaratildi va Telegramga yuborildi." };
+  } else {
+    return { success: false, error: aiRes.error };
+  }
 }
 
 module.exports = router;
