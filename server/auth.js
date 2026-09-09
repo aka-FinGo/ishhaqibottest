@@ -167,6 +167,7 @@ function checkUserRoles(tgId) {
   auth.positions   = emp.positions || [];
   auth.group       = emp.group || '';
   auth.isSardor    = !!emp.isSardor;
+  auth.lavozim     = emp.lavozim || '';
 
   return auth;
 }

@@ -451,6 +451,7 @@ async function handleInit(tgId, auth, data) {
     isSardor:        !!auth.isSardor,
     permissions:     auth.permissions,
     positions:       auth.positions,
+    lavozim:         auth.lavozim || '',
     allPositions,
     workflowConfig,
     isWorkflowStrict: getSetting('WORKFLOW_STRICT_MODE', '0') === '1',
@@ -575,9 +576,15 @@ async function handleAdminEdit(body, tgId, auth) {
     id
   );
   broadcast('records', 'edit', { rowId: id, telegramId: targetTgId, name: nameVal, status: statusVal });
+  const reason = String(body.reason || body.comment_reason || '').trim();
+  const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Admin'))));
+
   if (statusVal !== rec.status) {
     const { syncRecordStatusInTelegram } = require('../telegram');
-    syncRecordStatusInTelegram(id, statusVal, String(auth.username || 'Admin'), String(tgId)).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
+    syncRecordStatusInTelegram(id, statusVal, String(auth.username || 'Admin'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
+  } else if (reason) {
+    const { syncRecordStatusInTelegram } = require('../telegram');
+    syncRecordStatusInTelegram(id, "Tahrirlandi", String(auth.username || 'Admin'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
   }
   return { success: true };
 }
@@ -586,13 +593,16 @@ async function handleAdminDelete(body, tgId, auth) {
   const { db } = require('../db');
   const id = parseInt(body.rowId || body.id, 10);
   if (!id) return { success: false, error: "rowId topilmadi" };
+  const reason = String(body.reason || body.comment || '').trim();
+  const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Admin'))));
+
   db.prepare(`
     UPDATE records SET is_deleted = 1, actor_tg_id = ?, actor_name = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(String(tgId), String(auth.username || ''), id);
   broadcast('records', 'delete', { rowId: id });
   const { syncRecordStatusInTelegram } = require('../telegram');
-  syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Admin'), String(tgId)).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
+  syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Admin'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
   return { success: true };
 }
 
@@ -637,10 +647,13 @@ async function handleAdd(body, auth, tgId) {
 
   const rowId = info.lastInsertRowid;
 
+  const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Xodim'))));
+
   // Send Telegram Notifications & Approvals
   const notifyPayload = {
     employeeName: displayName,
     actorName: auth.username || 'Bugalter',
+    actorRole,
     amountUZS,
     amountUSD,
     rate,
@@ -667,7 +680,8 @@ async function handleAdd(body, auth, tgId) {
         comment,
         dateStr: date,
         actionPeriod: period,
-        actorName: auth.username || 'Bugalter'
+        actorName: auth.username || 'Bugalter',
+        actorRole
       }).catch(e => console.error('[sendApprovalRequest error]', e.message));
     } else if (notifyTarget === 'bugalter') {
       sendApprovalToBugalters({
@@ -722,6 +736,12 @@ async function handleSelfEdit(body, tgId, auth) {
   );
 
   broadcast('records', 'edit', { rowId: id, telegramId: tgId });
+  const reason = String(body.reason || body.comment_reason || '').trim();
+  const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Xodim'))));
+  if (reason) {
+    const { syncRecordStatusInTelegram } = require('../telegram');
+    syncRecordStatusInTelegram(id, "Tahrirlandi", String(auth.username || 'Xodim'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
+  }
 
   return { success: true };
 }
@@ -736,6 +756,9 @@ async function handleSelfDelete(body, tgId, auth) {
   const disableEmpDelete = getSetting('DISABLE_EMP_EDIT_DELETE', '0') === '1';
   if (!auth.isSuperAdmin && disableEmpDelete) return { success: false, error: "O'chirish o'chirilgan" };
 
+  const reason = String(body.reason || body.comment || '').trim();
+  const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Xodim'))));
+
   db.prepare(`
     UPDATE records SET is_deleted = 1, actor_tg_id = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND telegram_id = ?
@@ -743,7 +766,7 @@ async function handleSelfDelete(body, tgId, auth) {
 
   broadcast('records', 'delete', { rowId: id, telegramId: tgId });
   const { syncRecordStatusInTelegram } = require('../telegram');
-  syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Xodim'), String(tgId)).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
+  syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Xodim'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
 
   return { success: true };
 }

@@ -143,6 +143,7 @@ function processUserData(data) {
     else myRole = 'User';
 
     myRoleKey = data.roleKey || (myRole === 'SuperAdmin' ? 'SUPER_ADMIN' : (myRole === 'Kutilmoqda' ? 'PENDING' : 'EMPLOYEE'));
+    myLavozim = data.lavozim || (Array.isArray(data.positions) ? data.positions.join(', ') : '') || '';
 
     myIsSardor = !!data.isSardor;
     const asBool = (v) => v === true || v === 1 || String(v || '') === '1' || String(v || '').toLowerCase() === 'true';
@@ -486,11 +487,20 @@ function applyTheme() {
 }
 
 function updateProfileUI() {
-    console.log('👤 Profil UI yangilanmoqda. Rol:', myRole);
+    console.log('👤 Profil UI yangilanmoqda. Rol:', myRole, 'Lavozim:', myLavozim);
     const nameEl = document.getElementById('profileUserName');
     const roleEl = document.getElementById('profileUserRole');
     if (nameEl) nameEl.textContent = myUsername || 'Foydalanuvchi';
-    if (roleEl) roleEl.textContent = myRole || 'User';
+    
+    let roleText = '👤 Xodim';
+    if (myRole === 'SuperAdmin') roleText = '👑 SuperAdmin';
+    else if (myRole === 'Direktor') roleText = '🎯 Direktor';
+    else if (myRole === 'Admin') roleText = '🛡 Admin';
+    else if (myRole === 'Bugalter') roleText = '🧮 Bugalter';
+    else if (myRole === 'Kutilmoqda') roleText = '⏳ Kutilmoqda';
+    
+    const lavozimPart = myLavozim ? ` • ${myLavozim}` : '';
+    if (roleEl) roleEl.textContent = `${roleText}${lavozimPart}`;
 
     const adminSection = document.getElementById('profileAdminSection');
     if (adminSection) {
@@ -1182,6 +1192,16 @@ function setupWebAppRealtime() {
         try {
             const data = await apiRequest({ action: 'init' }, { timeoutMs: 15000 });
             if (data && data.success) {
+                if (typeof AppCache !== 'undefined') {
+                    AppCache.remove(AppCache.KEYS.USER_DATA);
+                }
+                processUserData(data);
+                if (typeof saveCacheData === 'function') {
+                    saveCacheData(myFullRecords, data);
+                }
+                updateProfileUI();
+                applyRoleBasedUI();
+
                 const empRaw = data.employeeList || [];
                 globalEmployeeList = Array.isArray(empRaw) ? empRaw : [];
                 window._kvEmpMap = {};

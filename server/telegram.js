@@ -66,8 +66,9 @@ async function sendTelegramNotification(data) {
   const usdText = Number(data.amountUSD) > 0 ? '\n\u{1F4B5} $' + Number(data.amountUSD).toLocaleString() : '';
   const rateText = Number(data.amountUSD) > 0 && Number(data.rate) > 0 ? '\n\u{1F4C8} Kurs: ' + Number(data.rate).toLocaleString() + ' UZS' : '';
   const statusBadge = data.initialStatus === 'Kutilmoqda' ? '\n\u23F3 <i>Holati: Kutilmoqda...</i>' : '';
-  const actorLine = (data.actorTgId && String(data.actorTgId) !== String(data.tgId) && data.actorName) ? '\n\u270D\uFE0F Kiritdi: ' + data.actorName + ' (Bugalter)' : '';
-  const msg = '\u26A0\uFE0F <b>Yangi amal qo\u2019shildi</b>\n\u{1F464} Xodim: ' + (data.employeeName || '\u2014') + actorLine + uzsText + usdText + rateText + (data.actionPeriod ? '\n\u{1F4C5} Davr: ' + data.actionPeriod : '') + '\n\u{1F4DD} ' + (data.comment || '\u2014') + '\n\u{1F4C5} ' + (data.date || '\u2014') + statusBadge;
+  const actorRole = data.actorRole || 'Bugalter';
+  const actorLine = (data.actorTgId && String(data.actorTgId) !== String(data.tgId) && data.actorName) ? '\n✍️ Kiritdi: ' + data.actorName + ' (' + actorRole + ')' : '';
+  const msg = '⚠️ <b>Yangi amal qo’shildi</b>\n👤 Xodim: ' + (data.employeeName || '—') + actorLine + uzsText + usdText + rateText + (data.actionPeriod ? '\n📅 Davr: ' + data.actionPeriod : '') + '\n📝 ' + (data.comment || '—') + '\n📅 ' + (data.date || '—') + statusBadge;
   const sentTrack = []; const rowId = data.rowId;
   const isSuperAdminGettingButton = (data.notifyTarget === 'bugalter') || (data.notifyTarget === 'employee' && String(config.CHAT_ID) === String(data.tgId));
   if (config.CHAT_ID && !isSuperAdminGettingButton) {
@@ -82,13 +83,14 @@ async function sendTelegramNotification(data) {
 
 async function sendApprovalRequest(data) {
   const db = require('./db');
-  const { tgId, rowId, employeeName, amountUZS, amountUSD, rate, comment, dateStr, actionPeriod, actorName } = data;
+  const { tgId, rowId, employeeName, amountUZS, amountUSD, rate, comment, dateStr, actionPeriod, actorName, actorRole } = data;
   const uzsText = Number(amountUZS) > 0 ? '\n\u{1F4B0} ' + Number(amountUZS).toLocaleString() + ' UZS' : '';
   const usdText = Number(amountUSD) > 0 ? '\n\u{1F4B5} $' + Number(amountUSD).toLocaleString() : '';
   const rateText = Number(amountUSD) > 0 && Number(rate) > 0 ? '\n\u{1F4C8} Kurs: ' + Number(rate).toLocaleString() + ' UZS' : '';
   const periodText = actionPeriod ? '\n\u{1F4C5} Davr: ' + actionPeriod : '';
-  const whoEntered = actorName ? 'Bugalter (' + actorName + ')' : 'Bugalter';
-  const msg = '\u26A0\uFE0F <b>Sizning hisobingizga ' + whoEntered + ' quyidagi amalni kiritdi. Iltimos, tasdiqlang yoki rad eting:</b>\n\u{1F464} Xodim: ' + (employeeName || '\u2014') + uzsText + usdText + rateText + periodText + '\n\u{1F4DD} ' + (comment || '\u2014') + '\n\u{1F4C5} ' + (dateStr || '\u2014');
+  const roleLabel = actorRole || 'Bugalter';
+  const whoEntered = actorName ? `${roleLabel} (${actorName})` : roleLabel;
+  const msg = '⚠️ <b>Sizning hisobingizga ' + whoEntered + ' quyidagi amalni kiritdi. Iltimos, tasdiqlang yoki rad eting:</b>\n👤 Xodim: ' + (employeeName || '—') + uzsText + usdText + rateText + periodText + '\n📝 ' + (comment || '—') + '\n📅 ' + (dateStr || '—');
   const replyMarkup = { inline_keyboard: [[{ text: '\u2705 Tasdiqlash', callback_data: 'conf_sal_' + rowId }, { text: '\u274C Rad etish', callback_data: 'rej_sal_' + rowId }]] };
   const res = await tgSendMessage(tgId, msg, 'HTML', replyMarkup);
   if (res && res.result && res.result.message_id)
@@ -216,7 +218,7 @@ async function sendAvansRequestNotification(username, amount, reason) {
   } catch (e) { console.error('[sendAvansRequestNotification]', e.message); }
 }
 
-async function syncRecordStatusInTelegram(recordId, newStatus, actorName = 'Admin', actorTgId = '') {
+async function syncRecordStatusInTelegram(recordId, newStatus, actorName = 'Admin', actorTgId = '', reason = '', actorRole = '') {
   if (!recordId) return;
   const db = require('./db');
   const tracks = db.getTrackedMessages ? db.getTrackedMessages(recordId) : [];
@@ -225,6 +227,10 @@ async function syncRecordStatusInTelegram(recordId, newStatus, actorName = 'Admi
   const isConfirm = (newStatus === 'Tasdiqlandi');
   const isReject  = (newStatus === 'Rad etildi');
   const isDelete  = (newStatus === "O'chirildi" || newStatus === "O`chirildi");
+  const isEdit    = (newStatus === 'Tahrirlandi');
+
+  const actorTitle = actorRole ? `${actorName} (${actorRole})` : actorName;
+  const reasonText = reason ? `\n📝 <b>Sabab:</b> ${reason}` : '';
 
   for (const item of tracks) {
     try {
@@ -232,27 +238,32 @@ async function syncRecordStatusInTelegram(recordId, newStatus, actorName = 'Admi
       let statusLine = '';
       if (isConfirm) {
         statusLine = isOwnChat
-          ? '\n\n✅ <b>Siz tomoningizdan tasdiqlandi</b>'
-          : `\n\n✅ <b>${actorName} tomonidan tasdiqlandi</b>`;
+          ? `\n\n✅ <b>Siz tomoningizdan tasdiqlandi</b>${reasonText}`
+          : `\n\n✅ <b>${actorTitle} tomonidan tasdiqlandi</b>${reasonText}`;
       } else if (isReject) {
         statusLine = isOwnChat
-          ? '\n\n❌ <b>Siz tomoningizdan rad etildi</b>'
-          : `\n\n❌ <b>${actorName} tomonidan rad etildi</b>`;
+          ? `\n\n❌ <b>Siz tomoningizdan rad etildi</b>${reasonText}`
+          : `\n\n❌ <b>${actorTitle} tomonidan rad etildi</b>${reasonText}`;
       } else if (isDelete) {
         statusLine = isOwnChat
-          ? '\n\n🗑 <b>Siz tomoningizdan o\'chirildi</b>'
-          : `\n\n🗑 <b>${actorName} tomonidan o'chirildi</b>`;
+          ? `\n\n🗑 <b>Siz tomoningizdan o'chirildi</b>${reasonText}`
+          : `\n\n🗑 <b>${actorTitle} tomonidan o'chirildi</b>${reasonText}`;
+      } else if (isEdit) {
+        statusLine = isOwnChat
+          ? `\n\n✏️ <b>Siz tomoningizdan tahrirlandi</b>${reasonText}`
+          : `\n\n✏️ <b>${actorTitle} tomonidan tahrirlandi</b>${reasonText}`;
       } else {
-        statusLine = `\n\nℹ️ <b>Holati: ${newStatus} (${actorName})</b>`;
+        statusLine = `\n\nℹ️ <b>Holati: ${newStatus} (${actorTitle})</b>${reasonText}`;
       }
 
       let cleanBaseText = String(item.base_text || '')
         .replace(/\n⏳\s*<i>Holati:\s*Kutilmoqda\.\.\.<\/i>/gi, '')
         .replace(/\n⏳\s*Holati:\s*Kutilmoqda\.\.\./gi, '')
-        .replace(/\n\n✅\s*<b>.*?<\/b>/gi, '')
-        .replace(/\n\n❌\s*<b>.*?<\/b>/gi, '')
-        .replace(/\n\n🗑\s*<b>.*?<\/b>/gi, '')
-        .replace(/\n\nℹ️\s*<b>.*?<\/b>/gi, '')
+        .replace(/\n\n✅\s*<b>.*?<\/b>(?:\n📝\s*<b>Sabab:<\/b>[^\n]*)?/gi, '')
+        .replace(/\n\n❌\s*<b>.*?<\/b>(?:\n📝\s*<b>Sabab:<\/b>[^\n]*)?/gi, '')
+        .replace(/\n\n🗑\s*<b>.*?<\/b>(?:\n📝\s*<b>Sabab:<\/b>[^\n]*)?/gi, '')
+        .replace(/\n\n✏️\s*<b>.*?<\/b>(?:\n📝\s*<b>Sabab:<\/b>[^\n]*)?/gi, '')
+        .replace(/\n\nℹ️\s*<b>.*?<\/b>(?:\n📝\s*<b>Sabab:<\/b>[^\n]*)?/gi, '')
         .replace(/\. Iltimos, tasdiqlang yoki rad eting:/gi, ':')
         .replace(/Iltimos, tasdiqlang yoki rad eting:/gi, '');
 

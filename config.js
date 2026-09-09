@@ -31,6 +31,7 @@ let myIsSardor = false;
 let canViewCompanyActions = false;
 let canExportCompanyData = false;
 let adminContactId = '';
+let myLavozim = '';
 
 let myPermissions = {
   canViewAll: false, canEdit: false,

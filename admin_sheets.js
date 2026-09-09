@@ -1614,10 +1614,12 @@ async function deleteRecordPrompt(id, name) {
         showToast("Xatolik: Yozuv ID aniqlanmadi ❌", true);
         return;
     }
-    if (!confirm(`Haqiqatan ham #${numId} — "${name}" moliyaviy yozuvini o'chirmoqchimisiz? (SQLite records)`)) return;
+    const reason = prompt(`Haqiqatan ham #${numId} — "${name}" moliyaviy yozuvini o'chirmoqchimisiz? (SQLite records)\n\nO'chirish sababini kiriting:`);
+    if (reason === null) return;
+    const cleanReason = reason.trim() || "Sabab ko'rsatilmadi";
 
     showStatus(`🗑 SQLite yozuvi o'chirilmoqda...`);
-    const res = await apiRequest('admin_delete', { rowId: numId });
+    const res = await apiRequest('admin_delete', { rowId: numId, reason: cleanReason });
     if (res && res.success) {
         SheetsApp.data.records = SheetsApp.data.records.filter(r => String(r.rowId || r.id) !== String(numId));
         updateTabBadges();

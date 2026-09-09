@@ -181,12 +181,14 @@ async function handleCallbackQuery(query) {
     return;
   }
 
+  const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirector ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : 'Xodim')));
+
   // Already processed?
   if (rec.status === 'Tasdiqlandi' || rec.status === 'Rad etildi') {
     // Just edit message text to reflect final status
     const { syncRecordStatusInTelegram } = require('../telegram');
-    await syncRecordStatusInTelegram(rowId, rec.status, actorName, actorTgId);
-    await _editConfirmMessage(chatId, messageId, query.message, rec.status === 'Tasdiqlandi', actorName);
+    await syncRecordStatusInTelegram(rowId, rec.status, actorName, actorTgId, '', actorRole);
+    await _editConfirmMessage(chatId, messageId, query.message, rec.status === 'Tasdiqlandi', actorName, actorRole);
     return;
   }
 
@@ -208,16 +210,17 @@ async function handleCallbackQuery(query) {
 
   // Synchronize status in all tracked Telegram chats (channel, bugalter, employee, director)
   const { syncRecordStatusInTelegram } = require('../telegram');
-  await syncRecordStatusInTelegram(rowId, newStatus, actorName, actorTgId);
+  await syncRecordStatusInTelegram(rowId, newStatus, actorName, actorTgId, '', actorRole);
 
-  await _editConfirmMessage(chatId, messageId, query.message, isConfirm, actorName);
+  await _editConfirmMessage(chatId, messageId, query.message, isConfirm, actorName, actorRole);
 }
 
-async function _editConfirmMessage(chatId, messageId, originalMsg, isConfirm, actorName) {
+async function _editConfirmMessage(chatId, messageId, originalMsg, isConfirm, actorName, actorRole) {
   if (!chatId || !messageId) return;
+  const actorTitle = actorRole ? `${actorName} (${actorRole})` : actorName;
   const statusLine = isConfirm
-    ? `\n\n✅ <b>${actorName} tomonidan tasdiqlandi</b>`
-    : `\n\n❌ <b>${actorName} tomonidan rad etildi</b>`;
+    ? `\n\n✅ <b>${actorTitle} tomonidan tasdiqlandi</b>`
+    : `\n\n❌ <b>${actorTitle} tomonidan rad etildi</b>`;
 
   const baseText = (originalMsg && originalMsg.text)
     ? String(originalMsg.text)
