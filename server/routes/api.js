@@ -133,15 +133,17 @@ router.post('/', async (req, res) => {
         result = await handleUpdateHodim(body);
         break;
 
-      case 'delete_hodim':
+      case 'delete_hodim': {
         if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
-        result = await handleDeleteHodim(body.tgId);
+        const targetId = String(body.tgId !== undefined && body.tgId !== null ? body.tgId : (body.userId !== undefined && body.userId !== null ? body.userId : '')).trim();
+        result = await handleDeleteHodim(targetId);
         break;
+      }
 
       case 'saveUser': {
         if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
         const formData = body.data || {};
-        const targetId = String(body.userId || formData.telegram_id || formData.tgId || '').trim();
+        const targetId = String(body.userId !== undefined && body.userId !== null ? body.userId : (formData.telegram_id || formData.tgId || '')).trim();
         const uName = String(formData.name || formData.username || '').trim();
         const uRole = formData.role || 'EMPLOYEE';
         const uLavozim = formData.position || formData.lavozim || '';
@@ -160,7 +162,7 @@ router.post('/', async (req, res) => {
 
       case 'deleteUser': {
         if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin!" });
-        const targetId = String(body.userId || body.tgId || '').trim();
+        const targetId = String(body.userId !== undefined && body.userId !== null ? body.userId : (body.tgId !== undefined && body.tgId !== null ? body.tgId : '')).trim();
         result = await handleDeleteHodim(targetId);
         break;
       }
@@ -364,21 +366,25 @@ router.post('/', async (req, res) => {
 async function handleInit(tgId, auth, data) {
   const { db } = require('../db');
 
+  const cleanTgId = String(tgId || '').trim();
+  const isInvalidId = !cleanTgId || cleanTgId === '0' || cleanTgId === 'null' || cleanTgId === 'undefined' || cleanTgId === 'TEST_LOCAL';
+
   // Auto-register pending user if not in list (mirrors autoRegisterPendingUserIfMissing_)
-  if (!auth.inList && !auth.isSuperAdmin) {
+  // NEVER auto-register dummy/empty/invalid IDs like '0'
+  if (!isInvalidId && !auth.inList && !auth.isSuperAdmin) {
     try {
       const firstName = String(data.firstName || data.first_name || '');
       const lastName  = String(data.lastName  || data.last_name  || '');
       const uname     = String(data.tgUsername || data.username  || '');
-      const displayName = [firstName, lastName].filter(Boolean).join(' ') || uname || `ID:${tgId}`;
+      const displayName = [firstName, lastName].filter(Boolean).join(' ') || uname || `ID:${cleanTgId}`;
       db.prepare(`
         INSERT OR IGNORE INTO employees
           (telegram_id, username, can_add, role)
         VALUES (?, ?, 0, 'PENDING')
-      `).run(String(tgId), displayName);
+      `).run(cleanTgId, displayName);
       // Re-resolve auth after possible insert
       const { checkUserRoles } = require('../auth');
-      Object.assign(auth, checkUserRoles(tgId));
+      Object.assign(auth, checkUserRoles(cleanTgId));
     } catch (e) { /* ignore */ }
   }
 
@@ -721,11 +727,11 @@ async function handleAddHodim(body) {
   const { db, getEmployee } = require('../db');
   const { normalizeRole, resolveEmployeeAccess, isConfigSuperAdmin } = require('../auth');
 
-  const tgId     = String(body.tgId || body.telegramId || '').trim();
+  const tgId     = String(body.tgId !== undefined && body.tgId !== null ? body.tgId : (body.telegramId || '')).trim();
   const username = String(body.username || '').trim();
   const role     = normalizeRole(body.role || 'EMPLOYEE', null);
 
-  if (!tgId)     return { success: false, error: "TelegramId kiritilmagan" };
+  if (!tgId || tgId === '0' || tgId === 'null' || tgId === 'undefined') return { success: false, error: "Yaroqli Telegram ID kiritilmagan" };
   if (!username) return { success: false, error: "Username kiritilmagan" };
 
   const existing = getEmployee(tgId);
@@ -806,8 +812,9 @@ async function handleUpdateHodim(body) {
 
 async function handleDeleteHodim(targetTgId) {
   const { db } = require('../db');
-  if (!targetTgId) return { success: false, error: "tgId topilmadi" };
-  db.prepare('DELETE FROM employees WHERE telegram_id = ?').run(String(targetTgId));
+  const cleanId = String(targetTgId !== undefined && targetTgId !== null ? targetTgId : '').trim();
+  if (cleanId === '') return { success: false, error: "tgId topilmadi" };
+  db.prepare('DELETE FROM employees WHERE telegram_id = ?').run(cleanId);
   return { success: true };
 }
 

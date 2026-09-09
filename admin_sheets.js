@@ -1521,12 +1521,17 @@ async function deleteKvadratPrompt(id, orderName) {
 }
 
 async function deleteHodimPrompt(tgId, username) {
-    if (!confirm(`Haqiqatan ham "${username}" (${tgId}) xodimini o'chirmoqchimisiz? (SQLite employees)`)) return;
+    const cleanId = String(tgId !== undefined && tgId !== null ? tgId : '').trim();
+    if (cleanId === '') {
+        showToast("Xatolik: Xodim ID topilmadi ❌", true);
+        return;
+    }
+    if (!confirm(`Haqiqatan ham "${username}" (${cleanId}) xodimini o'chirmoqchimisiz? (SQLite employees)`)) return;
 
     showStatus(`🗑 SQLite xodimi o'chirilmoqda...`);
-    const res = await apiRequest('delete_hodim', { tgId });
+    const res = await apiRequest('delete_hodim', { tgId: cleanId });
     if (res && res.success) {
-        SheetsApp.data.employees = SheetsApp.data.employees.filter(e => String(e.telegram_id || e.tgId) !== String(tgId));
+        SheetsApp.data.employees = SheetsApp.data.employees.filter(e => String(e.telegram_id || e.tgId) !== cleanId);
         updateTabBadges();
         renderActiveTable();
         showToast(`Xodim o'chirildi ✅`);
