@@ -273,6 +273,9 @@ async function executeFinanceAdd(btn, status, amountUZS, amountUSD, rate, commen
             action: 'add', telegramId: telegramId, targetTgId: targetTgId, employeeName: targetEmpName, amountUZS, amountUSD, rate, comment, date, dateISO: today.iso, actionPeriod
         });
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('records', 'add', { targetTgId, targetEmpName });
+            }
             status.style.color = 'var(--green-dark)'; status.innerText = '✅ Muvaffaqiyatli saqlandi!';
             if (String(targetTgId) === String(telegramId)) {
                 myFullRecords.push({

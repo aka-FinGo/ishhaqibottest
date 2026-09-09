@@ -329,6 +329,7 @@ async function initializeApp() {
             _appInitialized = true; _appInitRetries = 0;
             if (typeof updateModuleIframe === 'function') updateModuleIframe();
             startBackgroundSync();
+            setupWebAppRealtime();
             hideAppLoading();
         } else { throw new Error(data?.error || 'Init xatosi'); }
     } catch (error) {
@@ -1110,4 +1111,117 @@ function startBackgroundSync() {
             console.warn('⚠️ Background sync xatosi:', e.message);
         }
     }, 60000); // 1 daqiqa — yengil so'rov bo'lgani uchun
+}
+
+let _realtimeSetupDone = false;
+
+function setupWebAppRealtime() {
+    if (_realtimeSetupDone) return;
+    if (typeof RealtimeSync === 'undefined') return;
+    _realtimeSetupDone = true;
+
+    console.log('🚀 [WebApp] Realtime tinglovchilari faollashtirildi');
+
+    // 1. Records (Moliyaviy yozuvlar - tasdiqlash, rad etish, tahrirlash, o'chirish)
+    const refreshRecords = RealtimeSync.debounce(async (meta) => {
+        console.log('⚡ [WebApp Realtime] records yangilanishi:', meta);
+        if (typeof AppCache !== 'undefined' && AppCache.KEYS?.MY_RECORDS) {
+            AppCache.remove(AppCache.KEYS.MY_RECORDS);
+        }
+        try { localStorage.removeItem('globalAdminData'); } catch (e) {}
+
+        try {
+            const data = await apiRequest({ action: 'init' }, { timeoutMs: 15000 });
+            if (data && data.success) {
+                myFullRecords = data.data || [];
+                myFilteredRecords = [...myFullRecords];
+                saveCacheData(myFullRecords, data);
+                if (typeof renderMyRecords === 'function') renderMyRecords();
+            }
+        } catch (e) {
+            console.warn('⚠️ Realtime records init xatosi:', e.message);
+        }
+
+        // Agar admin yoki dashboard ochiq bo'lsa
+        const adminTab = document.getElementById('adminTab');
+        if (adminTab && !adminTab.classList.contains('hidden')) {
+            if (typeof loadAdminData === 'function') loadAdminData();
+        }
+        const dashTab = document.getElementById('dashboardTab');
+        if (dashTab && !dashTab.classList.contains('hidden')) {
+            if (typeof loadAdminData === 'function') await loadAdminData();
+            if (typeof renderDashboard === 'function') renderDashboard();
+        }
+    }, 400);
+
+    RealtimeSync.on('records', refreshRecords);
+
+    // 2. Kvadratlar (Buyurtmalar - qo'shish, status, bosqich o'zgarishi, o'chirish)
+    const refreshKvadratlar = RealtimeSync.debounce(async (meta) => {
+        console.log('⚡ [WebApp Realtime] kvadratlar yangilanishi:', meta);
+        if (typeof AppCache !== 'undefined' && AppCache.KEYS?.KV_RECORDS) {
+            AppCache.remove(AppCache.KEYS.KV_RECORDS);
+        }
+
+        const kvTab = document.getElementById('kvadratTab');
+        if (kvTab && !kvTab.classList.contains('hidden')) {
+            if (typeof initKvadratTab === 'function') await initKvadratTab();
+        }
+        const kvDashTab = document.getElementById('kvDashboardTab');
+        if (kvDashTab && !kvDashTab.classList.contains('hidden')) {
+            if (typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
+        }
+    }, 400);
+
+    RealtimeSync.on('kvadratlar', refreshKvadratlar);
+
+    // 3. Hodimlar
+    const refreshEmployees = RealtimeSync.debounce(async (meta) => {
+        console.log('⚡ [WebApp Realtime] employees yangilanishi:', meta);
+        try {
+            const data = await apiRequest({ action: 'init' }, { timeoutMs: 15000 });
+            if (data && data.success) {
+                const empRaw = data.employeeList || [];
+                globalEmployeeList = Array.isArray(empRaw) ? empRaw : [];
+                window._kvEmpMap = {};
+                globalEmployeeList.forEach(e => { if (e.tgId) window._kvEmpMap[e.tgId] = e.username || ''; });
+                if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+                if (typeof populateAddEmployeeDropdown === 'function') populateAddEmployeeDropdown();
+                if (typeof populateEmployeeFilter === 'function') populateEmployeeFilter();
+            }
+        } catch (e) {
+            console.warn('⚠️ Realtime employees xatosi:', e.message);
+        }
+    }, 400);
+
+    RealtimeSync.on('employees', refreshEmployees);
+
+    // 4. Workflow & Lavozimlar
+    RealtimeSync.on('workflow', RealtimeSync.debounce(async () => {
+        try {
+            const data = await apiRequest({ action: 'get_workflow_config' });
+            if (data && data.success && data.config && typeof myPermissions !== 'undefined') {
+                myPermissions.workflowConfig = data.config;
+            }
+        } catch (e) {}
+    }, 500));
+
+    RealtimeSync.on('positions', RealtimeSync.debounce(async () => {
+        try {
+            const data = await apiRequest({ action: 'get_positions' });
+            if (data && data.success && data.positions && typeof window._allPositions !== 'undefined') {
+                window._allPositions = data.positions;
+            }
+        } catch (e) {}
+    }, 500));
+}
+
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof RealtimeSync !== 'undefined') setupWebAppRealtime();
+        });
+    } else {
+        if (typeof RealtimeSync !== 'undefined') setupWebAppRealtime();
+    }
 }

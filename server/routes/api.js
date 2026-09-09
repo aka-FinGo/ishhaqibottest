@@ -17,6 +17,7 @@ const {
   tgSendMessage
 } = require('../telegram');
 const cfg = require('../config');
+const { broadcast } = require('../events');
 
 // Write actions requiring sequential processing (mirrors LockService logic)
 const WRITE_ACTIONS = new Set([
@@ -573,6 +574,7 @@ async function handleAdminEdit(body, tgId, auth) {
     String(auth.username || ''),
     id
   );
+  broadcast('records', 'edit', { rowId: id, telegramId: targetTgId, name: nameVal, status: statusVal });
   return { success: true };
 }
 
@@ -584,6 +586,7 @@ async function handleAdminDelete(body, tgId, auth) {
     UPDATE records SET is_deleted = 1, actor_tg_id = ?, actor_name = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(String(tgId), String(auth.username || ''), id);
+  broadcast('records', 'delete', { rowId: id });
   return { success: true };
 }
 
@@ -676,6 +679,14 @@ async function handleAdd(body, auth, tgId) {
     console.error('[Add Notification error]', notifErr.message);
   }
 
+  broadcast('records', 'add', {
+    rowId: Number(rowId),
+    telegramId: targetTgId,
+    name: displayName,
+    amountUZS,
+    status: initialStatus
+  });
+
   return { success: true, rowId: Number(rowId) };
 }
 
@@ -703,6 +714,9 @@ async function handleSelfEdit(body, tgId, auth) {
     String(body.actionPeriod ?? rec.action_period ?? ''),
     id, String(tgId)
   );
+
+  broadcast('records', 'edit', { rowId: id, telegramId: tgId });
+
   return { success: true };
 }
 
@@ -720,6 +734,9 @@ async function handleSelfDelete(body, tgId, auth) {
     UPDATE records SET is_deleted = 1, actor_tg_id = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND telegram_id = ?
   `).run(String(tgId), id, String(tgId));
+
+  broadcast('records', 'delete', { rowId: id, telegramId: tgId });
+
   return { success: true };
 }
 
@@ -800,6 +817,7 @@ async function handleAddHodim(body) {
       guruhStr,
       isSardorVal
     );
+    broadcast('employees', 'update', { telegramId: tgId, username, role });
     return { success: true };
   } catch (e) {
     return { success: false, error: String(e.message || e) };
@@ -815,6 +833,7 @@ async function handleDeleteHodim(targetTgId) {
   const cleanId = String(targetTgId !== undefined && targetTgId !== null ? targetTgId : '').trim();
   if (cleanId === '') return { success: false, error: "tgId topilmadi" };
   db.prepare('DELETE FROM employees WHERE telegram_id = ?').run(cleanId);
+  broadcast('employees', 'delete', { telegramId: cleanId });
   return { success: true };
 }
 
@@ -843,6 +862,7 @@ function setGlobalSettingHandler(key, val) {
     valStr = String(val ?? '');
   }
   setSetting(String(key), valStr);
+  broadcast('settings', 'update', { key: String(key), value: valStr });
   return { success: true };
 }
 
@@ -959,7 +979,9 @@ async function handleKvadratAdd(body, auth, actorTgId) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
   `).run(dateStr, orderNo, monthStr, yearStr, totalM2, orderName, staffName, String(actorTgId), initialStatus, initialLog);
 
-  return { success: true, rowId: Number(info.lastInsertRowid) };
+  const newRowId = Number(info.lastInsertRowid);
+  broadcast('kvadratlar', 'add', { rowId: newRowId, orderName, totalM2, staffName, status: initialStatus });
+  return { success: true, rowId: newRowId };
 }
 
 async function handleKvadratEdit(body, auth, actorTgId) {
@@ -990,6 +1012,7 @@ async function handleKvadratEdit(body, auth, actorTgId) {
     WHERE id = ?
   `).run(totalM2, orderNo, orderName, staffName, monthStr, yearStr, dateStr, statusStr, currentStep, rowId);
 
+  broadcast('kvadratlar', 'edit', { rowId, orderName, totalM2, staffName, status: statusStr });
   return { success: true };
 }
 
@@ -1006,6 +1029,7 @@ async function handleKvadratDelete(body, auth, actorTgId) {
   if (!canDelete) return { success: false, error: "Sizda buyurtmani o'chirish ruxsati yo'q!" };
 
   db.prepare('UPDATE kvadratlar SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(rowId);
+  broadcast('kvadratlar', 'delete', { rowId });
   return { success: true };
 }
 
@@ -1062,6 +1086,12 @@ async function handleKvadratClaim(body, auth, actorTgId) {
     rowId
   );
 
+  broadcast('kvadratlar', 'step_change', {
+    rowId,
+    currentStep: latestStep ? latestStep.step_index : existing.current_step,
+    status: latestStep ? latestStep.status_label : existing.status
+  });
+
   return { success: true };
 }
 
@@ -1099,6 +1129,12 @@ async function handleKvadratRevert(body, auth, actorTgId) {
     rowId
   );
 
+  broadcast('kvadratlar', 'step_change', {
+    rowId,
+    currentStep: latestStep ? latestStep.step_index : 1,
+    status: latestStep ? latestStep.status_label : 'yangi'
+  });
+
   return { success: true };
 }
 
@@ -1130,6 +1166,7 @@ async function handleForceReassignStep(body, auth) {
   logs.sort((a, b) => Number(a.step) - Number(b.step));
 
   db.prepare('UPDATE kvadratlar SET workflow_logs = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(JSON.stringify(logs), rowId);
+  broadcast('kvadratlar', 'step_change', { rowId, stepIndex: stepIdx, staffName: body.staffName });
   return { success: true };
 }
 
@@ -1173,6 +1210,7 @@ async function handleWorkflowSaveConfig(steps, auth) {
     );
   });
 
+  broadcast('workflow', 'update');
   return { success: true };
 }
 
@@ -1181,6 +1219,7 @@ async function handleWorkflowSaveSettings(body, auth) {
   const { setSetting } = require('../db');
   const isStrict = body.isWorkflowStrict === true || body.isWorkflowStrict === 'true';
   setSetting('WORKFLOW_STRICT_MODE', isStrict ? '1' : '0');
+  broadcast('workflow', 'update');
   return { success: true };
 }
 
@@ -1209,6 +1248,7 @@ async function handlePositionsSaveAll(positions, auth) {
     }
   });
 
+  broadcast('positions', 'update');
   return { success: true };
 }
 

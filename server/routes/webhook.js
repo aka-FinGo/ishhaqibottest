@@ -9,6 +9,7 @@ const router = require('express').Router();
 const cfg    = require('../config');
 const { checkUserRoles }        = require('../auth');
 const { db, addErrorLog, getEmployee } = require('../db');
+const { broadcast } = require('../events');
 
 // ── Telegram API helper ───────────────────────────────────────
 async function tgCall(method, params) {
@@ -193,6 +194,15 @@ async function handleCallbackQuery(query) {
     SET status = ?, actor_tg_id = ?, actor_name = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(newStatus, actorTgId, actorName, rowId);
+
+  // Realtime Broadcast to WebApp and GSheet Jadval
+  broadcast('records', 'status_change', {
+    rowId,
+    status: newStatus,
+    actorName,
+    actorTgId,
+    telegramId: rec.telegram_id
+  });
 
   await _editConfirmMessage(chatId, messageId, query.message, isConfirm, actorName);
 }

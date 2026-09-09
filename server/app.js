@@ -17,6 +17,10 @@ app.use(express.static(ROOT_DIR, { dotfiles: 'ignore' }));
 // ── Raw body parser ───────────────────────────────────────────
 // Mirrors GAS behaviour: no Content-Type header required
 app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    req.body = {};
+    return next();
+  }
   let data = '';
   req.on('data', chunk => { data += chunk; });
   req.on('end', () => {
@@ -32,6 +36,10 @@ app.use((req, res, next) => {
 
 // ── CORS — allow GitHub Pages + Telegram WebApp ───────────────
 app.use(cors({ origin: '*' }));
+
+// ── Realtime SSE endpoint (GET /api/events) ───────────────────
+const { handleSSEConnection } = require('./events');
+app.get('/api/events', handleSSEConnection);
 
 // ── Health check (GET /api) ───────────────────────────────────
 app.get('/api', (_req, res) => {

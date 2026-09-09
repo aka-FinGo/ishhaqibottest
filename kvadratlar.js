@@ -874,6 +874,9 @@ async function saveKv() {
         });
         window._kvEditReason = '';
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('kvadratlar', action, { rowId });
+            }
             showToastMsg('✅ Saqlandi');
             closeKvModal();
             initKvadratTab();
@@ -905,6 +908,9 @@ async function deleteKv(rowId) {
     try {
         const data = await apiRequest({ action: 'kvadrat_delete', rowId, reason });
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('kvadratlar', 'delete', { rowId });
+            }
             kvHideProc(true, 'O\'chirildi');
             initKvadratTab();
         } else {
@@ -947,6 +953,9 @@ async function claimKvWork(rowId, targetStepIndex = null) {
     try {
         const data = await apiRequest({ action: 'kvadrat_claim', rowId, targetStepIndex });
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('kvadratlar', 'claim', { rowId, targetStepIndex });
+            }
             kvHideProc(true, 'Bajarildi!');
             initKvadratTab();
             try { createUndoToast(rowId, 15 * 60); } catch (e) { /* ignore */ }
@@ -1042,6 +1051,9 @@ async function performForceReassign(rowId) {
             reason
         });
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('kvadratlar', 'reassign', { rowId });
+            }
             kvHideProc(true, 'Qayta tayinlandi!');
             document.querySelector('.modal-overlay')?.remove();
             initKvadratTab();
@@ -1061,6 +1073,9 @@ async function revertKv(rowId, targetStepIndex = null) {
     try {
         const data = await apiRequest({ action: 'kvadrat_revert', rowId, targetStepIndex, reason });
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('kvadratlar', 'revert', { rowId });
+            }
             kvHideProc(true, 'Bekor qilindi');
             clearUndoToast(rowId);
             initKvadratTab();
@@ -1077,6 +1092,9 @@ async function revertKvQuick(rowId) {
     try {
         const data = await apiRequest({ action: 'kvadrat_revert', rowId, reason: 'undo_quick' });
         if (data.success) {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('kvadratlar', 'revert', { rowId });
+            }
             kvHideProc(true, 'Bekor qilindi');
             clearUndoToast(rowId);
             initKvadratTab();

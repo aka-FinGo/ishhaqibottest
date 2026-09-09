@@ -278,6 +278,9 @@ async function saveEdit(){
             showToastMsg('❌ ' + (data.error || 'Saqlashda xato'), true);
             return;
         }
+        if (typeof RealtimeSync !== 'undefined') {
+            RealtimeSync.notifyLocalChange('records', 'edit', { rowId });
+        }
         if (currentEditScope === 'self') {
             const rec = findRecordByRowId(rowId);
             if (rec) {
@@ -337,6 +340,9 @@ async function deleteRecord(rowId) {
         if (!data.success) {
             showToastMsg('❌ ' + (data.error || "O'chirishda xato"), true);
         } else {
+            if (typeof RealtimeSync !== 'undefined') {
+                RealtimeSync.notifyLocalChange('records', 'delete', { rowId });
+            }
             showToastMsg("✅ O'chirildi");
         }
     } catch {
@@ -374,6 +380,9 @@ async function deleteOwnRecord(rowId) {
         if (!data.success) {
             showToastMsg('❌ ' + (data.error || "O'chirishda xato"), true);
             return;
+        }
+        if (typeof RealtimeSync !== 'undefined') {
+            RealtimeSync.notifyLocalChange('records', 'delete', { rowId });
         }
         myFullRecords = myFullRecords.filter(function (r) {
             return String(r.rowId) !== String(rowId);

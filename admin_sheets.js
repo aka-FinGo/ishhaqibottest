@@ -52,11 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
         initAuth();
         initTheme();
         setupEventListeners();
+        setupRealtimeListeners();
         loadAllData();
     } else {
         // index.html ichida embed rejimida: event listenerlarni tayyorlash
         initTheme();
         setupEventListeners();
+        setupRealtimeListeners();
     }
 });
 
@@ -278,6 +280,144 @@ async function loadAllData() {
     } finally {
         setSyncIndicator(false);
     }
+}
+
+// ── Realtime Sinxronizatsiya Tinglovchisi ────────────────────
+function setupRealtimeListeners() {
+    if (typeof RealtimeSync === 'undefined') return;
+
+    const refreshRecords = RealtimeSync.debounce(async () => {
+        if (SheetsApp.editingCell) return;
+        try {
+            const recRes = await apiRequest('admin_get_all');
+            if (recRes && recRes.success) {
+                SheetsApp.data.records = (recRes.data || []).map(r => ({
+                    id: r.rowId || r.id,
+                    rowId: r.rowId || r.id,
+                    name: r.name || '',
+                    telegram_id: String(r.telegram_id || r.telegramId || ''),
+                    telegramId: String(r.telegram_id || r.telegramId || ''),
+                    amount_uzs: Number(r.amount_uzs ?? r.amountUZS ?? 0),
+                    amountUZS: Number(r.amount_uzs ?? r.amountUZS ?? 0),
+                    amount_usd: Number(r.amount_usd ?? r.amountUSD ?? 0),
+                    amountUSD: Number(r.amount_usd ?? r.amountUSD ?? 0),
+                    rate: Number(r.rate || 0),
+                    comment: r.comment || '',
+                    date: r.date || '',
+                    action_period: r.action_period || r.actionPeriod || '',
+                    actionPeriod: r.action_period || r.actionPeriod || '',
+                    status: r.status || 'Tasdiqlandi',
+                    actor_name: r.actor_name || r.actorName || '',
+                    actorName: r.actor_name || r.actorName || ''
+                }));
+                updateTabBadges();
+                if (SheetsApp.activeTab === 'dataSheet') {
+                    const container = document.querySelector('.gs-table-container');
+                    const sLeft = container ? container.scrollLeft : 0;
+                    const sTop = container ? container.scrollTop : 0;
+                    renderDataSheetTable();
+                    if (container) {
+                        container.scrollLeft = sLeft;
+                        container.scrollTop = sTop;
+                    }
+                }
+                showStatus('🟢 Jonli yangilandi (Realtime)');
+            }
+        } catch (e) {
+            console.warn('[Realtime refresh error]', e);
+        }
+    }, 300);
+
+    const refreshKvadratlar = RealtimeSync.debounce(async () => {
+        if (SheetsApp.editingCell) return;
+        try {
+            const kvRes = await apiRequest('kvadrat_get_all');
+            if (kvRes && kvRes.success) {
+                SheetsApp.data.kvadratlar = (kvRes.data || []).map(k => ({
+                    id: k.rowId || k.id,
+                    rowId: k.rowId || k.id,
+                    date: k.date || k.sana || '',
+                    sana: k.date || k.sana || '',
+                    no: k.no || k.order_no || String(k.rowId || k.id || ''),
+                    order_no: k.no || k.order_no || String(k.rowId || k.id || ''),
+                    orderName: k.orderName || k.order_name || '',
+                    order_name: k.orderName || k.order_name || '',
+                    totalM2: Number(k.totalM2 ?? k.total_m2 ?? 0),
+                    total_m2: Number(k.totalM2 ?? k.total_m2 ?? 0),
+                    month: String(k.month || k.oy || ''),
+                    oy: String(k.month || k.oy || ''),
+                    year: String(k.year || k.yil || ''),
+                    yil: String(k.year || k.yil || ''),
+                    ownerTgId: String(k.ownerTgId || k.owner_tg_id || ''),
+                    owner_tg_id: String(k.ownerTgId || k.owner_tg_id || ''),
+                    staffName: k.staffName || k.staff_name || '',
+                    staff_name: k.staffName || k.staff_name || '',
+                    currentStep: Number(k.currentStep ?? k.current_step ?? 1),
+                    current_step: Number(k.currentStep ?? k.current_step ?? 1),
+                    status: k.status || 'yangi',
+                    logs: k.logs || []
+                }));
+                updateTabBadges();
+                if (SheetsApp.activeTab === 'Kvadratlar') {
+                    const container = document.querySelector('.gs-table-container');
+                    const sLeft = container ? container.scrollLeft : 0;
+                    const sTop = container ? container.scrollTop : 0;
+                    renderKvadratlarTable();
+                    if (container) {
+                        container.scrollLeft = sLeft;
+                        container.scrollTop = sTop;
+                    }
+                }
+                showStatus('🟢 Jonli yangilandi (Realtime)');
+            }
+        } catch (e) {}
+    }, 300);
+
+    const refreshEmployees = RealtimeSync.debounce(async () => {
+        if (SheetsApp.editingCell) return;
+        try {
+            const empRes = await apiRequest('get_hodimlar');
+            if (empRes && empRes.success) {
+                SheetsApp.data.employees = empRes.data || [];
+                updateTabBadges();
+                if (SheetsApp.activeTab === 'Hodimlar') {
+                    renderHodimlarTable();
+                }
+                showStatus('🟢 Jonli yangilandi (Realtime)');
+            }
+        } catch (e) {}
+    }, 300);
+
+    const refreshSettings = RealtimeSync.debounce(async () => {
+        if (SheetsApp.editingCell) return;
+        try {
+            const setRes = await apiRequest('get_global_settings');
+            if (setRes && setRes.success) {
+                if (Array.isArray(setRes.settings?.allList)) {
+                    SheetsApp.data.settings = setRes.settings.allList;
+                }
+                if (SheetsApp.activeTab === 'Sozlamalar' || SheetsApp.activeTab === 'AI_Providers') {
+                    renderActiveTable();
+                }
+                showStatus('🟢 Jonli yangilandi (Realtime)');
+            }
+        } catch (e) {}
+    }, 300);
+
+    RealtimeSync.on('records', refreshRecords);
+    RealtimeSync.on('kvadratlar', refreshKvadratlar);
+    RealtimeSync.on('employees', refreshEmployees);
+    RealtimeSync.on('settings', refreshSettings);
+    RealtimeSync.on('workflow', refreshKvadratlar);
+    RealtimeSync.on('positions', refreshKvadratlar);
+
+    RealtimeSync.onStatusChange((connected) => {
+        if (connected) {
+            showStatus('🟢 Realtime: Jonli ulangan');
+        } else {
+            showStatus('🟡 Qayta ulanmoqda...');
+        }
+    });
 }
 
 // ── Tab Badges (Hisoblagichlar) ─────────────────────────────
@@ -1374,6 +1514,12 @@ async function commitCellEdit(td) {
         }
         showToast(`Saqlandi ✅ (${colName}: ${newVal})`);
         showStatus('SQLite WAL Baza: Sinxronlangan');
+        if (typeof RealtimeSync !== 'undefined') {
+            const tbl = SheetsApp.activeTab === 'dataSheet' ? 'records' :
+                        SheetsApp.activeTab === 'Kvadratlar' ? 'kvadratlar' :
+                        SheetsApp.activeTab === 'Hodimlar' ? 'employees' : 'settings';
+            RealtimeSync.notifyLocalChange(tbl, 'edit', { rowId, colName, newVal });
+        }
     } else {
         renderActiveTable();
         const updatedRow = document.querySelector(`[data-row-id="${rowId}"], [data-emp-id="${rowId}"], [data-setting-key="${rowId}"]`);
@@ -1486,6 +1632,9 @@ async function deleteRecordPrompt(id, name) {
         if (typeof AppCache !== 'undefined' && AppCache.KEYS?.RECORDS) {
             AppCache.set(AppCache.KEYS.RECORDS, SheetsApp.data.records);
         }
+        if (typeof RealtimeSync !== 'undefined') {
+            RealtimeSync.notifyLocalChange('records', 'delete', { rowId: numId });
+        }
     } else {
         showToast(`Xatolik: ${res.error || 'O\'chirib bo\'lmadi'} ❌`, true);
     }
@@ -1515,6 +1664,9 @@ async function deleteKvadratPrompt(id, orderName) {
         if (typeof AppCache !== 'undefined' && AppCache.KEYS?.KV_RECORDS) {
             AppCache.set(AppCache.KEYS.KV_RECORDS, SheetsApp.data.kvadratlar);
         }
+        if (typeof RealtimeSync !== 'undefined') {
+            RealtimeSync.notifyLocalChange('kvadratlar', 'delete', { rowId: numId });
+        }
     } else {
         showToast(`Xatolik: ${res.error || 'O\'chirib bo\'lmadi'} ❌`, true);
     }
@@ -1536,6 +1688,9 @@ async function deleteHodimPrompt(tgId, username) {
         renderActiveTable();
         showToast(`Xodim o'chirildi ✅`);
         showStatus('SQLite WAL Baza: Sinxronlangan');
+        if (typeof RealtimeSync !== 'undefined') {
+            RealtimeSync.notifyLocalChange('employees', 'delete', { tgId: cleanId });
+        }
     } else {
         showToast(`Xatolik: ${res.error || 'O\'chirib bo\'lmadi'} ❌`, true);
     }
@@ -2020,6 +2175,7 @@ async function submitAddRecord(e) {
 
     if (res && res.success) {
         showToast('Yangi moliyaviy yozuv SQLite bazasida saqlandi ✅');
+        if (typeof RealtimeSync !== 'undefined') RealtimeSync.notifyLocalChange('records', 'add', { rowId: res.rowId });
         loadAllData();
     } else {
         showToast(`Xatolik: ${res.error || 'Qo\'shib bo\'lmadi'} ❌`, true);
@@ -2060,6 +2216,7 @@ async function submitAddKvadrat(e) {
 
     if (res && res.success) {
         showToast('Yangi buyurtma SQLite bazasida saqlandi ✅');
+        if (typeof RealtimeSync !== 'undefined') RealtimeSync.notifyLocalChange('kvadratlar', 'add', { rowId: res.rowId });
         loadAllData();
     } else {
         showToast(`Xatolik: ${res.error || 'Qo\'shib bo\'lmadi'} ❌`, true);
@@ -2098,6 +2255,7 @@ async function submitAddHodim(e) {
 
     if (res && res.success) {
         showToast('Yangi xodim SQLite bazasida saqlandi ✅');
+        if (typeof RealtimeSync !== 'undefined') RealtimeSync.notifyLocalChange('employees', 'add', { tgId });
         loadAllData();
     } else {
         showToast(`Xatolik: ${res.error || 'Qo\'shib bo\'lmadi'} ❌`, true);
