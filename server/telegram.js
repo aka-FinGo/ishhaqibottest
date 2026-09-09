@@ -50,15 +50,13 @@ async function sendNotifyToDirectors(msg) {
 function appendTrackedMessages(db, rowId, newTracks) {
   if (!rowId || !newTracks || !newTracks.length) return;
   try {
-    const key = 'trk_sal_' + rowId;
-    const existingJson = db.getCacheValue ? db.getCacheValue(key) : null;
-    let list = [];
-    if (existingJson) { try { list = JSON.parse(existingJson); } catch (e) {} }
     for (const item of newTracks) {
-      const exists = list.some(l => String(l.chatId) === String(item.chatId) && l.messageId === item.messageId);
-      if (!exists) list.push(item);
+      if (item && item.chatId && item.messageId) {
+        if (db && db.saveTrackedMessage) {
+          db.saveTrackedMessage(rowId, item.chatId, item.messageId, item.baseText || '');
+        }
+      }
     }
-    if (db.setCacheValue) db.setCacheValue(key, JSON.stringify(list), 21600);
   } catch (err) { console.error('[appendTrackedMessages]', err.message); }
 }
 
@@ -218,4 +216,77 @@ async function sendAvansRequestNotification(username, amount, reason) {
   } catch (e) { console.error('[sendAvansRequestNotification]', e.message); }
 }
 
-module.exports = { tgSendMessage, sendTelegramNotification, sendApprovalRequest, sendApprovalToBugalters, sendExcelToUser, answerCallbackQuery, editMessageText, editMessageReplyMarkup, sendSystemAlert, sendSalaryReminderToUser, sendAvansRequestNotification, appendTrackedMessages };
+async function syncRecordStatusInTelegram(recordId, newStatus, actorName = 'Admin', actorTgId = '') {
+  if (!recordId) return;
+  const db = require('./db');
+  const tracks = db.getTrackedMessages ? db.getTrackedMessages(recordId) : [];
+  if (!tracks || !tracks.length) return;
+
+  const isConfirm = (newStatus === 'Tasdiqlandi');
+  const isReject  = (newStatus === 'Rad etildi');
+  const isDelete  = (newStatus === "O'chirildi" || newStatus === "O`chirildi");
+
+  for (const item of tracks) {
+    try {
+      const isOwnChat = (actorTgId && String(item.chat_id) === String(actorTgId));
+      let statusLine = '';
+      if (isConfirm) {
+        statusLine = isOwnChat
+          ? '\n\n✅ <b>Siz tomoningizdan tasdiqlandi</b>'
+          : `\n\n✅ <b>${actorName} tomonidan tasdiqlandi</b>`;
+      } else if (isReject) {
+        statusLine = isOwnChat
+          ? '\n\n❌ <b>Siz tomoningizdan rad etildi</b>'
+          : `\n\n❌ <b>${actorName} tomonidan rad etildi</b>`;
+      } else if (isDelete) {
+        statusLine = isOwnChat
+          ? '\n\n🗑 <b>Siz tomoningizdan o\'chirildi</b>'
+          : `\n\n🗑 <b>${actorName} tomonidan o'chirildi</b>`;
+      } else {
+        statusLine = `\n\nℹ️ <b>Holati: ${newStatus} (${actorName})</b>`;
+      }
+
+      let cleanBaseText = String(item.base_text || '')
+        .replace(/\n⏳\s*<i>Holati:\s*Kutilmoqda\.\.\.<\/i>/gi, '')
+        .replace(/\n⏳\s*Holati:\s*Kutilmoqda\.\.\./gi, '')
+        .replace(/\n\n✅\s*<b>.*?<\/b>/gi, '')
+        .replace(/\n\n❌\s*<b>.*?<\/b>/gi, '')
+        .replace(/\n\n🗑\s*<b>.*?<\/b>/gi, '')
+        .replace(/\n\nℹ️\s*<b>.*?<\/b>/gi, '')
+        .replace(/\. Iltimos, tasdiqlang yoki rad eting:/gi, ':')
+        .replace(/Iltimos, tasdiqlang yoki rad eting:/gi, '');
+
+      if (cleanBaseText.startsWith('⚠️')) {
+        const firstLineEnd = cleanBaseText.indexOf('\n');
+        if (firstLineEnd > 0) {
+          const firstLine = cleanBaseText.substring(0, firstLineEnd);
+          const restOfMsg = cleanBaseText.substring(firstLineEnd);
+          const headerPure = firstLine.replace('⚠️', '').replace(/<\/?b>/gi, '').trim();
+          cleanBaseText = `⚠️ <b>${headerPure}</b>${restOfMsg}`;
+        }
+      }
+
+      const finalMsg = cleanBaseText ? (cleanBaseText + statusLine).trim() : statusLine.trim();
+
+      await editMessageText(item.chat_id, item.message_id, finalMsg, 'HTML', { inline_keyboard: [] });
+    } catch (e) {
+      console.warn(`[syncRecordStatusInTelegram] chat ${item.chat_id} msg ${item.message_id} edit failed:`, e.message);
+    }
+  }
+}
+
+module.exports = {
+  tgSendMessage,
+  sendTelegramNotification,
+  sendApprovalRequest,
+  sendApprovalToBugalters,
+  sendExcelToUser,
+  answerCallbackQuery,
+  editMessageText,
+  editMessageReplyMarkup,
+  sendSystemAlert,
+  sendSalaryReminderToUser,
+  sendAvansRequestNotification,
+  appendTrackedMessages,
+  syncRecordStatusInTelegram
+};

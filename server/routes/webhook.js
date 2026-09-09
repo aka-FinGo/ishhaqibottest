@@ -184,6 +184,8 @@ async function handleCallbackQuery(query) {
   // Already processed?
   if (rec.status === 'Tasdiqlandi' || rec.status === 'Rad etildi') {
     // Just edit message text to reflect final status
+    const { syncRecordStatusInTelegram } = require('../telegram');
+    await syncRecordStatusInTelegram(rowId, rec.status, actorName, actorTgId);
     await _editConfirmMessage(chatId, messageId, query.message, rec.status === 'Tasdiqlandi', actorName);
     return;
   }
@@ -203,6 +205,10 @@ async function handleCallbackQuery(query) {
     actorTgId,
     telegramId: rec.telegram_id
   });
+
+  // Synchronize status in all tracked Telegram chats (channel, bugalter, employee, director)
+  const { syncRecordStatusInTelegram } = require('../telegram');
+  await syncRecordStatusInTelegram(rowId, newStatus, actorName, actorTgId);
 
   await _editConfirmMessage(chatId, messageId, query.message, isConfirm, actorName);
 }

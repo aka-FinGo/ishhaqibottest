@@ -575,6 +575,10 @@ async function handleAdminEdit(body, tgId, auth) {
     id
   );
   broadcast('records', 'edit', { rowId: id, telegramId: targetTgId, name: nameVal, status: statusVal });
+  if (statusVal !== rec.status) {
+    const { syncRecordStatusInTelegram } = require('../telegram');
+    syncRecordStatusInTelegram(id, statusVal, String(auth.username || 'Admin'), String(tgId)).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
+  }
   return { success: true };
 }
 
@@ -587,6 +591,8 @@ async function handleAdminDelete(body, tgId, auth) {
     WHERE id = ?
   `).run(String(tgId), String(auth.username || ''), id);
   broadcast('records', 'delete', { rowId: id });
+  const { syncRecordStatusInTelegram } = require('../telegram');
+  syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Admin'), String(tgId)).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
   return { success: true };
 }
 
@@ -736,6 +742,8 @@ async function handleSelfDelete(body, tgId, auth) {
   `).run(String(tgId), id, String(tgId));
 
   broadcast('records', 'delete', { rowId: id, telegramId: tgId });
+  const { syncRecordStatusInTelegram } = require('../telegram');
+  syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Xodim'), String(tgId)).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
 
   return { success: true };
 }

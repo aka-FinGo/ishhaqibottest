@@ -326,6 +326,7 @@ async function initializeApp() {
             if (data.autoAdded) showToastMsg("✅ Siz ro'yxatga qo'shildingiz. Ruxsat uchun admin bilan bog'laning.");
             if (typeof initMyFilters === 'function') initMyFilters();
             if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+            if (typeof populateAddEmployeeDropdown === 'function') populateAddEmployeeDropdown(true);
             _appInitialized = true; _appInitRetries = 0;
             if (typeof updateModuleIframe === 'function') updateModuleIframe();
             startBackgroundSync();
@@ -793,12 +794,12 @@ function switchDashboardSub(areaId, btn) {
     if (areaId === 'dashboardChartsArea') loadDashboard();
 }
 
-function populateAddEmployeeDropdown() {
+function populateAddEmployeeDropdown(force = false) {
     const addSel = document.getElementById('addSelectedTgId');
     if (!addSel) return;
     if (myRole === 'Bugalter' || myRole === 'SuperAdmin' || myRole === 'Admin') {
         const currentVal = addSel.value;
-        if (addSel.options.length <= 1) {
+        if (force || addSel.options.length <= 1) {
             addSel.innerHTML = '<option value="">O\'zim uchun</option>';
             globalEmployeeList.forEach(e => {
                 if (String(e.tgId) !== String(telegramId)) {
@@ -808,8 +809,8 @@ function populateAddEmployeeDropdown() {
                     addSel.insertAdjacentHTML('beforeend', `<option value="${e.tgId}" data-emp-name="${escapeHtml(empName)}">${label}</option>`);
                 }
             });
+            if (currentVal) addSel.value = currentVal;
         }
-        addSel.value = currentVal;
     }
 }
 
@@ -1186,7 +1187,7 @@ function setupWebAppRealtime() {
                 window._kvEmpMap = {};
                 globalEmployeeList.forEach(e => { if (e.tgId) window._kvEmpMap[e.tgId] = e.username || ''; });
                 if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
-                if (typeof populateAddEmployeeDropdown === 'function') populateAddEmployeeDropdown();
+                if (typeof populateAddEmployeeDropdown === 'function') populateAddEmployeeDropdown(true);
                 if (typeof populateEmployeeFilter === 'function') populateEmployeeFilter();
             }
         } catch (e) {

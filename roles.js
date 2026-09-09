@@ -28,8 +28,8 @@ function normalizeRoleKey(val) {
     if (r === 'DIRECTOR' || r === 'DIREKTOR') return 'DIRECTOR';
     if (r === 'ADMIN') return 'ADMIN';
     if (r === 'BUGALTER' || r === 'ACCOUNTANT') return 'BUGALTER';
-    if (r === 'PENDING') return 'PENDING';
-    if (r === 'EMPLOYEE' || r === 'USER') return 'EMPLOYEE';
+    if (r === 'PENDING' || r === 'KUTILMOQDA') return 'PENDING';
+    if (r === 'EMPLOYEE' || r === 'USER' || r === 'XODIM') return 'EMPLOYEE';
     return 'EMPLOYEE';
 }
 

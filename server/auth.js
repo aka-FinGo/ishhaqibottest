@@ -231,8 +231,8 @@ function normalizeRole(value, rowForFallback) {
   if (raw === 'DIRECTOR'    || raw === 'DIREKTOR')   return 'DIRECTOR';
   if (raw === 'ADMIN')                               return 'ADMIN';
   if (raw === 'BUGALTER'    || raw === 'ACCOUNTANT') return 'BUGALTER';
-  if (raw === 'PENDING')                             return 'PENDING';
-  if (raw === 'EMPLOYEE'    || raw === 'USER')       return 'EMPLOYEE';
+  if (raw === 'PENDING'     || raw === 'KUTILMOQDA') return 'PENDING';
+  if (raw === 'EMPLOYEE'    || raw === 'USER' || raw === 'XODIM') return 'EMPLOYEE';
   // Legacy fallback: derive from boolean columns
   if (rowForFallback) return _deriveLegacyRole(rowForFallback);
   return 'EMPLOYEE';

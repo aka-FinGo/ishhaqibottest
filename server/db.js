@@ -161,6 +161,17 @@ CREATE TABLE IF NOT EXISTS pending_approvals (
     status           TEXT DEFAULT 'pending',
     created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- tracked_messages table (for syncing message status across all Telegram chats)
+CREATE TABLE IF NOT EXISTS tracked_messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    record_id   INTEGER NOT NULL,
+    chat_id     TEXT NOT NULL,
+    message_id  TEXT NOT NULL,
+    base_text   TEXT,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_trk_rec ON tracked_messages(record_id);
 `);
 
 // ── Seed default workflow steps if empty ─────────────────────
@@ -384,6 +395,38 @@ function checkRateLimit(tgId, action, maxPerWindow = 60, windowSec = 60) {
   }
 }
 
+/**
+ * Tracked messages helpers for syncing Telegram message statuses
+ */
+function saveTrackedMessage(recordId, chatId, messageId, baseText) {
+  try {
+    if (!recordId || !chatId || !messageId) return;
+    db.prepare(`
+      INSERT INTO tracked_messages (record_id, chat_id, message_id, base_text)
+      VALUES (?, ?, ?, ?)
+    `).run(Number(recordId), String(chatId), String(messageId), String(baseText || ''));
+  } catch (err) {
+    console.error('[saveTrackedMessage error]', err.message);
+  }
+}
+
+function getTrackedMessages(recordId) {
+  try {
+    return db.prepare('SELECT chat_id, message_id, base_text FROM tracked_messages WHERE record_id = ?').all(Number(recordId));
+  } catch (err) {
+    console.error('[getTrackedMessages error]', err.message);
+    return [];
+  }
+}
+
+function deleteTrackedMessages(recordId) {
+  try {
+    db.prepare('DELETE FROM tracked_messages WHERE record_id = ?').run(Number(recordId));
+  } catch (err) {
+    console.error('[deleteTrackedMessages error]', err.message);
+  }
+}
+
 // ── Internal helpers ─────────────────────────────────────────
 
 function _normalizeRole(value) {
@@ -392,8 +435,8 @@ function _normalizeRole(value) {
   if (raw === 'DIRECTOR'    || raw === 'DIREKTOR')   return 'DIRECTOR';
   if (raw === 'ADMIN')                               return 'ADMIN';
   if (raw === 'BUGALTER'    || raw === 'ACCOUNTANT') return 'BUGALTER';
-  if (raw === 'PENDING')                             return 'PENDING';
-  if (raw === 'EMPLOYEE'    || raw === 'USER')       return 'EMPLOYEE';
+  if (raw === 'PENDING'     || raw === 'KUTILMOQDA') return 'PENDING';
+  if (raw === 'EMPLOYEE'    || raw === 'USER' || raw === 'XODIM') return 'EMPLOYEE';
   return 'EMPLOYEE';
 }
 
@@ -414,5 +457,8 @@ module.exports = {
   getSetting,
   setSetting,
   addErrorLog,
-  checkRateLimit
+  checkRateLimit,
+  saveTrackedMessage,
+  getTrackedMessages,
+  deleteTrackedMessages
 };
