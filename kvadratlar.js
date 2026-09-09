@@ -74,17 +74,19 @@ function populateKvadratMeta(staffList) {
             if (Array.isArray(rec.logs)) {
                 rec.logs.forEach(log => {
                     if (!log || !log.uid) return;
-                    // Agar log uid ownerTgId bilan bir xil bo'lsa, staffName ni olamiz
-                    if (String(log.uid) === String(rec.ownerTgId)) {
-                        if (rec.staffName) involvedEmployees.add(rec.staffName);
+                    if (log.u && String(log.u).trim() && !String(log.u).startsWith('ID:')) {
+                        involvedEmployees.add(String(log.u).trim());
                         return;
                     }
-                    // Aks holda globalEmployeeList dan izlaymiz
+                    if (String(log.uid) === String(rec.ownerTgId)) {
+                        if (rec.staffName && !String(rec.staffName).startsWith('ID:')) involvedEmployees.add(rec.staffName);
+                        return;
+                    }
                     if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                        const emp = globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid));
                         if (emp) {
                             const name = emp.username || emp.firstName || '';
-                            if (name) involvedEmployees.add(name);
+                            if (name && !String(name).startsWith('ID:')) involvedEmployees.add(name);
                         }
                     }
                 });
@@ -569,12 +571,13 @@ function applySearchToRecord(rec, query) {
     if (Array.isArray(rec.logs)) {
         const logNames = rec.logs.map(log => {
             if (!log || !log.uid) return '';
-            if (String(log.uid) === String(rec.ownerTgId)) return rec.staffName || '';
-            if (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)]) {
+            if (log.u && String(log.u).trim() && !String(log.u).startsWith('ID:')) return String(log.u).trim();
+            if (String(log.uid) === String(rec.ownerTgId) && rec.staffName && !String(rec.staffName).startsWith('ID:')) return rec.staffName;
+            if (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)] && !String(window._kvEmpMap[String(log.uid)]).startsWith('ID:')) {
                 return window._kvEmpMap[String(log.uid)];
             }
             if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-                const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                const emp = globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid));
                 if (emp) return emp.username || emp.firstName || '';
             }
             return String(log.uid || '');
@@ -597,15 +600,19 @@ function updateStaffFilterByProcess(selectedProcess) {
                 if (Array.isArray(rec.logs)) {
                     rec.logs.forEach(log => {
                         if (!log || !log.uid) return;
+                        if (log.u && String(log.u).trim() && !String(log.u).startsWith('ID:')) {
+                            allEmployees.add(String(log.u).trim());
+                            return;
+                        }
                         if (String(log.uid) === String(rec.ownerTgId)) {
-                            if (rec.staffName) allEmployees.add(rec.staffName);
+                            if (rec.staffName && !String(rec.staffName).startsWith('ID:')) allEmployees.add(rec.staffName);
                             return;
                         }
                         if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-                            const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                            const emp = globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid));
                             if (emp) {
                                 const name = emp.username || emp.firstName || '';
-                                if (name) allEmployees.add(name);
+                                if (name && !String(name).startsWith('ID:')) allEmployees.add(name);
                             }
                         }
                     });
@@ -647,17 +654,19 @@ function updateStaffFilterByProcess(selectedProcess) {
             if (Array.isArray(rec.logs)) {
                 rec.logs.forEach(log => {
                     if (!log || !log.uid) return;
-                    // Agar log uid ownerTgId bilan bir xil bo'lsa, staffName ni olamiz
-                    if (String(log.uid) === String(rec.ownerTgId)) {
-                        if (rec.staffName) involvedEmployees.add(rec.staffName);
+                    if (log.u && String(log.u).trim() && !String(log.u).startsWith('ID:')) {
+                        involvedEmployees.add(String(log.u).trim());
                         return;
                     }
-                    // Aks holda globalEmployeeList dan izlaymiz
+                    if (String(log.uid) === String(rec.ownerTgId)) {
+                        if (rec.staffName && !String(rec.staffName).startsWith('ID:')) involvedEmployees.add(rec.staffName);
+                        return;
+                    }
                     if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                        const emp = globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid));
                         if (emp) {
                             const name = emp.username || emp.firstName || '';
-                            if (name) involvedEmployees.add(name);
+                            if (name && !String(name).startsWith('ID:')) involvedEmployees.add(name);
                         }
                     }
                 });
@@ -730,10 +739,12 @@ function applyKvFilters() {
             if (!staffMatch && Array.isArray(rec.logs)) {
                 const logNames = rec.logs.map(function (log) {
                     if (!log || !log.uid) return '';
-                    if (String(log.uid) === String(rec.ownerTgId)) return rec.staffName;
+                    if (log.u && String(log.u).trim() && !String(log.u).startsWith('ID:')) return String(log.u).trim();
+                    if (String(log.uid) === String(rec.ownerTgId) && rec.staffName && !String(rec.staffName).startsWith('ID:')) return rec.staffName;
                     let mapped = (typeof window._kvEmpMap !== 'undefined' && window._kvEmpMap[String(log.uid)]) || '';
+                    if (mapped && String(mapped).startsWith('ID:')) mapped = '';
                     if (!mapped && typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-                        const emp = globalEmployeeList.find(e => String(e.tgId) === String(log.uid));
+                        const emp = globalEmployeeList.find(e => String(e.tgId || e.id) === String(log.uid));
                         if (emp) mapped = emp.username || emp.firstName || '';
                     }
                     return mapped || String(log.uid);

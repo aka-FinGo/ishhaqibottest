@@ -9,6 +9,7 @@ const AppCache = {
         ADMIN_DATA: 'ari_admin_data',
         USER_DATA: 'ari_user_meta',
         KV_RECORDS: 'ari_kv_recs',
+        EMPLOYEES: 'ari_employees',
         DATA_VERSIONS: 'ari_data_versions'  // Har jadval uchun server timestamp
     },
 

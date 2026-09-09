@@ -150,14 +150,16 @@ router.post('/', async (req, res) => {
         const uLavozim = formData.position || formData.lavozim || '';
         const uGuruh = formData.guruh || formData.group || '';
         const uIsSardor = formData.isSardor ? 1 : 0;
-        result = await handleAddHodim({
+        const payload = {
           tgId: targetId,
           username: uName,
           role: uRole,
           lavozim: uLavozim,
           guruh: uGuruh,
           isSardor: uIsSardor
-        });
+        };
+        const existing = getEmployee(targetId);
+        result = existing ? await handleUpdateHodim(payload) : await handleAddHodim(payload);
         break;
       }
 
@@ -387,6 +389,27 @@ async function handleInit(tgId, auth, data) {
       const { checkUserRoles } = require('../auth');
       Object.assign(auth, checkUserRoles(cleanTgId));
     } catch (e) { /* ignore */ }
+  }
+
+  // Upgrade placeholder username if real name / tgUsername is now available
+  if (!isInvalidId) {
+    const firstName = String(data.firstName || data.first_name || '').trim();
+    const lastName  = String(data.lastName  || data.last_name  || '').trim();
+    const uname     = String(data.tgUsername || data.username  || '').trim();
+    const realName = [firstName, lastName].filter(Boolean).join(' ') || (uname ? (uname.startsWith('@') ? uname : '@' + uname) : '');
+    if (realName) {
+      try {
+        const upRes = db.prepare(`
+          UPDATE employees
+          SET username = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE telegram_id = ? AND (username LIKE 'ID:%' OR username = '' OR username IS NULL)
+        `).run(realName, cleanTgId);
+        if (upRes.changes > 0) {
+          const { checkUserRoles } = require('../auth');
+          Object.assign(auth, checkUserRoles(cleanTgId));
+        }
+      } catch (e) { /* ignore */ }
+    }
   }
 
   // User records (non-deleted)
@@ -780,12 +803,94 @@ async function handleAddHodim(body) {
   const role     = normalizeRole(body.role || 'EMPLOYEE', null);
 
   if (!tgId || tgId === '0' || tgId === 'null' || tgId === 'undefined') return { success: false, error: "Yaroqli Telegram ID kiritilmagan" };
-  if (!username) return { success: false, error: "Username kiritilmagan" };
+  if (!username) return { success: false, error: "Xodim ismi yoki username kiritilmagan!" };
 
   const existing = getEmployee(tgId);
-  const isSuper  = isConfigSuperAdmin(tgId) || role === 'SUPER_ADMIN' || (existing && existing.isSuperAdmin);
+  if (existing) {
+    return {
+      success: false,
+      error: `Ushbu Telegram ID (${tgId}) bilan xodim allaqachon mavjud: "${existing.username || 'Nomsiz'}"! Tahrirlash uchun mavjud xodimni tahrirlang.`
+    };
+  }
+
+  const isSuper  = isConfigSuperAdmin(tgId) || role === 'SUPER_ADMIN';
 
   // Fallback defaults from role
+  const accessDefaults = resolveEmployeeAccess({
+    telegram_id: tgId,
+    role: isSuper ? 'SUPER_ADMIN' : role,
+    super_admin: isSuper ? 1 : 0,
+    direktor:    role === 'DIRECTOR' ? 1 : 0,
+    admin:       role === 'ADMIN' ? 1 : 0,
+    can_add:     1,
+    can_view_all: 0, can_edit: 0, can_delete: 0, can_export: 0, can_view_dash: 0
+  });
+
+  const canAdd      = isSuper ? 1 : (body.canAdd !== undefined ? (body.canAdd ? 1 : 0) : (accessDefaults.canAdd ? 1 : 0));
+  const canViewAll  = isSuper ? 1 : (body.canViewAll !== undefined ? (body.canViewAll ? 1 : 0) : (accessDefaults.permissions.canViewAll ? 1 : 0));
+  const canEdit     = isSuper ? 1 : (body.canEdit !== undefined ? (body.canEdit ? 1 : 0) : (accessDefaults.permissions.canEdit ? 1 : 0));
+  const canDelete   = isSuper ? 1 : (body.canDelete !== undefined ? (body.canDelete ? 1 : 0) : (accessDefaults.permissions.canDelete ? 1 : 0));
+  const canExport   = isSuper ? 1 : (body.canExport !== undefined ? (body.canExport ? 1 : 0) : (accessDefaults.permissions.canExport ? 1 : 0));
+  const canViewDash = isSuper ? 1 : (body.canViewDash !== undefined ? (body.canViewDash ? 1 : 0) : (accessDefaults.permissions.canViewDash ? 1 : 0));
+
+  let lavozimStr = '';
+  if (Array.isArray(body.positions)) {
+    lavozimStr = body.positions.join(',');
+  } else if (body.lavozim !== undefined) {
+    lavozimStr = String(body.lavozim);
+  }
+
+  const guruhStr = body.guruh !== undefined ? String(body.guruh) : (body.group !== undefined ? String(body.group) : '');
+  const isSardorVal = body.isSardor !== undefined ? (body.isSardor ? 1 : 0) : 0;
+
+  try {
+    db.prepare(`
+      INSERT INTO employees
+        (telegram_id, username, can_add, super_admin, direktor, admin,
+         can_view_all, can_edit, can_delete, can_export, can_view_dash,
+         role, lavozim, guruh, is_sardor)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `).run(
+      tgId, username,
+      canAdd,
+      isSuper ? 1 : 0,
+      (!isSuper && role === 'DIRECTOR') ? 1 : 0,
+      (isSuper || role === 'ADMIN') ? 1 : 0,
+      canViewAll,
+      canEdit,
+      canDelete,
+      canExport,
+      canViewDash,
+      isSuper ? 'SUPER_ADMIN' : role,
+      lavozimStr,
+      guruhStr,
+      isSardorVal
+    );
+    broadcast('employees', 'add', { telegramId: tgId, username, role });
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: String(e.message || e) };
+  }
+}
+
+async function handleUpdateHodim(body) {
+  const { db, getEmployee } = require('../db');
+  const { normalizeRole, resolveEmployeeAccess, isConfigSuperAdmin } = require('../auth');
+
+  const tgId     = String(body.tgId !== undefined && body.tgId !== null ? body.tgId : (body.telegramId || '')).trim();
+  const username = String(body.username || '').trim();
+  const role     = normalizeRole(body.role || 'EMPLOYEE', null);
+
+  if (!tgId || tgId === '0' || tgId === 'null' || tgId === 'undefined') return { success: false, error: "Yaroqli Telegram ID kiritilmagan" };
+  if (!username) return { success: false, error: "Username yoki xodim ismi kiritilmagan!" };
+
+  const existing = getEmployee(tgId);
+  if (!existing) {
+    return { success: false, error: `Bunday Telegram ID (${tgId}) ga ega xodim topilmadi!` };
+  }
+
+  const isSuper  = isConfigSuperAdmin(tgId) || role === 'SUPER_ADMIN' || existing.isSuperAdmin;
+
   const accessDefaults = resolveEmployeeAccess({
     telegram_id: tgId,
     role: isSuper ? 'SUPER_ADMIN' : role,
@@ -803,7 +908,6 @@ async function handleAddHodim(body) {
   const canExport   = isSuper ? 1 : (body.canExport !== undefined ? (body.canExport ? 1 : 0) : (existing ? (existing.canExport ? 1 : 0) : (accessDefaults.permissions.canExport ? 1 : 0)));
   const canViewDash = isSuper ? 1 : (body.canViewDash !== undefined ? (body.canViewDash ? 1 : 0) : (existing ? (existing.canViewDash ? 1 : 0) : (accessDefaults.permissions.canViewDash ? 1 : 0)));
 
-  // lavozim (positions)
   let lavozimStr = '';
   if (Array.isArray(body.positions)) {
     lavozimStr = body.positions.join(',');
@@ -818,22 +922,19 @@ async function handleAddHodim(body) {
 
   try {
     db.prepare(`
-      INSERT INTO employees
-        (telegram_id, username, can_add, super_admin, direktor, admin,
-         can_view_all, can_edit, can_delete, can_export, can_view_dash,
-         role, lavozim, guruh, is_sardor)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(telegram_id) DO UPDATE SET
-        username=excluded.username, role=excluded.role,
-        can_add=excluded.can_add, super_admin=excluded.super_admin,
-        direktor=excluded.direktor, admin=excluded.admin,
-        can_view_all=excluded.can_view_all, can_edit=excluded.can_edit,
-        can_delete=excluded.can_delete, can_export=excluded.can_export,
-        can_view_dash=excluded.can_view_dash,
-        lavozim=excluded.lavozim, guruh=excluded.guruh,
-        is_sardor=excluded.is_sardor, updated_at=CURRENT_TIMESTAMP
+      UPDATE employees SET
+        username=?, role=?,
+        can_add=?, super_admin=?,
+        direktor=?, admin=?,
+        can_view_all=?, can_edit=?,
+        can_delete=?, can_export=?,
+        can_view_dash=?,
+        lavozim=?, guruh=?,
+        is_sardor=?, updated_at=CURRENT_TIMESTAMP
+      WHERE telegram_id = ?
     `).run(
-      tgId, username,
+      username,
+      isSuper ? 'SUPER_ADMIN' : role,
       canAdd,
       isSuper ? 1 : 0,
       (!isSuper && role === 'DIRECTOR') ? 1 : 0,
@@ -843,20 +944,16 @@ async function handleAddHodim(body) {
       canDelete,
       canExport,
       canViewDash,
-      isSuper ? 'SUPER_ADMIN' : role,
       lavozimStr,
       guruhStr,
-      isSardorVal
+      isSardorVal,
+      tgId
     );
     broadcast('employees', 'update', { telegramId: tgId, username, role });
     return { success: true };
   } catch (e) {
     return { success: false, error: String(e.message || e) };
   }
-}
-
-async function handleUpdateHodim(body) {
-  return handleAddHodim(body); // upsert covers both add and update
 }
 
 async function handleDeleteHodim(targetTgId) {

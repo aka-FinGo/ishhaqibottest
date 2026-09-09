@@ -65,8 +65,8 @@ function showAddHodimModal() {
                     placeholder="Masalan: 123456789" inputmode="numeric">
             </div>
             <div class="input-group">
-                <label>Username (ixtiyoriy)</label>
-                <input type="text" id="newHodimUsername" placeholder="@username">
+                <label>👤 Xodim ismi / Username:</label>
+                <input type="text" id="newHodimUsername" placeholder="Masalan: Sardor yoki @sardor_dev">
             </div>
             <div style="display:flex; gap:10px; margin-top:8px;">
                 <button class="btn-main"      onclick="addNewHodim()" style="flex:1;">✅ Qo'shish</button>
@@ -84,10 +84,13 @@ async function addNewHodim() {
     if (!tgId || !/^\d+$/.test(tgId)) {
         showToastMsg('❌ Telegram ID raqamlardan iborat bo\'lishi kerak', true); return;
     }
+    if (!username) {
+        showToastMsg('❌ Xodim ismi yoki username kiritilishi shart!', true); return;
+    }
     const btn = document.querySelector('.hs-overlay .btn-main');
     setButtonLoading(btn, true, 'Qo\'shilmoqda...');
     try {
-        const data = await apiRequest({ action: 'add_hodim', tgId, username: username || null });
+        const data = await apiRequest({ action: 'add_hodim', tgId, username });
         if (data.success) {
             showToastMsg('✅ Xodim muvaffaqiyatli qo\'shildi!');
             document.querySelector('.hs-overlay').remove();
@@ -291,6 +294,9 @@ function onHodimRoleChanged(tgId) {
 }
 
 async function loadHodimlar() {
+    if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList) && globalEmployeeList.length > 0) {
+        renderHodimlarList(globalEmployeeList);
+    }
     await ensureAdminDataLoaded(true);
     renderHodimlarList(globalEmployeeList);
 }
@@ -410,13 +416,22 @@ async function addHodim() {
         return;
     }
     
+    if (!username) {
+        showToastMsg("❌ Xodim ismi yoki username kiritilishi shart!", true);
+        if (statusEl) {
+            statusEl.innerText = "❌ Xodim ismi yoki username kiritilishi shart!";
+            statusEl.className = 'status-msg text-red';
+        }
+        return;
+    }
+    
     if (statusEl) {
         statusEl.innerText = "Qo'shilmoqda...";
         statusEl.className = 'status-msg';
     }
     
     try {
-        const data = await apiRequest({ action: 'add_hodim', tgId, username: username || null });
+        const data = await apiRequest({ action: 'add_hodim', tgId, username });
         if (data.success) {
             showToastMsg("✅ Xodim muvaffaqiyatli qo'shildi!");
             if (idEl) idEl.value = '';

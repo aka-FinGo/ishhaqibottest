@@ -109,6 +109,18 @@ function loadCachedData() {
             showToastMsg('⚡ Ma\'lumotlar keshdan yuklandi', false);
         }
     }
+    const cachedEmps = AppCache.get(AppCache.KEYS.EMPLOYEES, 120);
+    if (cachedEmps && Array.isArray(cachedEmps) && cachedEmps.length > 0) {
+        globalEmployeeList = cachedEmps;
+        window._kvEmpMap = {};
+        globalEmployeeList.forEach(e => {
+            const uid = String(e.tgId || e.telegram_id || e.id || '');
+            if (uid) window._kvEmpMap[uid] = e.username || '';
+        });
+        if (typeof populateAddEmployeeDropdown === 'function') populateAddEmployeeDropdown(true);
+        if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
+        console.log('✅ Employees cached:', globalEmployeeList.length);
+    }
     const cachedUser = AppCache.get(AppCache.KEYS.USER_DATA, 120);
     if (cachedUser) {
         processUserData(cachedUser);
@@ -118,9 +130,11 @@ function loadCachedData() {
     return !!cached;
 }
 
-function saveCacheData(records, userData) {
+function saveCacheData(records, userData, employees) {
     if (records) AppCache.set(AppCache.KEYS.MY_RECORDS, records);
     if (userData) AppCache.set(AppCache.KEYS.USER_DATA, userData);
+    const emps = employees || (typeof globalEmployeeList !== 'undefined' && globalEmployeeList.length ? globalEmployeeList : null);
+    if (emps && Array.isArray(emps)) AppCache.set(AppCache.KEYS.EMPLOYEES, emps);
 }
 
 function processUserData(data) {
@@ -1134,6 +1148,36 @@ function setupWebAppRealtime() {
     console.log('🚀 [WebApp] Realtime tinglovchilari faollashtirildi');
 
     // 1. Records (Moliyaviy yozuvlar - tasdiqlash, rad etish, tahrirlash, o'chirish)
+    RealtimeSync.on('records', (meta) => {
+        if (!meta) return;
+        const rowId = meta.rowId || meta.id;
+        const action = meta.action;
+        // Optimistik tezkor yangilash (0ms)
+        if (rowId && action === 'delete') {
+            myFullRecords = myFullRecords.filter(r => String(r.id || r.rowId || (Array.isArray(r) ? r[0] : '')) !== String(rowId));
+            myFilteredRecords = myFilteredRecords.filter(r => String(r.id || r.rowId || (Array.isArray(r) ? r[0] : '')) !== String(rowId));
+            if (typeof globalAdminData !== 'undefined' && Array.isArray(globalAdminData)) {
+                globalAdminData = globalAdminData.filter(r => String(r.id || r.rowId || (Array.isArray(r) ? r[0] : '')) !== String(rowId));
+            }
+            if (typeof renderMyRecords === 'function') renderMyRecords();
+            if (typeof renderAdminTable === 'function') renderAdminTable();
+        } else if (rowId && (action === 'status_change' || action === 'status') && meta.status) {
+            const updateStatus = (item) => {
+                if (!item) return;
+                if (Array.isArray(item)) item[9] = meta.status;
+                else item.status = meta.status;
+            };
+            const rec = myFullRecords.find(r => String(r.id || r.rowId || (Array.isArray(r) ? r[0] : '')) === String(rowId));
+            if (rec) updateStatus(rec);
+            if (typeof globalAdminData !== 'undefined' && Array.isArray(globalAdminData)) {
+                const aRec = globalAdminData.find(r => String(r.id || r.rowId || (Array.isArray(r) ? r[0] : '')) === String(rowId));
+                if (aRec) updateStatus(aRec);
+            }
+            if (typeof renderMyRecords === 'function') renderMyRecords();
+            if (typeof renderAdminTable === 'function') renderAdminTable();
+        }
+    });
+
     const refreshRecords = RealtimeSync.debounce(async (meta) => {
         console.log('⚡ [WebApp Realtime] records yangilanishi:', meta);
         if (typeof AppCache !== 'undefined' && AppCache.KEYS?.MY_RECORDS) {
@@ -1163,7 +1207,7 @@ function setupWebAppRealtime() {
             if (typeof loadAdminData === 'function') await loadAdminData();
             if (typeof renderDashboard === 'function') renderDashboard();
         }
-    }, 400);
+    }, 100);
 
     RealtimeSync.on('records', refreshRecords);
 
@@ -1182,7 +1226,7 @@ function setupWebAppRealtime() {
         if (kvDashTab && !kvDashTab.classList.contains('hidden')) {
             if (typeof renderKvDashboardPage === 'function') renderKvDashboardPage();
         }
-    }, 400);
+    }, 100);
 
     RealtimeSync.on('kvadratlar', refreshKvadratlar);
 
@@ -1194,26 +1238,31 @@ function setupWebAppRealtime() {
             if (data && data.success) {
                 if (typeof AppCache !== 'undefined') {
                     AppCache.remove(AppCache.KEYS.USER_DATA);
+                    AppCache.remove(AppCache.KEYS.EMPLOYEES);
                 }
                 processUserData(data);
-                if (typeof saveCacheData === 'function') {
-                    saveCacheData(myFullRecords, data);
-                }
-                updateProfileUI();
-                applyRoleBasedUI();
 
                 const empRaw = data.employeeList || [];
                 globalEmployeeList = Array.isArray(empRaw) ? empRaw : [];
                 window._kvEmpMap = {};
                 globalEmployeeList.forEach(e => { if (e.tgId) window._kvEmpMap[e.tgId] = e.username || ''; });
+
+                if (typeof saveCacheData === 'function') {
+                    saveCacheData(myFullRecords, data, globalEmployeeList);
+                }
+                updateProfileUI();
+                applyRoleBasedUI();
+
                 if (typeof populateKvadratMeta === 'function') populateKvadratMeta(globalEmployeeList);
                 if (typeof populateAddEmployeeDropdown === 'function') populateAddEmployeeDropdown(true);
                 if (typeof populateEmployeeFilter === 'function') populateEmployeeFilter();
+                const hodimlarArea = document.getElementById('adminHodimlarArea');
+                if (hodimlarArea && typeof renderHodimlarList === 'function') renderHodimlarList(globalEmployeeList);
             }
         } catch (e) {
             console.warn('⚠️ Realtime employees xatosi:', e.message);
         }
-    }, 400);
+    }, 100);
 
     RealtimeSync.on('employees', refreshEmployees);
 

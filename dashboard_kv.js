@@ -311,17 +311,21 @@ function kvMkLine(id, labels, datasets) {
     });
 }
 
-function _resolveKvName(uid, rec) {
+function _resolveKvName(uid, rec, log) {
     if (!uid) return (rec && rec.staffName) ? rec.staffName : "Noma'lum";
     const map = window._kvEmpMap || {};
-    if (map[uid]) return map[uid];
-    if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
-        const emp = globalEmployeeList.find(e => String(e.tgId) === String(uid));
-        if (emp && emp.username) return emp.username;
+    if (map[uid] && !String(map[uid]).startsWith('ID:')) return map[uid];
+    if (log && log.u && String(log.u).trim() && !String(log.u).startsWith('ID:')) {
+        return String(log.u).trim();
     }
-    if (rec && rec.ownerTgId && String(uid) === String(rec.ownerTgId)) {
+    if (typeof globalEmployeeList !== 'undefined' && Array.isArray(globalEmployeeList)) {
+        const emp = globalEmployeeList.find(e => String(e.tgId || e.telegram_id || e.id) === String(uid));
+        if (emp && emp.username && !String(emp.username).startsWith('ID:')) return emp.username;
+    }
+    if (rec && rec.ownerTgId && String(uid) === String(rec.ownerTgId) && rec.staffName && !String(rec.staffName).startsWith('ID:')) {
         return rec.staffName;
     }
+    if (map[uid]) return map[uid];
     return String(uid);
 }
 
@@ -347,7 +351,7 @@ function _aggregateWorkerM2(records) {
             const stepKey = `${uid}|${step}`;
             if (creditedSteps.has(stepKey)) return;
             creditedSteps.add(stepKey);
-            const name = _resolveKvName(uid, rec);
+            const name = _resolveKvName(uid, rec, log);
             workerM2[name] = (workerM2[name] || 0) + m2;
             const orderKey = `${name}|${rec.rowId||rec.no||rec.orderName||''}`;
             if (!creditedOrders.has(orderKey)) {
@@ -355,8 +359,10 @@ function _aggregateWorkerM2(records) {
                 workerOrders[name] = (workerOrders[name] || 0) + 1;
             }
         });
-        if (creditedSteps.size === 0 && rec.staffName) {
-            const name = rec.staffName;
+        if (creditedSteps.size === 0 && (rec.staffName || rec.ownerTgId)) {
+            const name = (rec.staffName && !String(rec.staffName).startsWith('ID:'))
+                ? rec.staffName
+                : (rec.ownerTgId ? _resolveKvName(rec.ownerTgId, rec) : "Noma'lum");
             workerM2[name] = (workerM2[name] || 0) + m2;
             workerOrders[name] = (workerOrders[name] || 0) + 1;
         }

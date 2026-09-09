@@ -175,6 +175,7 @@
      */
     notifyLocalChange(table, action, meta = {}) {
       const payload = { table, action, timestamp: Date.now(), ...meta };
+      _dispatchChange(payload, 'local_notify');
       if (_broadcastChannel) {
         try { _broadcastChannel.postMessage(payload); } catch(e) {}
       }

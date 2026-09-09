@@ -69,13 +69,26 @@ async function handleStartCommand(message) {
 
   // If user is already registered / SuperAdmin, send greeting with WebApp button
   if (auth.isSuperAdmin || auth.inList) {
+    const firstName   = String(from.first_name || '').trim();
+    const lastName    = String(from.last_name  || '').trim();
+    const tgUsername  = String(from.username   || '').trim();
+    const realName    = [firstName, lastName].filter(Boolean).join(' ') || (tgUsername ? (tgUsername.startsWith('@') ? tgUsername : '@' + tgUsername) : '');
+    if (realName) {
+      try {
+        db.prepare(`
+          UPDATE employees
+          SET username = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE telegram_id = ? AND (username LIKE 'ID:%' OR username = '' OR username IS NULL)
+        `).run(realName, tgId);
+      } catch (e) { /* ignore */ }
+    }
     const webApp = String(cfg.WEB_APP_URL || 'https://ish.cabix.website').trim();
     const buttons = [
       [{ text: '🚀 Aristokrat Ish Haqi & Kvadratlar', web_app: { url: webApp } }]
     ];
     await tgCall('sendMessage', {
       chat_id: tgId,
-      text: `👋 Assalomu alaykum, <b>${auth.username || 'iRealBy_3D'}</b>!\n\n🏢 <b>Aristokrat Ish Haqi & Kvadratlar Boshqaruv Tizimiga xush kelibsiz!</b>\n\nIlovadan foydalanish uchun quyidagi tugmani bosing 👇`,
+      text: `👋 Assalomu alaykum, <b>${realName || auth.username || 'iRealBy_3D'}</b>!\n\n🏢 <b>Aristokrat Ish Haqi & Kvadratlar Boshqaruv Tizimiga xush kelibsiz!</b>\n\nIlovadan foydalanish uchun quyidagi tugmani bosing 👇`,
       parse_mode: 'HTML',
       reply_markup: { inline_keyboard: buttons }
     });
@@ -83,17 +96,19 @@ async function handleStartCommand(message) {
   }
 
   // Auto-register as PENDING if missing
-  const firstName   = String(from.first_name || '');
-  const lastName    = String(from.last_name  || '');
-  const tgUsername  = String(from.username   || '');
-  const displayName = [firstName, lastName].filter(Boolean).join(' ') || tgUsername || `ID:${tgId}`;
+  const firstName   = String(from.first_name || '').trim();
+  const lastName    = String(from.last_name  || '').trim();
+  const tgUsername  = String(from.username   || '').trim();
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || (tgUsername ? (tgUsername.startsWith('@') ? tgUsername : '@' + tgUsername) : '') || `ID:${tgId}`;
 
   let created = false;
   try {
     const info = db.prepare(`
-      INSERT OR IGNORE INTO employees
+      INSERT INTO employees
         (telegram_id, username, can_add, role)
       VALUES (?, ?, 0, 'PENDING')
+      ON CONFLICT(telegram_id) DO UPDATE SET
+        username = CASE WHEN employees.username LIKE 'ID:%' OR employees.username = '' THEN excluded.username ELSE employees.username END
     `).run(tgId, displayName);
     created = info.changes > 0;
   } catch (e) { /* ignore */ }
