@@ -18,6 +18,7 @@ const {
 } = require('../telegram');
 const cfg = require('../config');
 const { broadcast } = require('../events');
+const { syncToGoogleSheets } = require('../gsheets_sync');
 
 // Write actions requiring sequential processing (mirrors LockService logic)
 const WRITE_ACTIONS = new Set([
@@ -599,6 +600,7 @@ async function handleAdminEdit(body, tgId, auth) {
     id
   );
   broadcast('records', 'edit', { rowId: id, telegramId: targetTgId, name: nameVal, status: statusVal });
+  syncToGoogleSheets('admin_edit', { ...body, rowId: id });
   const reason = String(body.reason || body.comment_reason || '').trim();
   const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Admin'))));
 
@@ -624,6 +626,7 @@ async function handleAdminDelete(body, tgId, auth) {
     WHERE id = ?
   `).run(String(tgId), String(auth.username || ''), id);
   broadcast('records', 'delete', { rowId: id });
+  syncToGoogleSheets('admin_delete', { rowId: id, reason });
   const { syncRecordStatusInTelegram } = require('../telegram');
   syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Admin'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
   return { success: true };
@@ -729,6 +732,7 @@ async function handleAdd(body, auth, tgId) {
     amountUZS,
     status: initialStatus
   });
+  syncToGoogleSheets('add', { ...body, rowId: Number(rowId), targetTelegramId: targetTgId });
 
   return { success: true, rowId: Number(rowId) };
 }
@@ -759,6 +763,7 @@ async function handleSelfEdit(body, tgId, auth) {
   );
 
   broadcast('records', 'edit', { rowId: id, telegramId: tgId });
+  syncToGoogleSheets('self_edit', { ...body, rowId: id });
   const reason = String(body.reason || body.comment_reason || '').trim();
   const actorRole = auth.isSuperAdmin ? 'SuperAdmin' : (auth.isDirektor ? 'Direktor' : (auth.isBugalter ? 'Bugalter' : (auth.isAdmin ? 'Admin' : (auth.role || 'Xodim'))));
   if (reason) {
@@ -788,6 +793,7 @@ async function handleSelfDelete(body, tgId, auth) {
   `).run(String(tgId), id, String(tgId));
 
   broadcast('records', 'delete', { rowId: id, telegramId: tgId });
+  syncToGoogleSheets('self_delete', { rowId: id, reason });
   const { syncRecordStatusInTelegram } = require('../telegram');
   syncRecordStatusInTelegram(id, "O'chirildi", String(auth.username || 'Xodim'), String(tgId), reason, actorRole).catch(e => console.error('[syncRecordStatusInTelegram error]', e.message));
 

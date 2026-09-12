@@ -118,7 +118,8 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     position_name TEXT NOT NULL,
     action_label  TEXT NOT NULL,
     status_label  TEXT NOT NULL,
-    is_start      INTEGER DEFAULT 0
+    is_start      INTEGER DEFAULT 0,
+    is_end        INTEGER DEFAULT 0
 );
 
 -- positions table
@@ -174,16 +175,23 @@ CREATE TABLE IF NOT EXISTS tracked_messages (
 CREATE INDEX IF NOT EXISTS idx_trk_rec ON tracked_messages(record_id);
 `);
 
+// ── Schema migrations for existing databases ──────────────────
+try {
+  db.exec('ALTER TABLE workflow_steps ADD COLUMN is_end INTEGER DEFAULT 0;');
+} catch (_e) {
+  // Column already exists
+}
+
 // ── Seed default workflow steps if empty ─────────────────────
 const stepCount = db.prepare('SELECT COUNT(*) AS cnt FROM workflow_steps').get();
 if (stepCount.cnt === 0) {
   const insertStep = db.prepare(
-    'INSERT INTO workflow_steps (step_index, position_name, action_label, status_label, is_start) VALUES (?,?,?,?,?)'
+    'INSERT INTO workflow_steps (step_index, position_name, action_label, status_label, is_start, is_end) VALUES (?,?,?,?,?,?)'
   );
   const seedSteps = db.transaction(() => {
-    insertStep.run(1, 'Loyihachi',   'Kiritish',        'Yangi',    1);
-    insertStep.run(2, 'Yig\'uvchi',  'Men yig\'dim',    'Yig\'ildi', 0);
-    insertStep.run(3, 'Qadoqlovchi','Men qadoqladim',   'Tayyor',   0);
+    insertStep.run(1, 'Loyihachi',   'Kiritish',        'Yangi',    1, 0);
+    insertStep.run(2, 'Yig\'uvchi',  'Men yig\'dim',    'Yig\'ildi', 0, 0);
+    insertStep.run(3, 'Qadoqlovchi','Men qadoqladim',   'Tayyor',   0, 1);
   });
   seedSteps();
 }
