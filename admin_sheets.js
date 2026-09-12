@@ -539,12 +539,11 @@ function updateFilterOptions() {
         selRole.innerHTML = `
             <option value="">Rol: Barchasi</option>
             <option value="SUPER_ADMIN">👑 SuperAdmin</option>
+            <option value="DIRECTOR">🎯 Direktor</option>
             <option value="ADMIN">🛡 Admin</option>
-            <option value="DIRECTOR">💼 Direktor</option>
-            <option value="BUGALTER">💰 Bugalter</option>
-            <option value="BRIGADIR">👷 Brigadir</option>
-            <option value="STAFF">👔 Staff</option>
+            <option value="BUGALTER">🧮 Bugalter</option>
             <option value="EMPLOYEE">👤 Xodim</option>
+            <option value="PENDING">⏳ Kutilmoqda</option>
         `;
         selRole.value = SheetsApp.filters.role;
         selRole.onchange = (e) => {
@@ -860,6 +859,15 @@ function renderHodimlarTable() {
     tbody.innerHTML = items.map((e, idx) => {
         const tgId = String(e.telegram_id || e.tgId || '');
         const roleStr = e.roleKey || e.role || 'EMPLOYEE';
+        const roleLabelMap = {
+            'SUPER_ADMIN': '👑 SuperAdmin',
+            'DIRECTOR': '🎯 Direktor',
+            'ADMIN': '🛡 Admin',
+            'BUGALTER': '🧮 Bugalter',
+            'EMPLOYEE': '👤 Xodim',
+            'PENDING': '⏳ Kutilmoqda'
+        };
+        const roleDisplay = roleLabelMap[roleStr] || roleStr;
 
         return `
             <tr data-emp-id="${tgId}">
@@ -867,7 +875,7 @@ function renderHodimlarTable() {
                 <td style="font-family: var(--gs-mono); font-size:11.5px; font-weight:700;">${tgId}</td>
                 <td class="gs-cell-editable" data-col="username" data-id="${tgId}" data-type="text" title="2 marta bosing tahrirlash uchun"><b>${escapeHtml(e.username)}</b></td>
                 <td class="gs-cell-editable" data-col="role" data-id="${tgId}" data-type="select-role" title="2 marta bosing tahrirlash uchun">
-                    <span class="gs-status-badge gs-badge-tasdiqlandi">${escapeHtml(roleStr)}</span>
+                    <span class="gs-status-badge gs-badge-tasdiqlandi">${escapeHtml(roleDisplay)}</span>
                 </td>
                 <td class="gs-cell-editable" data-col="lavozim" data-id="${tgId}" data-type="text" title="2 marta bosing tahrirlash uchun">${escapeHtml(e.lavozim || '—')}</td>
                 <td class="gs-cell-editable" data-col="guruh" data-id="${tgId}" data-type="text" title="2 marta bosing tahrirlash uchun">${escapeHtml(e.guruh || '—')}</td>
@@ -1328,13 +1336,12 @@ function startCellEdit(td) {
         inputEl = document.createElement('select');
         inputEl.className = 'gs-cell-input';
         inputEl.innerHTML = `
-            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="DIRECTOR">DIRECTOR</option>
-            <option value="BUGALTER">BUGALTER</option>
-            <option value="BRIGADIR">BRIGADIR</option>
-            <option value="STAFF">STAFF</option>
-            <option value="EMPLOYEE">EMPLOYEE</option>
+            <option value="SUPER_ADMIN">👑 SuperAdmin</option>
+            <option value="DIRECTOR">🎯 Direktor</option>
+            <option value="ADMIN">🛡 Admin</option>
+            <option value="BUGALTER">🧮 Bugalter</option>
+            <option value="EMPLOYEE">👤 Xodim</option>
+            <option value="PENDING">⏳ Kutilmoqda</option>
         `;
         inputEl.value = currentRawVal || 'EMPLOYEE';
     } else if (type === 'select-step') {
@@ -1947,13 +1954,12 @@ function openAddModal() {
                 <div class="gs-form-group">
                     <label>Rol (Tizimdagi darajasi):</label>
                     <select id="addEmpRole" class="gs-form-select">
-                        <option value="EMPLOYEE" selected>EMPLOYEE (Oddiy xodim)</option>
-                        <option value="STAFF">STAFF (Usta)</option>
-                        <option value="BRIGADIR">BRIGADIR (Brigadir)</option>
-                        <option value="BUGALTER">BUGALTER (Bugalter)</option>
-                        <option value="DIRECTOR">DIRECTOR (Direktor)</option>
-                        <option value="ADMIN">ADMIN (Admin)</option>
-                        <option value="SUPER_ADMIN">SUPER_ADMIN (Boshqaruvchi)</option>
+                        <option value="EMPLOYEE" selected>👤 Xodim</option>
+                        <option value="BUGALTER">🧮 Bugalter</option>
+                        <option value="DIRECTOR">🎯 Direktor</option>
+                        <option value="ADMIN">🛡 Admin</option>
+                        <option value="SUPER_ADMIN">👑 SuperAdmin</option>
+                        <option value="PENDING">⏳ Kutilmoqda</option>
                     </select>
                 </div>
                 <div class="gs-form-group">
