@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Aristokrat — Boshqaruv Jadvali (SQLite Google Sheets)</title>
     
     <!-- Google Fonts -->
@@ -11,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Google Sheets Uslubidagi Stillar -->
-    <link rel="stylesheet" href="admin_sheets.css?v=2.4.0">
+    <link rel="stylesheet" href="admin_sheets.css?v=2.5.8">
 
     <!-- Tashqi kutubxonalar -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -41,8 +44,8 @@
             <button class="gs-btn gs-btn-primary" onclick="openAddModal()" title="Yangi qator qo'shish">
                 ➕ Qator qo'shish
             </button>
-            <button class="gs-btn" onclick="loadAllData()" title="SQLite bazasidan yangilash">
-                🔄 Yangilash
+            <button class="gs-btn" onclick="window.location.reload(true)" title="Sahifani to'liq yangilash">
+                🔄 Qayta yuklash
             </button>
             <button class="gs-btn" onclick="exportToExcel()" title="Joriy varaqni Excel (xlsx) formatida yuklab olish">
                 📥 Excel
@@ -138,7 +141,7 @@
     <div class="gs-toast-container" id="gsToastContainer"></div>
 
     <!-- ── Asosiy Skriptlar ──────────────────────────────────────── -->
-    <script src="realtime.js?v=2.5.5"></script>
-    <script src="admin_sheets.js?v=2.5.5"></script>
+    <script src="realtime.js?v=2.5.8"></script>
+    <script src="admin_sheets.js?v=2.5.8"></script>
 </body>
 </html>

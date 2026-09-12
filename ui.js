@@ -948,8 +948,8 @@ async function switchAdminSub(areaId, btn) {
             const tg = window.Telegram?.WebApp;
             const initData = tg?.initData || (typeof tgInitData !== 'undefined' ? tgInitData : '');
             const tgId = (typeof myTgId !== 'undefined' && myTgId) ? myTgId : (tg?.initDataUnsafe?.user?.id || '2112012311');
-            const targetUrl = `admin_sheets.html?tgId=${encodeURIComponent(tgId)}&v=2.2.0#tgWebAppData=${encodeURIComponent(initData)}`;
-            if (iframe.src === 'about:blank' || !iframe.src || iframe.src.endsWith('about:blank')) {
+            const targetUrl = `admin_sheets.html?tgId=${encodeURIComponent(tgId)}&v=${Date.now()}#tgWebAppData=${encodeURIComponent(initData)}`;
+            if (iframe.src === 'about:blank' || !iframe.src || iframe.src.endsWith('about:blank') || iframe.src.includes('v=2.2.0')) {
                 iframe.src = targetUrl;
             }
         }

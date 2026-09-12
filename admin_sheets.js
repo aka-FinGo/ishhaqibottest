@@ -489,15 +489,15 @@ function updateFilterOptions() {
             filterContainer.appendChild(selPeriod);
         }
     } else if (SheetsApp.activeTab === 'Kvadratlar') {
-        // Status filter
+        // Status filter (dinamik va to'liq)
+        const defaultKvStatuses = ['Kesishga berildi', 'Qadoqlandi', 'Yakunlandi', 'yangi', 'Jarayonda', 'Bajarildi', 'Sanoq buzilgan'];
+        const currentKvStatuses = (SheetsApp.data.kvadratlar || []).map(k => k.status).filter(Boolean);
+        const uniqueKvStatuses = [...new Set([...defaultKvStatuses, ...currentKvStatuses])].sort();
+
         const selStatus = document.createElement('select');
         selStatus.className = 'gs-select';
-        selStatus.innerHTML = `
-            <option value="">Holat: Barchasi</option>
-            <option value="yangi">🆕 Yangi</option>
-            <option value="Jarayonda">⚡ Jarayonda</option>
-            <option value="Bajarildi">🏁 Bajarildi</option>
-        `;
+        selStatus.innerHTML = `<option value="">Holat: Barchasi</option>` +
+            uniqueKvStatuses.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
         selStatus.value = SheetsApp.filters.status;
         selStatus.onchange = (e) => {
             SheetsApp.filters.status = e.target.value;
@@ -556,6 +556,15 @@ function updateFilterOptions() {
 
 // ── Asosiy Jadvalni Render Qilish ───────────────────────────
 function renderActiveTable() {
+    const tableEl = document.getElementById('gsTable');
+    if (tableEl) {
+        if (SheetsApp.activeTab === 'Kvadratlar') {
+            tableEl.classList.add('gs-table-wide');
+        } else {
+            tableEl.classList.remove('gs-table-wide');
+        }
+    }
+
     switch (SheetsApp.activeTab) {
         case 'dataSheet':
             renderDataSheetTable();
@@ -693,15 +702,20 @@ function renderKvadratlarTable() {
 
     let items = [...SheetsApp.data.kvadratlar];
 
-    // Qidiruv va filtrlar — API camelCase: orderName, no, staffName, date, ownerTgId
+    // Qidiruv va filtrlar — API camelCase: orderName, no, staffName, date, ownerTgId + step logs (qadoqlovchi, yiguvchi)
     const search = SheetsApp.filters.search.toLowerCase().trim();
     if (search) {
         items = items.filter(k => {
+            const logs = Array.isArray(k.logs) ? k.logs : [];
+            const logUsers = logs.map(l => `${l.u || ''} ${l.group || ''} ${l.uid || ''}`).join(' ').toLowerCase();
             return (k.orderName && k.orderName.toLowerCase().includes(search)) ||
                    (k.no && String(k.no).toLowerCase().includes(search)) ||
                    (k.staffName && k.staffName.toLowerCase().includes(search)) ||
                    (k.date && k.date.toLowerCase().includes(search)) ||
-                   (k.ownerTgId && String(k.ownerTgId).includes(search));
+                   (k.ownerTgId && String(k.ownerTgId).includes(search)) ||
+                   (k.month && k.month.toLowerCase().includes(search)) ||
+                   (k.year && String(k.year).includes(search)) ||
+                   logUsers.includes(search);
         });
     }
     if (SheetsApp.filters.status) {
@@ -719,34 +733,76 @@ function renderKvadratlarTable() {
         const col = SheetsApp.sort.column;
         const dir = SheetsApp.sort.order === 'asc' ? 1 : -1;
         items.sort((a, b) => {
-            let valA = a[col] ?? '';
-            let valB = b[col] ?? '';
+            let valA = '';
+            let valB = '';
+            if (col === 'qadoqlovchi') {
+                const lA = (a.logs || []).find(l => Number(l.step) === 2);
+                const lB = (b.logs || []).find(l => Number(l.step) === 2);
+                valA = lA ? (lA.u || '') : '';
+                valB = lB ? (lB.u || '') : '';
+            } else if (col === 'qadoq_sana') {
+                const lA = (a.logs || []).find(l => Number(l.step) === 2);
+                const lB = (b.logs || []).find(l => Number(l.step) === 2);
+                valA = lA ? (lA.d || '') : '';
+                valB = lB ? (lB.d || '') : '';
+            } else if (col === 'yiguvchi') {
+                const lA = (a.logs || []).find(l => Number(l.step) === 3);
+                const lB = (b.logs || []).find(l => Number(l.step) === 3);
+                valA = lA ? (lA.u || '') : '';
+                valB = lB ? (lB.u || '') : '';
+            } else if (col === 'yiguv_sana') {
+                const lA = (a.logs || []).find(l => Number(l.step) === 3);
+                const lB = (b.logs || []).find(l => Number(l.step) === 3);
+                valA = lA ? (lA.d || '') : '';
+                valB = lB ? (lB.d || '') : '';
+            } else if (col === 'no') {
+                valA = parseInt(a.no || a.order_no || 0, 10);
+                valB = parseInt(b.no || b.order_no || 0, 10);
+            } else if (col === 'rowId') {
+                valA = Number(a.rowId || a.id || 0);
+                valB = Number(b.rowId || b.id || 0);
+            } else if (col === 'totalM2') {
+                valA = Number(a.totalM2 || a.total_m2 || 0);
+                valB = Number(b.totalM2 || b.total_m2 || 0);
+            } else if (col === 'currentStep') {
+                valA = Number(a.currentStep || a.current_step || 1);
+                valB = Number(b.currentStep || b.current_step || 1);
+            } else {
+                valA = a[col] ?? '';
+                valB = b[col] ?? '';
+            }
+
             if (typeof valA === 'number' && typeof valB === 'number') return (valA - valB) * dir;
             return String(valA).localeCompare(String(valB)) * dir;
         });
     }
 
-    // Sarlavhalar (Header)
+    // Sarlavhalar (Header) — Haqiqiy Google Sheets Kvadratlar jadvali ustunlari bilan to'liq bir xil
     thead.innerHTML = `
         <tr>
             <th class="gs-col-row-num">#</th>
             <th onclick="sortTable('rowId')">ID ${getSortIcon('rowId')}</th>
             <th onclick="sortTable('date')">Sana 📅 ${getSortIcon('date')}</th>
             <th onclick="sortTable('no')">№ ${getSortIcon('no')}</th>
-            <th onclick="sortTable('orderName')">Buyurtma Nomi 🏷 ${getSortIcon('orderName')}</th>
-            <th onclick="sortTable('totalM2')" style="text-align:right;">Maydon (m²) 📐 ${getSortIcon('totalM2')}</th>
             <th onclick="sortTable('month')">Oy 🗓 ${getSortIcon('month')}</th>
             <th onclick="sortTable('year')">Yil 📅 ${getSortIcon('year')}</th>
-            <th onclick="sortTable('ownerTgId')">Mulkdor ID 🆔 ${getSortIcon('ownerTgId')}</th>
-            <th onclick="sortTable('staffName')">Xodim 👤 ${getSortIcon('staffName')}</th>
+            <th onclick="sortTable('totalM2')" style="text-align:right;">Jami m² 📐 ${getSortIcon('totalM2')}</th>
+            <th onclick="sortTable('orderName')">Buyurtma Nomi / Mijoz 🏷 ${getSortIcon('orderName')}</th>
+            <th onclick="sortTable('staffName')">Loyihachi (Kirituvchi) 📐 ${getSortIcon('staffName')}</th>
+            <th onclick="sortTable('ownerTgId')">Loyihachi ID 🆔 ${getSortIcon('ownerTgId')}</th>
             <th onclick="sortTable('currentStep')">Bosqich ⚡ ${getSortIcon('currentStep')}</th>
             <th onclick="sortTable('status')">Holat 🟢 ${getSortIcon('status')}</th>
+            <th onclick="sortTable('qadoqlovchi')">Qadoqlovchi 📦 ${getSortIcon('qadoqlovchi')}</th>
+            <th onclick="sortTable('qadoq_sana')">Qadoqlash Sanasi ⏱ ${getSortIcon('qadoq_sana')}</th>
+            <th onclick="sortTable('yiguvchi')">Yig'uvchi 🔧 ${getSortIcon('yiguvchi')}</th>
+            <th onclick="sortTable('yiguv_sana')">Yig'ish Sanasi ⏱ ${getSortIcon('yiguv_sana')}</th>
+            <th style="text-align:center;">Workflow Tarixi 📜</th>
             <th style="text-align:center; width: 70px;">Amallar ⚙️</th>
         </tr>
     `;
 
     if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding: 40px; color: var(--gs-text-muted);">Buyurtmalar topilmadi</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center; padding: 40px; color: var(--gs-text-muted);">Buyurtmalar topilmadi</td></tr>`;
         updateStatsBar(0, 0, 0, 0);
         return;
     }
@@ -758,10 +814,29 @@ function renderKvadratlarTable() {
         totalM2 += m2;
         const id = k.rowId || k.id;
         const statusStr = k.status || 'yangi';
+        
         let badgeClass = 'gs-badge-kutilmoqda';
-        if (statusStr.toLowerCase().includes('bajarildi') || statusStr.toLowerCase().includes('yakunlandi')) {
+        const stLow = statusStr.toLowerCase();
+        if (stLow.includes('yakunlandi') || stLow.includes('bajarildi')) {
             badgeClass = 'gs-badge-tasdiqlandi';
+        } else if (stLow.includes('qadoqlandi')) {
+            badgeClass = 'gs-badge-qadoqlandi';
+        } else if (stLow.includes('kesishga') || stLow.includes('jarayonda')) {
+            badgeClass = 'gs-badge-jarayonda';
+        } else if (stLow.includes('xato') || stLow.includes('buzilgan')) {
+            badgeClass = 'gs-badge-rad';
         }
+
+        const logs = Array.isArray(k.logs) ? k.logs : [];
+        const log1 = logs.find(l => Number(l.step) === 1);
+        const log2 = logs.find(l => Number(l.step) === 2);
+        const log3 = logs.find(l => Number(l.step) === 3);
+
+        const qadoqName = log2 ? (log2.u + (log2.group ? ` (${log2.group})` : '')) : '';
+        const qadoqSana = log2 && log2.d ? formatDateTime(log2.d) : '';
+
+        const yiguvName = log3 ? (log3.u + (log3.group ? ` (${log3.group})` : '')) : '';
+        const yiguvSana = log3 && log3.d ? formatDateTime(log3.d) : '';
 
         return `
             <tr data-row-id="${id}">
@@ -769,17 +844,34 @@ function renderKvadratlarTable() {
                 <td style="color: var(--gs-text-muted); font-size:11px;">#${id}</td>
                 <td class="gs-cell-editable" data-col="date" data-id="${id}" data-type="date" title="2 marta bosing">${escapeHtml(k.date || '')}</td>
                 <td class="gs-cell-editable" data-col="no" data-id="${id}" data-type="text" title="2 marta bosing" style="font-weight:700;">${escapeHtml(k.no || '—')}</td>
-                <td class="gs-cell-editable" data-col="orderName" data-id="${id}" data-type="text" title="2 marta bosing"><b>${escapeHtml(k.orderName || '')}</b></td>
-                <td class="gs-cell-editable gs-num" data-col="totalM2" data-id="${id}" data-type="number" title="2 marta bosing" style="font-weight:800; color: #0284c7;">${m2.toLocaleString('uz-UZ', {minimumFractionDigits: 1, maximumFractionDigits: 2})} m²</td>
                 <td class="gs-cell-editable" data-col="month" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.month || '—')}</td>
                 <td class="gs-cell-editable" data-col="year" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.year || '—')}</td>
-                <td class="gs-cell-editable" data-col="ownerTgId" data-id="${id}" data-type="text" title="2 marta bosing" style="font-family: var(--gs-mono); font-size:11.5px;">${escapeHtml(k.ownerTgId || '')}</td>
-                <td class="gs-cell-editable" data-col="staffName" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.staffName || '—')}</td>
+                <td class="gs-cell-editable gs-num" data-col="totalM2" data-id="${id}" data-type="number" title="2 marta bosing" style="font-weight:800; color: #0284c7;">${m2.toLocaleString('uz-UZ', {minimumFractionDigits: 1, maximumFractionDigits: 2})} m²</td>
+                <td class="gs-cell-editable" data-col="orderName" data-id="${id}" data-type="text" title="2 marta bosing"><b>${escapeHtml(k.orderName || '')}</b></td>
+                <td class="gs-cell-editable" data-col="staffName" data-id="${id}" data-type="text" title="2 marta bosing">${escapeHtml(k.staffName || (log1 ? log1.u : '—'))}</td>
+                <td class="gs-cell-editable" data-col="ownerTgId" data-id="${id}" data-type="text" title="2 marta bosing" style="font-family: var(--gs-mono); font-size:11px;">${escapeHtml(k.ownerTgId || (log1 ? log1.uid : ''))}</td>
                 <td class="gs-cell-editable" data-col="currentStep" data-id="${id}" data-type="select-step" title="2 marta bosing" style="text-align:center;">
                     <span style="font-weight:700; background:rgba(2,132,199,0.1); color:#0284c7; padding:2px 8px; border-radius:6px;">Bosqich ${k.currentStep || 1}</span>
                 </td>
                 <td class="gs-cell-editable" data-col="status" data-id="${id}" data-type="select-kv-status" title="2 marta bosing">
                     <span class="gs-status-badge ${badgeClass}">${escapeHtml(statusStr)}</span>
+                </td>
+                <td style="font-weight:600; color:${qadoqName ? '#0d9488' : 'var(--gs-text-muted)'};">
+                    ${qadoqName ? `📦 ${escapeHtml(qadoqName)}` : '—'}
+                </td>
+                <td style="font-size:11px; font-family:var(--gs-mono); color:${qadoqSana ? 'var(--gs-text)' : 'var(--gs-text-muted)'};">
+                    ${qadoqSana ? escapeHtml(qadoqSana) : '—'}
+                </td>
+                <td style="font-weight:600; color:${yiguvName ? '#7c3aed' : 'var(--gs-text-muted)'};">
+                    ${yiguvName ? `🔧 ${escapeHtml(yiguvName)}` : '—'}
+                </td>
+                <td style="font-size:11px; font-family:var(--gs-mono); color:${yiguvSana ? 'var(--gs-text)' : 'var(--gs-text-muted)'};">
+                    ${yiguvSana ? escapeHtml(yiguvSana) : '—'}
+                </td>
+                <td style="text-align:center;">
+                    <button class="gs-act-btn" onclick="openKvLogsModal(${id})" title="Barcha bosqichlar tarixini ko'rish" style="font-size:11px; padding:2px 7px; background:rgba(2,132,199,0.1); color:#0284c7; border:1px solid rgba(2,132,199,0.3); border-radius:6px; font-weight:700; cursor:pointer;">
+                        📜 ${logs.length ? `${logs.length} ta` : 'Tarix'}
+                    </button>
                 </td>
                 <td style="text-align:center;">
                     <div class="gs-row-actions" style="justify-content:center;">
@@ -1326,11 +1418,19 @@ function startCellEdit(td) {
     } else if (type === 'select-kv-status') {
         inputEl = document.createElement('select');
         inputEl.className = 'gs-cell-input';
-        inputEl.innerHTML = `
-            <option value="yangi">yangi</option>
-            <option value="Jarayonda">Jarayonda</option>
-            <option value="Bajarildi">Bajarildi</option>
-        `;
+        const kvStatusList = [
+            'Kesishga berildi',
+            'Qadoqlandi',
+            'Yakunlandi',
+            'yangi',
+            'Jarayonda',
+            'Bajarildi',
+            'Sanoq buzilgan'
+        ];
+        if (currentRawVal && !kvStatusList.includes(currentRawVal)) {
+            kvStatusList.push(currentRawVal);
+        }
+        inputEl.innerHTML = kvStatusList.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
         inputEl.value = currentRawVal || 'yangi';
     } else if (type === 'select-role') {
         inputEl = document.createElement('select');
@@ -2351,19 +2451,43 @@ function exportToExcel() {
             "Kiritgan": r.actor_name || r.actorName || ''
         }));
     } else if (SheetsApp.activeTab === 'Kvadratlar') {
-        dataToExport = SheetsApp.data.kvadratlar.map(k => ({
-            "ID": k.rowId || k.id,
-            "Sana": k.date || k.sana || '',
-            "Buyurtma №": k.no || k.order_no || '',
-            "Buyurtma Nomi": k.orderName || k.order_name || '',
-            "Maydon (m²)": k.totalM2 ?? k.total_m2 ?? 0,
-            "Oy": k.month || k.oy || '',
-            "Yil": k.year || k.yil || '',
-            "Mulkdor ID": k.ownerTgId || k.owner_tg_id || '',
-            "Xodim": k.staffName || k.staff_name || '',
-            "Bosqich": k.currentStep ?? k.current_step ?? 1,
-            "Holat": k.status || 'yangi'
-        }));
+        dataToExport = SheetsApp.data.kvadratlar.map(k => {
+            const logs = Array.isArray(k.logs) ? k.logs : [];
+            const log1 = logs.find(l => Number(l.step) === 1);
+            const log2 = logs.find(l => Number(l.step) === 2);
+            const log3 = logs.find(l => Number(l.step) === 3);
+
+            const qadoqlovchi = log2 ? (log2.u + (log2.group ? ` (${log2.group})` : '')) : '';
+            const qadoqlovchiId = log2 ? (log2.uid || '') : '';
+            const qadoqlovchiSana = log2 && log2.d ? formatDateTime(log2.d) : '';
+
+            const yiguvchi = log3 ? (log3.u + (log3.group ? ` (${log3.group})` : '')) : '';
+            const yiguvchiId = log3 ? (log3.uid || '') : '';
+            const yigishSana = log3 && log3.d ? formatDateTime(log3.d) : '';
+
+            return {
+                "ID": k.rowId || k.id,
+                "Sana": k.date || k.sana || '',
+                "№": k.no || k.order_no || '',
+                "Oy": k.month || k.oy || '',
+                "Yil": k.year || k.yil || '',
+                "Jami m2:": k.totalM2 ?? k.total_m2 ?? 0,
+                "Buyurtma nomi/Mijoz ismi": k.orderName || k.order_name || '',
+                "Kirituvchi": k.staffName || (log1 ? log1.u : '') || '',
+                "OwnerTgId": k.ownerTgId || (log1 ? log1.uid : '') || '',
+                "CurrentStep": k.currentStep ?? k.current_step ?? 1,
+                "Status": k.status || 'yangi',
+                "Qadoqlovchi (Hodim)": qadoqlovchi,
+                "Qadoqlovchi (Hodim ID)": qadoqlovchiId,
+                "Qadoqlovchi (m2)": log2 ? (k.totalM2 ?? k.total_m2 ?? 0) : '',
+                "Qadoqlovchi (Sana)": qadoqlovchiSana,
+                "Yig'uvchi (Hodim)": yiguvchi,
+                "Yig'uvchi (Hodim ID)": yiguvchiId,
+                "Yig'uvchi (m2)": log3 ? (k.totalM2 ?? k.total_m2 ?? 0) : '',
+                "Yig'uvchi (Sana)": yigishSana,
+                "WorkflowLogs": JSON.stringify(logs)
+            };
+        });
     } else if (SheetsApp.activeTab === 'Hodimlar') {
         dataToExport = SheetsApp.data.employees.map(e => ({
             "Telegram ID": e.telegram_id || e.tgId,
@@ -2437,6 +2561,126 @@ function getSortIcon(column) {
 function formatMoney(num) {
     if (!num && num !== 0) return '0';
     return Number(num).toLocaleString('uz-UZ').replace(/,/g, ' ');
+}
+
+function formatDateTime(isoStr) {
+    if (!isoStr) return '—';
+    try {
+        const dt = new Date(isoStr);
+        if (isNaN(dt.getTime())) return String(isoStr);
+        const day = String(dt.getDate()).padStart(2, '0');
+        const month = String(dt.getMonth() + 1).padStart(2, '0');
+        const year = dt.getFullYear();
+        const hours = String(dt.getHours()).padStart(2, '0');
+        const minutes = String(dt.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year} ${hours}:${minutes}`;
+    } catch (e) {
+        return String(isoStr);
+    }
+}
+
+function openKvLogsModal(rowId) {
+    const k = SheetsApp.data.kvadratlar.find(item => String(item.rowId || item.id) === String(rowId));
+    if (!k) return;
+
+    const modal = document.getElementById('gsAddModal');
+    const title = document.getElementById('gsModalTitle');
+    const body = document.getElementById('gsModalBody');
+    if (!modal || !body) return;
+
+    modal.style.display = 'flex';
+    title.textContent = `📜 Buyurtma Tarixi: №${k.no || ''} ${k.orderName || ''}`;
+
+    const logs = Array.isArray(k.logs) ? k.logs : [];
+    const log1 = logs.find(l => Number(l.step) === 1);
+    const log2 = logs.find(l => Number(l.step) === 2);
+    const log3 = logs.find(l => Number(l.step) === 3);
+
+    body.innerHTML = `
+        <div style="padding: 6px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:12px; background:var(--gs-surface-alt, rgba(0,0,0,0.03)); border-radius:10px; border:1px solid var(--gs-grid-border);">
+                <div>
+                    <div style="font-size:16px; font-weight:800; color:var(--gs-text);">${escapeHtml(k.orderName || 'Nomsiz')}</div>
+                    <div style="font-size:12px; color:var(--gs-text-muted); margin-top:3px;">
+                        № ${escapeHtml(k.no || '—')} &bull; Sana: <b>${escapeHtml(k.date || '')}</b> &bull; Davr: <b>${escapeHtml(k.month || '')} / ${escapeHtml(k.year || '')}</b>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:18px; font-weight:800; color:#0284c7;">${Number(k.totalM2 || 0).toLocaleString('uz-UZ', {minimumFractionDigits: 1, maximumFractionDigits: 2})} m²</div>
+                    <div style="margin-top:4px;">
+                        <span class="gs-status-badge ${k.status === 'Yakunlandi' ? 'gs-badge-tasdiqlandi' : 'gs-badge-kutilmoqda'}">${escapeHtml(k.status || 'yangi')}</span>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="font-size:13px; font-weight:800; margin-bottom:12px; color:var(--gs-text);">⚡ Bajarilgan Bosqichlar Ijrosi:</h4>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <!-- 1-Bosqich: Loyihalash -->
+                <div style="padding:12px; border-radius:8px; border:1px solid ${log1 || k.staffName ? 'rgba(16,185,129,0.3)' : 'var(--gs-grid-border)'}; background:${log1 || k.staffName ? 'rgba(16,185,129,0.05)' : 'var(--gs-surface)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; color:${log1 || k.staffName ? '#059669' : 'var(--gs-text)'};">
+                            1-Bosqich: 📐 Loyihalash (Kesishga berildi)
+                        </div>
+                        <span style="font-size:11px; font-weight:700; color:${log1 || k.staffName ? '#10b981' : 'var(--gs-text-muted)'};">
+                            ${log1 || k.staffName ? '✅ Bajarilgan' : '⏳ Kutilmoqda'}
+                        </span>
+                    </div>
+                    <div style="font-size:12px; color:var(--gs-text); margin-top:6px;">
+                        Xodim: <b>${escapeHtml(k.staffName || (log1 ? log1.u : '—'))}</b>
+                        ${k.ownerTgId ? `<span style="font-family:var(--gs-mono); font-size:11px; color:var(--gs-text-muted);"> (TG ID: ${escapeHtml(k.ownerTgId)})</span>` : ''}
+                    </div>
+                    <div style="font-size:11.5px; color:var(--gs-text-muted); margin-top:3px;">
+                        Sana / Vaqt: ${log1 && log1.d ? formatDateTime(log1.d) : escapeHtml(k.date || '—')}
+                    </div>
+                </div>
+
+                <!-- 2-Bosqich: Qadoqlash -->
+                <div style="padding:12px; border-radius:8px; border:1px solid ${log2 ? 'rgba(13,148,136,0.3)' : 'var(--gs-grid-border)'}; background:${log2 ? 'rgba(13,148,136,0.05)' : 'var(--gs-surface)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; color:${log2 ? '#0d9488' : 'var(--gs-text)'};">
+                            2-Bosqich: 📦 Qadoqlash
+                        </div>
+                        <span style="font-size:11px; font-weight:700; color:${log2 ? '#0d9488' : 'var(--gs-text-muted)'};">
+                            ${log2 ? '✅ Qadoqlangan' : '⏳ Kutilmoqda'}
+                        </span>
+                    </div>
+                    <div style="font-size:12px; color:var(--gs-text); margin-top:6px;">
+                        Xodim: <b>${log2 ? escapeHtml(log2.u) : '—'}</b>
+                        ${log2 && log2.group ? `<span style="font-weight:600; color:#0d9488;"> (${escapeHtml(log2.group)})</span>` : ''}
+                        ${log2 && log2.uid ? `<span style="font-family:var(--gs-mono); font-size:11px; color:var(--gs-text-muted);"> (TG ID: ${escapeHtml(log2.uid)})</span>` : ''}
+                    </div>
+                    <div style="font-size:11.5px; color:var(--gs-text-muted); margin-top:3px;">
+                        Sana / Vaqt: ${log2 && log2.d ? formatDateTime(log2.d) : '—'}
+                    </div>
+                </div>
+
+                <!-- 3-Bosqich: Yig'ish -->
+                <div style="padding:12px; border-radius:8px; border:1px solid ${log3 ? 'rgba(124,58,237,0.3)' : 'var(--gs-grid-border)'}; background:${log3 ? 'rgba(124,58,237,0.05)' : 'var(--gs-surface)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; color:${log3 ? '#7c3aed' : 'var(--gs-text)'};">
+                            3-Bosqich: 🔧 Yig'ish (Montaj)
+                        </div>
+                        <span style="font-size:11px; font-weight:700; color:${log3 ? '#7c3aed' : 'var(--gs-text-muted)'};">
+                            ${log3 ? '✅ Yakunlangan' : '⏳ Kutilmoqda'}
+                        </span>
+                    </div>
+                    <div style="font-size:12px; color:var(--gs-text); margin-top:6px;">
+                        Xodim: <b>${log3 ? escapeHtml(log3.u) : '—'}</b>
+                        ${log3 && log3.group ? `<span style="font-weight:600; color:#7c3aed;"> (${escapeHtml(log3.group)})</span>` : ''}
+                        ${log3 && log3.uid ? `<span style="font-family:var(--gs-mono); font-size:11px; color:var(--gs-text-muted);"> (TG ID: ${escapeHtml(log3.uid)})</span>` : ''}
+                    </div>
+                    <div style="font-size:11.5px; color:var(--gs-text-muted); margin-top:3px;">
+                        Sana / Vaqt: ${log3 && log3.d ? formatDateTime(log3.d) : '—'}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                <button type="button" class="gs-btn gs-btn-primary" onclick="closeAddModal()">Yopish</button>
+            </div>
+        </div>
+    `;
 }
 
 function escapeHtml(str) {

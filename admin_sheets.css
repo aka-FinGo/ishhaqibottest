@@ -637,3 +637,28 @@ body.gs-standalone-body {
     color: var(--gs-text);
     padding: 6px;
 }
+
+.gs-badge-qadoqlandi {
+    background: #ccfbf1;
+    color: #0f766e;
+}
+
+.gs-badge-jarayonda {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+[data-theme="dark"] .gs-badge-qadoqlandi {
+    background: rgba(15, 118, 110, 0.25);
+    color: #2dd4bf;
+}
+
+[data-theme="dark"] .gs-badge-jarayonda {
+    background: rgba(3, 105, 161, 0.25);
+    color: #38bdf8;
+}
+
+.gs-table-wide {
+    min-width: 1550px !important;
+}
+
