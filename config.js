@@ -1,6 +1,6 @@
-const API_URL = (window.location.hostname === 'ish.cabix.website' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? '/api'
-  : 'https://ish.cabix.website/api';
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? (window.location.port ? `http://${window.location.hostname}:${window.location.port}/api` : 'http://localhost:3010/api')
+  : '/api';
 
 const tg = window.Telegram.WebApp;
 tg.expand();

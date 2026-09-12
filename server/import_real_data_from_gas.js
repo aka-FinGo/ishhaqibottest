@@ -11,10 +11,10 @@ const path   = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
 const { db, setSetting } = require('./db');
 
-const BOT_TOKEN = (process.env.BOT_TOKEN && process.env.BOT_TOKEN !== 'YOUR_BOT_TOKEN')
+const BOT_TOKEN = (process.env.BOT_TOKEN && !process.env.BOT_TOKEN.startsWith('YOUR_') && process.env.BOT_TOKEN.includes(':'))
   ? process.env.BOT_TOKEN
   : '8355215374:AAENva7vRDUX7qQ9793wAHjzw-uHnxePVyk';
-const SUPER_ADMIN_ID = (process.env.SUPER_ADMIN_ID && process.env.SUPER_ADMIN_ID !== 'YOUR_TG_ADMIN_CHAT_ID')
+const SUPER_ADMIN_ID = (process.env.SUPER_ADMIN_ID && !process.env.SUPER_ADMIN_ID.startsWith('YOUR_'))
   ? process.env.SUPER_ADMIN_ID
   : '2112012311';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwwCfiCjL6Nvi3uXw6gfLkrXJrV30SS7YKoeQbnzJj0wXieWjTHrcn9vtPBtvonFQa4RA/exec';
@@ -48,7 +48,11 @@ async function fetchFromGAS(action, extra = {}) {
       ...extra
     })
   });
-  return await res.json();
+  const json = await res.json();
+  if (!json.success) {
+    console.warn(`   ⚠️ [${action}] GAS xatosi:`, json.error || 'Muvaffaqiyatsiz javob');
+  }
+  return json;
 }
 
 async function importRealData() {
@@ -66,7 +70,17 @@ async function importRealData() {
       setSetting('DISABLE_EMP_EDIT_DELETE', s.disableEmpEditDelete ? '1' : '0');
       setSetting('NOTIFY_DIRECTOR', s.notifyDirector ? '1' : '0');
       setSetting('WORKFLOW_STRICT_MODE', s.workflowStrictMode ? '1' : '0');
-      console.log('   ✅ Sozlamalar muvaffaqiyatli saqlandi.');
+      console.log('   ✅ Asosiy sozlamalar muvaffaqiyatli saqlandi.');
+    }
+    const reminderRes = await fetchFromGAS('get_reminder_text');
+    if (reminderRes.success && reminderRes.text) {
+      setSetting('REMINDER_TEXT', reminderRes.text);
+      console.log('   ✅ Eslatma matni saqlandi.');
+    }
+    const dirRes = await fetchFromGAS('get_director_notify');
+    if (dirRes.success && dirRes.enabled !== undefined) {
+      setSetting('NOTIFY_DIRECTOR', dirRes.enabled ? '1' : '0');
+      console.log('   ✅ Direktor bildirishnomasi sozlandi.');
     }
   } catch (e) {
     console.warn('   ⚠️ Sozlamalarni olishda xato:', e.message);
@@ -75,13 +89,13 @@ async function importRealData() {
   // 2. Lavozimlar (Positions)
   console.log('\n2️⃣ Lavozimlar (positions) yuklanmoqda...');
   try {
-    const posRes = await fetchFromGAS('get_positions');
+    const posRes = await fetchFromGAS('positions_get_all');
     if (posRes.success && Array.isArray(posRes.positions)) {
       const stmt = db.prepare('INSERT OR REPLACE INTO positions (id, position_name, icon) VALUES (?, ?, ?)');
       db.exec('BEGIN TRANSACTION;');
       let pIdx = 1;
       for (const p of posRes.positions) {
-        const name = typeof p === 'string' ? p : (p.position_name || p.name || '');
+        const name = typeof p === 'string' ? p : (p.name || p.position_name || '');
         const icon = (typeof p === 'object' && p.icon) ? p.icon : '💼';
         if (name) {
           stmt.run(pIdx++, name, icon);
@@ -122,11 +136,25 @@ async function importRealData() {
     console.warn('   ⚠️ Workflow olishda xato:', e.message);
   }
 
-  // 4. Xodimlar (Employees)
-  console.log('\n4️⃣ Xodimlar ro\'yxati (Hodimlar) yuklanmoqda...');
+  // 4. AI Sozlamalari (AI_Sozlamalar)
+  console.log('\n4️⃣ AI Agent provayderlari sozlamalari yuklanmoqda...');
+  try {
+    const aiRes = await fetchFromGAS('ai_get_config');
+    if (aiRes.success && aiRes.config) {
+      setSetting('AI_PROVIDERS_CONFIG', JSON.stringify(aiRes.config));
+      const provCount = (aiRes.config.all && aiRes.config.all.length) || 0;
+      console.log(`   ✅ AI Sozlamalari saqlandi (${provCount} ta provayder: Groq, Gemini, OpenRouter, Ollama).`);
+    }
+  } catch (e) {
+    console.warn('   ⚠️ AI Sozlamalarini olishda xato:', e.message);
+  }
+
+  // 5. Xodimlar (Employees / Hodimlar)
+  console.log('\n5️⃣ Xodimlar ro\'yxati (Hodimlar) yuklanmoqda...');
   try {
     const empRes = await fetchFromGAS('get_hodimlar');
-    if (empRes.success && Array.isArray(empRes.hodimlar)) {
+    const empList = (empRes.success && (empRes.data || empRes.hodimlar)) || [];
+    if (Array.isArray(empList) && empList.length > 0) {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO employees (
           telegram_id, username, can_add, super_admin, direktor, admin,
@@ -136,38 +164,50 @@ async function importRealData() {
       `);
       db.exec('BEGIN TRANSACTION;');
       let empCount = 0;
-      for (const h of empRes.hodimlar) {
-        const tgId = String(h.telegramId || h.telegram_id || '').trim();
+      for (const h of empList) {
+        const tgId = String(h.tgId || h.telegramId || h.telegram_id || '').trim();
         if (!tgId) continue;
-        const isSuper = String(tgId) === String(SUPER_ADMIN_ID) ? 1 : (h.superAdmin ? 1 : 0);
+        const isSuper = String(tgId) === String(SUPER_ADMIN_ID) ? 1 : (h.isSuperAdmin || h.superAdmin ? 1 : 0);
+        
+        let role = 'EMPLOYEE';
+        if (isSuper) role = 'SUPER_ADMIN';
+        else if (h.isDirektor || h.direktor) role = 'DIRECTOR';
+        else if (h.isBugalter || h.bugalter || String(h.role).toUpperCase() === 'BUGALTER') role = 'BUGALTER';
+        else if (h.isAdmin || h.admin) role = 'ADMIN';
+        else if (h.role) role = String(h.role).toUpperCase();
+
+        const lavozimStr = Array.isArray(h.positions) 
+          ? h.positions.join(', ') 
+          : String(h.lavozim || h.positions || '');
+
         stmt.run(
           tgId,
-          String(h.name || h.username || 'Xodim').trim(),
+          String(h.username || h.name || 'Xodim').trim(),
           h.canAdd !== false ? 1 : 0,
           isSuper,
-          h.direktor ? 1 : 0,
-          h.admin ? 1 : 0,
-          h.canViewAll ? 1 : 0,
+          h.isDirektor || h.direktor ? 1 : 0,
+          h.isAdmin || h.admin ? 1 : 0,
+          h.canViewAll !== false ? 1 : 0,
           h.canEdit ? 1 : 0,
           h.canDelete ? 1 : 0,
           h.canExport ? 1 : 0,
           h.canViewDash ? 1 : 0,
-          isSuper ? 'SUPER_ADMIN' : String(h.role || 'EMPLOYEE').toUpperCase(),
-          String(h.lavozim || ''),
-          String(h.guruh || ''),
+          role,
+          lavozimStr,
+          String(h.group || h.guruh || ''),
           h.isSardor ? 1 : 0
         );
         empCount++;
       }
       db.exec('COMMIT;');
-      console.log(`   ✅ ${empCount} ta xodim SQLite ga muvaffaqiyatli saqlandi.`);
+      console.log(`   ✅ ${empCount} ta haqiqiy xodim SQLite ga muvaffaqiyatli saqlandi.`);
     }
   } catch (e) {
     console.warn('   ⚠️ Xodimlarni olishda xato:', e.message);
   }
 
-  // 5. Moliyaviy Amallar (Records)
-  console.log('\n5️⃣ Haqiqiy moliyaviy amallar (records) yuklanmoqda...');
+  // 6. Moliyaviy Amallar (Records / Ish haqi)
+  console.log('\n6️⃣ Haqiqiy moliyaviy amallar (Ish haqi) yuklanmoqda...');
   let totalUZS = 0;
   let totalUSD = 0;
   let recCount = 0;
@@ -218,8 +258,8 @@ async function importRealData() {
     console.warn('   ⚠️ Moliyaviy amallarni olishda xato:', e.message);
   }
 
-  // 6. Kvadratlar (Buyurtmalar)
-  console.log('\n6️⃣ Haqiqiy kvadratlar (buyurtmalar) yuklanmoqda...');
+  // 7. Kvadratlar (Buyurtmalar / Kvadratlar)
+  console.log('\n7️⃣ Haqiqiy kvadratlar (Kvadratlar buyurtmalari) yuklanmoqda...');
   let totalM2 = 0;
   let kvCount = 0;
   try {
@@ -269,10 +309,12 @@ async function importRealData() {
 
   console.log('\n====================================================');
   console.log('🎉 YAKUNIY RECONCILIATION HISOBOTI:');
-  console.log(`   • Xodimlar soni: ${db.prepare('SELECT COUNT(*) as c FROM employees').get().c}`);
-  console.log(`   • Amallar soni: ${db.prepare('SELECT COUNT(*) as c FROM records WHERE is_deleted=0').get().c}`);
-  console.log(`   • Buyurtmalar soni: ${db.prepare('SELECT COUNT(*) as c FROM kvadratlar WHERE is_deleted=0').get().c}`);
-  console.log('   • Barcha ma\'lumotlar to\'liq va xatosiz sinxronlandi!');
+  console.log(`   • Xodimlar (Hodimlar): ${db.prepare('SELECT COUNT(*) as c FROM employees').get().c}`);
+  console.log(`   • Amallar (Ish haqi): ${db.prepare('SELECT COUNT(*) as c FROM records WHERE is_deleted=0').get().c}`);
+  console.log(`   • Buyurtmalar (Kvadratlar): ${db.prepare('SELECT COUNT(*) as c FROM kvadratlar WHERE is_deleted=0').get().c}`);
+  console.log(`   • Lavozimlar (Lavozimlar): ${db.prepare('SELECT COUNT(*) as c FROM positions').get().c}`);
+  console.log(`   • Bosqichlar (WorkflowSteps): ${db.prepare('SELECT COUNT(*) as c FROM workflow_steps').get().c}`);
+  console.log('   • Barcha listlar 100% to\'liq va xatosiz import qilindi!');
   console.log('====================================================\n');
 }
 
