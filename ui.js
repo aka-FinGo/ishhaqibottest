@@ -872,8 +872,18 @@ function showPermWarning(title, desc) {
 function showToastMsg(msg, isErr = false) {
     let t = document.getElementById('toast');
     if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
-    t.innerText = msg; t.className = 'toast' + (isErr ? ' toast-err' : '');
-    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+    t.innerText = msg;
+    const isWarn = isErr === 'warn' || (typeof msg === 'string' && msg.includes('⚠️'));
+    t.className = 'toast' + (isWarn ? ' toast-warn' : (isErr ? ' toast-err' : ''));
+    t.style.whiteSpace = 'pre-line';
+    t.style.maxWidth = '92vw';
+    t.style.width = 'max-content';
+    t.style.textAlign = 'center';
+    t.style.lineHeight = '1.4';
+    t.classList.add('show');
+    if (window._toastTimer) clearTimeout(window._toastTimer);
+    const duration = (msg && msg.length > 40) ? 5000 : 3000;
+    window._toastTimer = setTimeout(() => t.classList.remove('show'), duration);
 }
 
 let adminInitData = null;

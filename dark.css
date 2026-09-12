@@ -461,6 +461,20 @@ div.bottom-nav {
     box-shadow: var(--cyan-glow) !important;
 }
 
+.toast.toast-warn {
+    background: #241d08 !important;
+    color: #fef3c7 !important;
+    border: 1px solid #f59e0b !important;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4) !important;
+}
+
+.toast.toast-err {
+    background: #270f0f !important;
+    color: #fee2e2 !important;
+    border: 1px solid #ef4444 !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4) !important;
+}
+
 .nav-item.hidden {
     visibility: hidden !important;
     pointer-events: none !important;

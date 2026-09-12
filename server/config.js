@@ -1,8 +1,7 @@
-﻿// ============================================================
-// CONFIG.JS — Server-side configuration
-// Reads from .env via dotenv
 // ============================================================
-require('dotenv').config();
+// CONFIG.JS — Server-side configuration
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
 
 module.exports = {
   BOT_TOKEN:            process.env.BOT_TOKEN            || '',

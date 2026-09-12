@@ -341,39 +341,126 @@ async function runSystemSelfCheck(scope) {
     const statusEl = document.getElementById('adminServiceStatus');
     if (btn) btn.disabled = true;
     if (statusEl) {
-        statusEl.innerText = "⏳ Tizim tekshirilmoqda...";
+        statusEl.style.opacity = '1';
+        statusEl.style.display = 'block';
+        statusEl.style.textAlign = 'left';
         statusEl.className = 'status-msg';
+        statusEl.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; padding:10px; border-radius:8px; background:rgba(0,242,254,0.08); border:1px solid rgba(0,242,254,0.2); color:var(--text-light, #94a3b8); margin-top:10px;">
+                <div class="loading-spinner" style="border-color:rgba(0,242,254,0.3); border-top-color:#00f2fe; width:16px; height:16px; flex-shrink:0;"></div>
+                <span style="font-size:13px;">Tizim sozlamalari va xavfsizlik parametrlari tekshirilmoqda...</span>
+            </div>
+        `;
     }
     
     try {
         const res = await apiRequest({ action: 'self_check' });
         if (res && res.success) {
-            let msg = (res.warnings > 0)
-                ? `⚠️ Tekshiruvda ${res.warnings} ta ogohlantirish topildi:\n`
-                : "✅ Barcha tizim parametrlari to'g'ri sozlangan!\n";
-            if (Array.isArray(res.checks) && res.checks.length > 0) {
-                msg += res.checks.map(c => `${c.ok ? '✅' : '⚠️'} ${c.key}: ${c.note}`).join('\n');
-            } else if (res.summary) {
-                msg += res.summary;
-            }
+            const warnings = res.warnings || 0;
+            const checks = Array.isArray(res.checks) ? res.checks : [];
+            const failedChecks = checks.filter(c => !c.ok);
+
             if (statusEl) {
-                statusEl.innerText = msg;
-                statusEl.className = 'status-msg ' + (res.warnings > 0 ? 'text-warn' : 'text-green');
-                statusEl.style.whiteSpace = 'pre-wrap';
+                statusEl.style.opacity = '1';
+                statusEl.style.display = 'block';
+                statusEl.style.textAlign = 'left';
+
+                let html = '';
+                if (warnings > 0) {
+                    html += `
+                        <div style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b; border-radius:10px; padding:12px; margin-top:12px;">
+                            <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#f59e0b; font-size:14px; margin-bottom:8px;">
+                                <span>⚠️</span>
+                                <span>Tizimda ${warnings} ta ogohlantirish aniqlandi:</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                    `;
+                    failedChecks.forEach(c => {
+                        html += `
+                            <div style="background:rgba(245,158,11,0.08); border-left:3px solid #f59e0b; padding:8px 10px; border-radius:4px;">
+                                <div style="font-weight:700; color:#fbbf24; font-size:13px;">${c.label || c.key} <code>(${c.key})</code></div>
+                                <div style="font-size:12px; color:var(--text, #e2e8f0); margin-top:3px; line-height:1.4;"><b>Muammo:</b> ${c.desc || c.note || "Noto'g'ri sozlangan"}</div>
+                                ${c.advice ? `<div style="font-size:11px; color:#94a3b8; margin-top:4px;">💡 <i>Maslahat: ${c.advice}</i></div>` : ''}
+                            </div>
+                        `;
+                    });
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:10px; padding:12px; margin-top:12px;">
+                            <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#10b981; font-size:14px;">
+                                <span>✅</span>
+                                <span>Barcha tizim parametrlari to'g'ri sozlangan!</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Full checks list
+                if (checks.length > 0) {
+                    html += `
+                        <div style="margin-top:12px; background:var(--surface, #1e293b); border:1px solid var(--border, #334155); border-radius:10px; padding:12px;">
+                            <div style="font-size:11px; font-weight:700; color:var(--text-muted, #94a3b8); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Barcha tekshiruvlar tafsiloti:</div>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                    `;
+                    checks.forEach(c => {
+                        const icon = c.ok ? '✅' : '⚠️';
+                        const color = c.ok ? '#10b981' : '#f59e0b';
+                        const badgeBg = c.ok ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.1)';
+                        html += `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-radius:6px; background:${badgeBg}; font-size:12px; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+                                    <span>${icon}</span>
+                                    <span style="font-weight:600; color:var(--text, #e2e8f0); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${c.label || c.key}</span>
+                                </div>
+                                <span style="color:${color}; font-weight:700; font-size:11px; white-space:nowrap; flex-shrink:0;">${c.note}</span>
+                            </div>
+                        `;
+                    });
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                statusEl.innerHTML = html;
             }
-            showToastMsg(res.warnings > 0 ? "⚠️ Tizimda ogohlantirishlar mavjud" : "✅ Tizim tekshiruvi muvaffaqiyatli!");
+
+            // Toast message
+            if (warnings > 0) {
+                const toastLines = failedChecks.map(c => `• ${c.label || c.key}: ${c.desc || c.note}`);
+                const toastMsg = `⚠️ Ogohlantirish (${warnings} ta):\n` + toastLines.slice(0, 2).join('\n') + (toastLines.length > 2 ? `\n(+yana ${toastLines.length - 2} ta)` : '');
+                showToastMsg(toastMsg, 'warn');
+            } else {
+                showToastMsg("✅ Tizim tekshiruvi muvaffaqiyatli! Barcha parametrlar to'g'ri sozlangan.");
+            }
         } else {
             const err = res && res.error ? res.error : "Xatolik yuz berdi";
             if (statusEl) {
-                statusEl.innerText = "❌ " + err;
-                statusEl.className = 'status-msg text-red';
+                statusEl.style.opacity = '1';
+                statusEl.style.display = 'block';
+                statusEl.style.textAlign = 'left';
+                statusEl.innerHTML = `
+                    <div style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:10px; padding:12px; margin-top:12px; color:#f87171; font-size:13px; font-weight:600;">
+                        ❌ ${err}
+                    </div>
+                `;
             }
             showToastMsg("❌ " + err, true);
         }
     } catch (e) {
         if (statusEl) {
-            statusEl.innerText = "❌ Serverga ulanishda xato: " + e.message;
-            statusEl.className = 'status-msg text-red';
+            statusEl.style.opacity = '1';
+            statusEl.style.display = 'block';
+            statusEl.style.textAlign = 'left';
+            statusEl.innerHTML = `
+                <div style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:10px; padding:12px; margin-top:12px; color:#f87171; font-size:13px; font-weight:600;">
+                    ❌ Serverga ulanishda xato: ${e.message}
+                </div>
+            `;
         }
         showToastMsg("❌ Xatolik: " + e.message, true);
     } finally {

@@ -996,30 +996,137 @@ function setGlobalSettingHandler(key, val) {
 
 function runSelfCheck() {
   const checks = [];
-  function addCheck(key, ok, note) { checks.push({ key, ok: !!ok, note: String(note || '') }); }
+  function addCheck(key, label, ok, note, desc, advice) {
+    checks.push({
+      key,
+      label,
+      ok: !!ok,
+      note: String(note || ''),
+      desc: String(desc || ''),
+      advice: String(advice || '')
+    });
+  }
 
   const token = String(cfg.BOT_TOKEN || '');
-  addCheck('BOT_TOKEN', token && token !== 'YOUR_BOT_TOKEN', token ? 'sozlangan' : 'bo\'sh');
+  const hasToken = token && token !== 'YOUR_BOT_TOKEN';
+  addCheck(
+    'BOT_TOKEN',
+    'Telegram Bot Token',
+    hasToken,
+    hasToken ? 'sozlangan' : "bo'sh",
+    hasToken ? 'Telegram bot tokeni to\'g\'ri sozlangan' : 'BOT_TOKEN .env faylida kiritilmagan yoki standart holatda',
+    hasToken ? '' : 'Telegram @BotFather orqali olingan tokenni .env faylidagi BOT_TOKEN ga yozing'
+  );
 
   const chatId = String(cfg.CHAT_ID || '');
-  addCheck('CHAT_ID', chatId && chatId !== 'YOUR_TG_CHAT_ID', chatId ? 'sozlangan' : 'bo\'sh');
+  const hasChatId = chatId && chatId !== 'YOUR_TG_CHAT_ID';
+  addCheck(
+    'CHAT_ID',
+    'Hisobotlar Guruhi ID',
+    hasChatId,
+    hasChatId ? 'sozlangan' : "bo'sh",
+    hasChatId ? 'Xabarlar guruhi IDsi to\'g\'ri sozlangan' : 'CHAT_ID .env faylida kiritilmagan',
+    hasChatId ? '' : 'Bot qo\'shilgan va xabarlar yuboriladigan guruh ID raqamini .env fayliga kiriting'
+  );
 
   const superAdmin = String(cfg.SUPER_ADMIN_ID || '');
-  addCheck('SUPER_ADMIN_ID', superAdmin && superAdmin !== 'YOUR_TG_ADMIN_CHAT_ID', superAdmin ? 'sozlangan' : 'bo\'sh');
+  const hasSuperAdmin = superAdmin && superAdmin !== 'YOUR_TG_ADMIN_CHAT_ID';
+  addCheck(
+    'SUPER_ADMIN_ID',
+    'Bosh Admin Telegram ID',
+    hasSuperAdmin,
+    hasSuperAdmin ? 'sozlangan' : "bo'sh",
+    hasSuperAdmin ? 'Bosh admin Telegram IDsi sozlangan' : 'SUPER_ADMIN_ID .env faylida kiritilmagan',
+    hasSuperAdmin ? '' : 'Bosh adminning shaxsiy Telegram ID raqamini .env fayliga yozing'
+  );
 
   const webApp = String(cfg.WEB_APP_URL || '');
-  addCheck('WEB_APP_URL', /^https:\/\/.+/i.test(webApp) && !webApp.includes('YOUR.github.io'), webApp || 'bo\'sh');
+  const isHttps = /^https:\/\/.+/i.test(webApp) && !webApp.includes('YOUR.github.io');
+  addCheck(
+    'WEB_APP_URL',
+    'Web Ilova Manzili (URL)',
+    isHttps,
+    webApp || "bo'sh",
+    isHttps ? 'HTTPS manzil to\'g\'ri sozlangan' : 'WEB_APP_URL noto\'g\'ri yoki HTTPS protokoli mavjud emas',
+    isHttps ? '' : 'Domen https:// bilan boshlanishi va to\'g\'ri domen bo\'lishi shart'
+  );
 
-  addCheck('REQUIRE_TELEGRAM_AUTH', cfg.REQUIRE_TELEGRAM_AUTH === true, String(cfg.REQUIRE_TELEGRAM_AUTH));
-  addCheck('AUTH_MAX_AGE_SEC', cfg.AUTH_MAX_AGE_SEC > 0 && cfg.AUTH_MAX_AGE_SEC <= 86400, String(cfg.AUTH_MAX_AGE_SEC));
-  addCheck('RATE_LIMIT_ENABLED', cfg.RATE_LIMIT_ENABLED !== false, String(cfg.RATE_LIMIT_ENABLED));
-  addCheck('ERROR_ALERT_ENABLED', cfg.ERROR_ALERT_ENABLED !== false, String(cfg.ERROR_ALERT_ENABLED));
+  const isAuthEnabled = cfg.REQUIRE_TELEGRAM_AUTH === true;
+  addCheck(
+    'REQUIRE_TELEGRAM_AUTH',
+    'Telegram HMAC Xavfsizligi',
+    isAuthEnabled,
+    String(cfg.REQUIRE_TELEGRAM_AUTH),
+    isAuthEnabled 
+      ? 'Telegram HMAC imzosi tekshiruvi faol (Xavfsiz rejim)' 
+      : 'Telegram HMAC avtorizatsiyasi o\'chirilgan (REQUIRE_TELEGRAM_AUTH=false). Tizim hozirda test rejimida ishlamoqda.',
+    isAuthEnabled ? '' : 'Haqiqiy foydalanish uchun xavfsizlik maqsadida .env faylida REQUIRE_TELEGRAM_AUTH=true qiling'
+  );
 
-  const warningCount = checks.filter(c => !c.ok).length;
+  const isMaxAgeOk = cfg.AUTH_MAX_AGE_SEC > 0 && cfg.AUTH_MAX_AGE_SEC <= 86400;
+  addCheck(
+    'AUTH_MAX_AGE_SEC',
+    'Sessiya Muddati',
+    isMaxAgeOk,
+    String(cfg.AUTH_MAX_AGE_SEC) + 's',
+    isMaxAgeOk ? 'Sessiya muddati to\'g\'ri sozlangan (86400s)' : 'AUTH_MAX_AGE_SEC noto\'g\'ri qiymatda (0 dan 86400 gacha bo\'lishi kerak)',
+    isMaxAgeOk ? '' : 'Standart qiymat: 86400 (24 soat)'
+  );
+
+  const isRateLimitOk = cfg.RATE_LIMIT_ENABLED !== false;
+  addCheck(
+    'RATE_LIMIT_ENABLED',
+    'So\'rovlar Cheklovi (Rate Limit)',
+    isRateLimitOk,
+    String(cfg.RATE_LIMIT_ENABLED),
+    isRateLimitOk ? 'Spam va ortiqcha yuklamaga qarshi cheklov faol' : 'RATE_LIMIT_ENABLED o\'chirilgan',
+    isRateLimitOk ? '' : 'Server barqarorligi uchun RATE_LIMIT_ENABLED=true bo\'lishi tavsiya etiladi'
+  );
+
+  const isAlertOk = cfg.ERROR_ALERT_ENABLED !== false;
+  addCheck(
+    'ERROR_ALERT_ENABLED',
+    'Xatolik Signallari',
+    isAlertOk,
+    String(cfg.ERROR_ALERT_ENABLED),
+    isAlertOk ? 'Adminlarga avtomatik xatolik signallari yoqilgan' : 'ERROR_ALERT_ENABLED o\'chirilgan',
+    isAlertOk ? '' : 'Xatoliklarni tezkor aniqlash uchun ERROR_ALERT_ENABLED=true bo\'lishi tavsiya etiladi'
+  );
+
+  // SQLite Database status
+  try {
+    const { db } = require('../db');
+    const empCount = db.prepare('SELECT COUNT(*) as c FROM employees').get()?.c || 0;
+    const recCount = db.prepare('SELECT COUNT(*) as c FROM records WHERE is_deleted = 0').get()?.c || 0;
+    const kvCount = db.prepare('SELECT COUNT(*) as c FROM kvadratlar WHERE is_deleted = 0').get()?.c || 0;
+    addCheck(
+      'DATABASE',
+      'SQLite Ma\'lumotlar Bazasi',
+      true,
+      `${empCount} xodim, ${recCount} amal, ${kvCount} buyurtma`,
+      'Baza faol, jadvallar mavjud va to\'g\'ri ishlamoqda',
+      ''
+    );
+  } catch (dbErr) {
+    addCheck(
+      'DATABASE',
+      'SQLite Ma\'lumotlar Bazasi',
+      false,
+      'Xatolik',
+      'SQLite bazasiga ulanishda xato: ' + dbErr.message,
+      'Serverdagi data/ishhaqi.db faylini va ruxsatlarini tekshiring'
+    );
+  }
+
+  const failed = checks.filter(c => !c.ok);
+  const warningCount = failed.length;
+  const warningDetails = failed.map(c => `${c.label || c.key}: ${c.desc || c.note}`).join('; ');
+
   return {
     success: true,
     status:  warningCount === 0 ? 'ok' : 'warn',
     warnings: warningCount,
+    warningDetails,
     checks
   };
 }
