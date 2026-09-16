@@ -34,16 +34,41 @@ async function sendNotifyToDirectors(msg) {
   try {
     const db = require('./db');
     if (db.getSetting('NOTIFY_DIRECTOR') !== '1') return sentTracks;
-    const employees = db.getAllEmployees();
+    const employees = db.getAllEmployees ? db.getAllEmployees() : [];
     for (const emp of employees) {
-      const tgId = String(emp.tg_id || '').trim();
-      if ((emp.is_direktor == 1) && tgId && tgId !== String(config.SUPER_ADMIN_ID || '')) {
+      const tgId = String(emp.tgId || emp.telegram_id || emp.tg_id || '').trim();
+      const isDirektor = (emp.isDirektor == 1) || (emp.direktor == 1) || (emp.roleKey === 'DIRECTOR') || ((emp.role || '').toUpperCase().includes('DIRECTOR') || (emp.role || '').toUpperCase().includes('DIREKTOR'));
+      if (isDirektor && tgId && tgId !== String(config.SUPER_ADMIN_ID || '')) {
         const res = await tgSendMessage(tgId, msg, 'HTML');
-        if (res && res.result && res.result.message_id)
+        if (res && res.result && res.result.message_id) {
           sentTracks.push({ chatId: String(tgId), messageId: res.result.message_id, baseText: msg });
+        } else if (res && !res.ok) {
+          console.warn(`[sendNotifyToDirectors] tgId ${tgId} (${emp.username || 'Direktor'}) ga yuborilmadi: ${res.description}`);
+        }
       }
     }
   } catch (e) { console.error('[sendNotifyToDirectors]', e.message); }
+  return sentTracks;
+}
+
+async function sendNotifyToBugalters(msg) {
+  const config = getConfig(); const sentTracks = [];
+  try {
+    const db = require('./db');
+    const employees = db.getAllEmployees ? db.getAllEmployees() : [];
+    for (const emp of employees) {
+      const tgId = String(emp.tgId || emp.telegram_id || emp.tg_id || '').trim();
+      const isBugalter = (emp.isBugalter == 1) || (emp.roleKey === 'BUGALTER') || ((emp.role || '').toUpperCase().includes('BUGALTER'));
+      if (isBugalter && tgId && tgId !== String(config.SUPER_ADMIN_ID || '')) {
+        const res = await tgSendMessage(tgId, msg, 'HTML');
+        if (res && res.result && res.result.message_id) {
+          sentTracks.push({ chatId: String(tgId), messageId: res.result.message_id, baseText: msg });
+        } else if (res && !res.ok) {
+          console.warn(`[sendNotifyToBugalters] tgId ${tgId} (${emp.username || 'Bugalter'}) ga yuborilmadi: ${res.description}`);
+        }
+      }
+    }
+  } catch (e) { console.error('[sendNotifyToBugalters]', e.message); }
   return sentTracks;
 }
 
@@ -65,9 +90,11 @@ async function sendTelegramNotification(data) {
   const uzsText = Number(data.amountUZS) > 0 ? '\n\u{1F4B0} ' + Number(data.amountUZS).toLocaleString() + ' UZS' : '';
   const usdText = Number(data.amountUSD) > 0 ? '\n\u{1F4B5} $' + Number(data.amountUSD).toLocaleString() : '';
   const rateText = Number(data.amountUSD) > 0 && Number(data.rate) > 0 ? '\n\u{1F4C8} Kurs: ' + Number(data.rate).toLocaleString() + ' UZS' : '';
-  const statusBadge = data.initialStatus === 'Kutilmoqda' ? '\n\u23F3 <i>Holati: Kutilmoqda...</i>' : '';
+  const statusBadge = data.initialStatus === 'Kutilmoqda' ? '\n\u23F3 <i>Holati: Kutilmoqda...</i>' : '\n✅ <i>Holati: Tasdiqlangan</i>';
   const actorRole = data.actorRole || 'Bugalter';
-  const actorLine = (data.actorTgId && String(data.actorTgId) !== String(data.tgId) && data.actorName) ? '\n✍️ Kiritdi: ' + data.actorName + ' (' + actorRole + ')' : '';
+  const actorLine = (data.actorTgId && String(data.actorTgId) !== String(data.tgId) && data.actorName) 
+    ? '\n✍️ Kiritdi: ' + data.actorName + ' (' + actorRole + ')' 
+    : (data.actorName ? '\n✍️ Kiritdi: ' + data.actorName + ' (O\'zi)' : '');
   const msg = '⚠️ <b>Yangi amal qo’shildi</b>\n👤 Xodim: ' + (data.employeeName || '—') + actorLine + uzsText + usdText + rateText + (data.actionPeriod ? '\n📅 Davr: ' + data.actionPeriod : '') + '\n📝 ' + (data.comment || '—') + '\n📅 ' + (data.date || '—') + statusBadge;
   const sentTrack = []; const rowId = data.rowId;
   const isSuperAdminGettingButton = (data.notifyTarget === 'bugalter') || (data.notifyTarget === 'employee' && String(config.CHAT_ID) === String(data.tgId));
@@ -76,8 +103,19 @@ async function sendTelegramNotification(data) {
     if (resAdmin && resAdmin.result && resAdmin.result.message_id)
       sentTrack.push({ chatId: String(config.CHAT_ID), messageId: resAdmin.result.message_id, baseText: msg });
   }
+
+  // 1. Direktorlarga informativ xabar yuborish (NOTIFY_DIRECTOR = 1 bo'lsa)
   const dirTracks = await sendNotifyToDirectors(msg);
   if (dirTracks.length > 0) sentTrack.push(...dirTracks);
+
+  // 2. Bugalterlarga informativ xabar yuborish:
+  // Agar amal tasdiqlash uchun bugalterga tugmali so'rov sifatida ketmagan bo'lsa (masalan, SuperAdmin o'zi uchun kiritganda),
+  // Bugalterlar hisob-kitobdan xabardor bo'lishi uchun ularga informativ xabar boradi!
+  if (data.notifyTarget !== 'bugalter') {
+    const bugTracks = await sendNotifyToBugalters(msg);
+    if (bugTracks.length > 0) sentTrack.push(...bugTracks);
+  }
+
   if (rowId && sentTrack.length > 0) appendTrackedMessages(db, rowId, sentTrack);
 }
 
@@ -110,12 +148,15 @@ async function sendApprovalToBugalters(data) {
   const sentTrack = [];
   const employees = db.getAllEmployees ? db.getAllEmployees() : [];
   for (const emp of employees) {
-    const isBugalter = (emp.role || '').toUpperCase() === 'BUGALTER' || emp.is_bugalter == 1;
-    const tgId = String(emp.tg_id || '').trim();
+    const isBugalter = (emp.isBugalter == 1) || (emp.roleKey === 'BUGALTER') || ((emp.role || '').toUpperCase().includes('BUGALTER'));
+    const tgId = String(emp.tgId || emp.telegram_id || emp.tg_id || '').trim();
     if (isBugalter && tgId && tgId !== String(config.SUPER_ADMIN_ID || '')) {
       const res = await tgSendMessage(tgId, msg, 'HTML', replyMarkup);
-      if (res && res.result && res.result.message_id)
+      if (res && res.result && res.result.message_id) {
         sentTrack.push({ chatId: String(tgId), messageId: res.result.message_id, baseText: msg });
+      } else if (res && !res.ok) {
+        console.warn(`[sendApprovalToBugalters] tgId ${tgId} (${emp.username || 'Bugalter'}) ga yuborilmadi: ${res.description}`);
+      }
     }
   }
   if (config.SUPER_ADMIN_ID) {
@@ -289,6 +330,8 @@ async function syncRecordStatusInTelegram(recordId, newStatus, actorName = 'Admi
 module.exports = {
   tgSendMessage,
   sendTelegramNotification,
+  sendNotifyToDirectors,
+  sendNotifyToBugalters,
   sendApprovalRequest,
   sendApprovalToBugalters,
   sendExcelToUser,
