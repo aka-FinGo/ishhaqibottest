@@ -487,7 +487,7 @@ async function runImportFromSheets() {
     }
 
     try {
-        const res = await callApi('admin_import_from_sheets', {});
+        const res = await apiRequest({ action: 'admin_import_from_sheets' }, { timeoutMs: 60000 });
         if (res && res.success) {
             const stats = res.stats || {};
             const backupMsg = res.backupFile ? `<div style="margin-top:6px; font-size:11px; color:var(--text-muted);">🛡️ Avtomatik zaxira fayli: <code>${res.backupFile}</code></div>` : '';
