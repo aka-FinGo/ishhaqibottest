@@ -86,11 +86,35 @@ async function importRealData() {
   let posCount = 0;
   let stepCount = 0;
 
+  console.log('📡 Google Sheets dan barcha jadvallar parallel ravishda yuklanmoqda...');
+  const tFetchStart = Date.now();
+  const [
+    globalRes,
+    reminderRes,
+    dirRes,
+    posRes,
+    wfRes,
+    aiRes,
+    empRes,
+    recRes,
+    kvRes
+  ] = await Promise.all([
+    fetchFromGAS('get_global_settings'),
+    fetchFromGAS('get_reminder_text'),
+    fetchFromGAS('get_director_notify'),
+    fetchFromGAS('positions_get_all'),
+    fetchFromGAS('workflow_get_config'),
+    fetchFromGAS('ai_get_config'),
+    fetchFromGAS('get_hodimlar'),
+    fetchFromGAS('admin_get_all'),
+    fetchFromGAS('kvadrat_get_all')
+  ]);
+  console.log(`⚡ Barcha ma'lumotlar ${Date.now() - tFetchStart}ms da muvaffaqiyatli yuklab olindi!\n`);
+
   // 1. Sozlamalar (Global Settings)
-  console.log('1️⃣ Global tizim sozlamalari yuklanmoqda...');
+  console.log('1️⃣ Global tizim sozlamalari saqlanmoqda...');
   try {
-    const globalRes = await fetchFromGAS('get_global_settings');
-    if (globalRes.success && globalRes.settings) {
+    if (globalRes && globalRes.success && globalRes.settings) {
       const s = globalRes.settings;
       setSetting('ONLY_BUGALTER_ADD', s.onlyBugalterAdd ? '1' : '0');
       setSetting('DISABLE_EMP_EDIT_DELETE', s.disableEmpEditDelete ? '1' : '0');
@@ -98,25 +122,22 @@ async function importRealData() {
       setSetting('WORKFLOW_STRICT_MODE', s.workflowStrictMode ? '1' : '0');
       console.log('   ✅ Asosiy sozlamalar muvaffaqiyatli saqlandi.');
     }
-    const reminderRes = await fetchFromGAS('get_reminder_text');
-    if (reminderRes.success && reminderRes.text) {
+    if (reminderRes && reminderRes.success && reminderRes.text) {
       setSetting('REMINDER_TEXT', reminderRes.text);
       console.log('   ✅ Eslatma matni saqlandi.');
     }
-    const dirRes = await fetchFromGAS('get_director_notify');
-    if (dirRes.success && dirRes.enabled !== undefined) {
+    if (dirRes && dirRes.success && dirRes.enabled !== undefined) {
       setSetting('NOTIFY_DIRECTOR', dirRes.enabled ? '1' : '0');
       console.log('   ✅ Direktor bildirishnomasi sozlandi.');
     }
   } catch (e) {
-    console.warn('   ⚠️ Sozlamalarni olishda xato:', e.message);
+    console.warn('   ⚠️ Sozlamalarni saqlashda xato:', e.message);
   }
 
   // 2. Lavozimlar (Positions)
-  console.log('\n2️⃣ Lavozimlar (positions) yuklanmoqda...');
+  console.log('\n2️⃣ Lavozimlar (positions) saqlanmoqda...');
   try {
-    const posRes = await fetchFromGAS('positions_get_all');
-    if (posRes.success && Array.isArray(posRes.positions)) {
+    if (posRes && posRes.success && Array.isArray(posRes.positions)) {
       const stmt = db.prepare('INSERT OR REPLACE INTO positions (id, position_name, icon) VALUES (?, ?, ?)');
       db.exec('BEGIN TRANSACTION;');
       let pIdx = 1;
@@ -132,14 +153,13 @@ async function importRealData() {
       console.log(`   ✅ ${posCount} ta lavozim SQLite ga saqlandi.`);
     }
   } catch (e) {
-    console.warn('   ⚠️ Lavozimlarni olishda xato:', e.message);
+    console.warn('   ⚠️ Lavozimlarni saqlashda xato:', e.message);
   }
 
   // 3. Workflow Steps
-  console.log('\n3️⃣ Kvadratlar Workflow bosqichlari yuklanmoqda...');
+  console.log('\n3️⃣ Kvadratlar Workflow bosqichlari saqlanmoqda...');
   try {
-    const wfRes = await fetchFromGAS('workflow_get_config');
-    if (wfRes.success && Array.isArray(wfRes.steps)) {
+    if (wfRes && wfRes.success && Array.isArray(wfRes.steps)) {
       db.exec('DELETE FROM workflow_steps;');
       const stmt = db.prepare(`
         INSERT INTO workflow_steps (step_index, position_name, action_label, status_label, is_start, is_end)
@@ -165,23 +185,21 @@ async function importRealData() {
   }
 
   // 4. AI Sozlamalari (AI_Sozlamalar)
-  console.log('\n4️⃣ AI Agent provayderlari sozlamalari yuklanmoqda...');
+  console.log('\n4️⃣ AI Agent provayderlari sozlamalari saqlanmoqda...');
   try {
-    const aiRes = await fetchFromGAS('ai_get_config');
-    if (aiRes.success && aiRes.config) {
+    if (aiRes && aiRes.success && aiRes.config) {
       setSetting('AI_PROVIDERS_CONFIG', JSON.stringify(aiRes.config));
       const provCount = (aiRes.config.all && aiRes.config.all.length) || 0;
       console.log(`   ✅ AI Sozlamalari saqlandi (${provCount} ta provayder: Groq, Gemini, OpenRouter, Ollama).`);
     }
   } catch (e) {
-    console.warn('   ⚠️ AI Sozlamalarini olishda xato:', e.message);
+    console.warn('   ⚠️ AI Sozlamalarini saqlashda xato:', e.message);
   }
 
   // 5. Xodimlar (Employees / Hodimlar)
-  console.log('\n5️⃣ Xodimlar ro\'yxati (Hodimlar) yuklanmoqda...');
+  console.log('\n5️⃣ Xodimlar ro\'yxati (Hodimlar) saqlanmoqda...');
   try {
-    const empRes = await fetchFromGAS('get_hodimlar');
-    const empList = (empRes.success && (empRes.data || empRes.hodimlar)) || [];
+    const empList = (empRes && empRes.success && (empRes.data || empRes.hodimlar)) || [];
     if (Array.isArray(empList) && empList.length > 0) {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO employees (
@@ -191,7 +209,7 @@ async function importRealData() {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       db.exec('BEGIN TRANSACTION;');
-      let empCount = 0;
+      let count = 0;
       for (const h of empList) {
         const tgId = String(h.tgId || h.telegramId || h.telegram_id || '').trim();
         if (!tgId) continue;
@@ -225,23 +243,23 @@ async function importRealData() {
           String(h.group || h.guruh || ''),
           h.isSardor ? 1 : 0
         );
-        empCount++;
+        count++;
       }
       db.exec('COMMIT;');
+      empCount = count;
       console.log(`   ✅ ${empCount} ta haqiqiy xodim SQLite ga muvaffaqiyatli saqlandi.`);
     }
   } catch (e) {
-    console.warn('   ⚠️ Xodimlarni olishda xato:', e.message);
+    console.warn('   ⚠️ Xodimlarni saqlashda xato:', e.message);
   }
 
   // 6. Moliyaviy Amallar (Records / Ish haqi)
-  console.log('\n6️⃣ Haqiqiy moliyaviy amallar (Ish haqi) yuklanmoqda...');
+  console.log('\n6️⃣ Haqiqiy moliyaviy amallar (Ish haqi) saqlanmoqda...');
   totalUZS = 0;
   totalUSD = 0;
   recCount = 0;
   try {
-    const recRes = await fetchFromGAS('admin_get_all');
-    if (recRes.success && Array.isArray(recRes.data)) {
+    if (recRes && recRes.success && Array.isArray(recRes.data)) {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO records (
           id, name, telegram_id, amount_uzs, amount_usd, rate,
@@ -283,16 +301,15 @@ async function importRealData() {
       console.log(`      • Jami USD summasi: ${totalUSD.toLocaleString('uz-UZ')} $`);
     }
   } catch (e) {
-    console.warn('   ⚠️ Moliyaviy amallarni olishda xato:', e.message);
+    console.warn('   ⚠️ Moliyaviy amallarni saqlashda xato:', e.message);
   }
 
   // 7. Kvadratlar (Buyurtmalar / Kvadratlar)
-  console.log('\n7️⃣ Haqiqiy kvadratlar (Kvadratlar buyurtmalari) yuklanmoqda...');
+  console.log('\n7️⃣ Haqiqiy kvadratlar (Kvadratlar buyurtmalari) saqlanmoqda...');
   totalM2 = 0;
   kvCount = 0;
   try {
-    const kvRes = await fetchFromGAS('kvadrat_get_all');
-    if (kvRes.success && Array.isArray(kvRes.data)) {
+    if (kvRes && kvRes.success && Array.isArray(kvRes.data)) {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO kvadratlar (
           id, sana, order_no, oy, yil, total_m2, order_name,
