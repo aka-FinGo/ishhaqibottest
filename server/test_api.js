@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // test_api.js -- Local Integration Test Suite
 // Run: node server/test_api.js
 // Requires: Server running at localhost:3010
@@ -122,13 +122,26 @@ function assertHasKey(obj, key) {
 }
 
 // Test Suite
+let spawnedServer = null;
+
 async function runTests() {
   console.log('');
   console.log('Ishhaqibot API Test Suite');
   console.log('Target: http://' + HOST + ':' + PORT + API_PATH);
-  console.log('Note: Set REQUIRE_TELEGRAM_AUTH=false in .env for local testing');
   console.log('-------------------------------------------------------');
   console.log('');
+
+  // Auto-start server if not already running
+  try {
+    await healthCheck();
+  } catch (e) {
+    process.env.REQUIRE_TELEGRAM_AUTH = 'false';
+    const app = require('./app');
+    await new Promise(resolve => {
+      spawnedServer = app.listen(PORT, resolve);
+    });
+    console.log('  [Auto-spawned in-process server on port ' + PORT + ']');
+  }
 
   // Test 1: Health check
   await runTest('Test 1: Health check (GET /api)', async () => {
@@ -207,6 +220,18 @@ async function runTests() {
     assert(typeof res.body === 'object', 'Must be JSON object');
     assertHasKey(res.body, 'success');
   });
+
+  // Test 9: admin_import_from_sheets (auth protection)
+  await runTest('Test 9: admin_import_from_sheets -- auth check', async () => {
+    // Calling with fake non-admin ID must fail
+    const res = await testRequest('admin_import_from_sheets');
+    assert(res.status === 200, 'HTTP ' + res.status);
+    assert(res.body && res.body.success === false, 'Non-admin request must be rejected');
+  });
+
+  if (spawnedServer) {
+    spawnedServer.close();
+  }
 
   // Summary
   console.log('');

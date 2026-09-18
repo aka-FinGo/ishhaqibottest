@@ -468,3 +468,76 @@ async function runSystemSelfCheck(scope) {
     }
 }
 
+async function runImportFromSheets() {
+    const isConfirmed = confirm("⚠️ DIQQAT!\n\nGoogle Sheets dagi barcha ma'lumotlar (Hodimlar, Ish haqi, Kvadratlar, Lavozimlar, Sozlamalar) SQLite bazasiga import qilinadi.\n\nHar bir importdan oldin bazaning avtomatik zaxira nusxasi (backup) olinadi.\n\nDavom ettirishni tasdiqlaysizmi?");
+    if (!isConfirmed) return;
+
+    const btn = document.getElementById('btnAdminImportSheets');
+    const statusEl = document.getElementById('adminImportStatus');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳</span> Yuklanmoqda (Google Sheets bilan bog'lanilmoqda)...`;
+    }
+
+    if (statusEl) {
+        statusEl.style.opacity = '1';
+        statusEl.style.display = 'block';
+        statusEl.innerHTML = `<div style="color:var(--cyan-neon, #00f2fe); font-weight:600;">⏳ Google Sheets dan ma'lumotlar tortib olinmoqda va SQLite bazasi yangilanmoqda...</div>`;
+    }
+
+    try {
+        const res = await callApi('admin_import_from_sheets', {});
+        if (res && res.success) {
+            const stats = res.stats || {};
+            const backupMsg = res.backupFile ? `<div style="margin-top:6px; font-size:11px; color:var(--text-muted);">🛡️ Avtomatik zaxira fayli: <code>${res.backupFile}</code></div>` : '';
+
+            if (statusEl) {
+                statusEl.innerHTML = `
+                    <div style="background:rgba(16,185,129,0.12); border:1px solid #10b981; border-radius:10px; padding:12px; margin-top:12px; color:#10b981; text-align:left;">
+                        <div style="font-weight:700; font-size:14px; margin-bottom:6px;">✅ Muvaffaqiyatli import qilindi!</div>
+                        <div style="font-size:12px; line-height:1.6; color:var(--text);">
+                            • <b>Xodimlar (Hodimlar):</b> ${stats.employees || 0} ta<br>
+                            • <b>Moliyaviy amallar (Ish haqi):</b> ${stats.records || 0} ta (Jami: ${(stats.totalUZS || 0).toLocaleString()} UZS, ${(stats.totalUSD || 0).toLocaleString()} $)<br>
+                            • <b>Kvadratlar buyurtmalari:</b> ${stats.kvadratlar || 0} ta (Jami: ${stats.totalM2 || 0} m²)<br>
+                            • <b>Lavozimlar & Bosqichlar:</b> ${stats.positions || 0} ta / ${stats.workflowSteps || 0} ta
+                        </div>
+                        ${backupMsg}
+                    </div>
+                `;
+            }
+            showToastMsg("✅ Google Sheets ma'lumotlari muvaffaqiyatli yuklandi!");
+
+            // Agar boshqa ma'lumotlar ochiq bo'lsa yangilash
+            if (typeof loadAllData === 'function') loadAllData();
+            if (typeof loadKvData === 'function') loadKvData();
+            if (typeof renderHodimlarTable === 'function') renderHodimlarTable();
+        } else {
+            const err = (res && res.error) ? res.error : "Noma'lum xatolik yuz berdi";
+            if (statusEl) {
+                statusEl.innerHTML = `
+                    <div style="background:rgba(239,68,68,0.12); border:1px solid #ef4444; border-radius:10px; padding:12px; margin-top:12px; color:#f87171; text-align:left;">
+                        ❌ <b>Xatolik:</b> ${err}
+                    </div>
+                `;
+            }
+            showToastMsg("❌ " + err, true);
+        }
+    } catch (e) {
+        if (statusEl) {
+            statusEl.innerHTML = `
+                <div style="background:rgba(239,68,68,0.12); border:1px solid #ef4444; border-radius:10px; padding:12px; margin-top:12px; color:#f87171; text-align:left;">
+                    ❌ <b>Aloqa xatosi:</b> ${e.message}
+                </div>
+            `;
+        }
+        showToastMsg("❌ Xatolik: " + e.message, true);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span>📥</span> Google Sheets dan yuklab olish`;
+        }
+    }
+}
+
+

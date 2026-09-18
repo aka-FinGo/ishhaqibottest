@@ -588,6 +588,20 @@
                         onclick="runSystemSelfCheck('admin')">🧪 Self-check</button>
                     <div id="adminServiceStatus" class="status-msg"></div>
                 </div>
+
+                <div class="card" style="margin-top:15px; border: 1px solid rgba(16, 185, 129, 0.25);">
+                    <div class="card-title" style="display:flex; align-items:center; gap:8px;">
+                        <span>📥</span> Google Sheets dan Yuklab Olish
+                    </div>
+                    <p style="margin:0 0 12px; font-size:12px; color:var(--text-muted); line-height:1.5;">
+                        Google Sheets dagi barcha ma'lumotlarni (Hodimlar, Ish haqi, Kvadratlar, Lavozimlar, Sozlamalar) SQLite bazasiga import qiladi. Har bir importdan oldin avtomatik zaxira nusxasi (backup) olinadi.
+                    </p>
+                    <button class="btn-main bg-navy" id="btnAdminImportSheets" style="margin-top:0; width:100%; display:flex; align-items:center; justify-content:center; gap:8px;"
+                        onclick="runImportFromSheets()">
+                        <span>📥</span> Google Sheets dan yuklab olish
+                    </button>
+                    <div id="adminImportStatus" class="status-msg" style="margin-top:12px; font-size:12px;"></div>
+                </div>
             </div>
 
             <div id="adminSettingsArea" class="hidden">
@@ -1126,7 +1140,7 @@
         <script defer src="realtime.js?v=2.5.7"></script>
         <script defer src="ui.js?v=2.5.7"></script>
         <script defer src="employee.js?v=2.5.7"></script>
-        <script defer src="admin.js?v=2.5.7"></script>
+        <script defer src="admin.js?v=2.5.9"></script>
         <script defer src="export.js?v=2.5.7"></script>
         <script defer src="actions.js?v=2.5.7"></script>
         <script defer src="dashboard.js?v=2.5.7"></script>

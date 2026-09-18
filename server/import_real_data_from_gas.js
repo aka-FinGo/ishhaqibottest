@@ -60,6 +60,32 @@ async function importRealData() {
   console.log('🚀 HAQIQIY GSHEETS MA\'LUMOTLARINI IMPORT QILISH BOSHLANDI');
   console.log('====================================================\n');
 
+  // 0. Avtomatik Zaxira olish (Pre-import backup)
+  const fs = require('fs');
+  const dbPath = path.join(__dirname, '..', 'data', 'ishhaqi.db');
+  const backupsDir = path.join(__dirname, '..', 'data', 'backups');
+  let backupFile = null;
+  try {
+    if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
+    if (fs.existsSync(dbPath)) {
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      backupFile = `ishhaqi_pre_import_${ts}.db`;
+      fs.copyFileSync(dbPath, path.join(backupsDir, backupFile));
+      console.log(`🛡️ Import oldidan avtomatik zaxira olindi: ${backupFile}`);
+    }
+  } catch (bErr) {
+    console.warn('⚠️ Zaxira olishda xato:', bErr.message);
+  }
+
+  let empCount = 0;
+  let recCount = 0;
+  let totalUZS = 0;
+  let totalUSD = 0;
+  let kvCount = 0;
+  let totalM2 = 0;
+  let posCount = 0;
+  let stepCount = 0;
+
   // 1. Sozlamalar (Global Settings)
   console.log('1️⃣ Global tizim sozlamalari yuklanmoqda...');
   try {
@@ -102,7 +128,8 @@ async function importRealData() {
         }
       }
       db.exec('COMMIT;');
-      console.log(`   ✅ ${pIdx - 1} ta lavozim SQLite ga saqlandi.`);
+      posCount = pIdx - 1;
+      console.log(`   ✅ ${posCount} ta lavozim SQLite ga saqlandi.`);
     }
   } catch (e) {
     console.warn('   ⚠️ Lavozimlarni olishda xato:', e.message);
@@ -130,7 +157,8 @@ async function importRealData() {
         );
       }
       db.exec('COMMIT;');
-      console.log(`   ✅ ${wfRes.steps.length} ta workflow bosqichlari saqlandi.`);
+      stepCount = wfRes.steps.length;
+      console.log(`   ✅ ${stepCount} ta workflow bosqichlari saqlandi.`);
     }
   } catch (e) {
     console.warn('   ⚠️ Workflow olishda xato:', e.message);
@@ -208,9 +236,9 @@ async function importRealData() {
 
   // 6. Moliyaviy Amallar (Records / Ish haqi)
   console.log('\n6️⃣ Haqiqiy moliyaviy amallar (Ish haqi) yuklanmoqda...');
-  let totalUZS = 0;
-  let totalUSD = 0;
-  let recCount = 0;
+  totalUZS = 0;
+  totalUSD = 0;
+  recCount = 0;
   try {
     const recRes = await fetchFromGAS('admin_get_all');
     if (recRes.success && Array.isArray(recRes.data)) {
@@ -260,8 +288,8 @@ async function importRealData() {
 
   // 7. Kvadratlar (Buyurtmalar / Kvadratlar)
   console.log('\n7️⃣ Haqiqiy kvadratlar (Kvadratlar buyurtmalari) yuklanmoqda...');
-  let totalM2 = 0;
-  let kvCount = 0;
+  totalM2 = 0;
+  kvCount = 0;
   try {
     const kvRes = await fetchFromGAS('kvadrat_get_all');
     if (kvRes.success && Array.isArray(kvRes.data)) {
@@ -309,13 +337,34 @@ async function importRealData() {
 
   console.log('\n====================================================');
   console.log('🎉 YAKUNIY RECONCILIATION HISOBOTI:');
-  console.log(`   • Xodimlar (Hodimlar): ${db.prepare('SELECT COUNT(*) as c FROM employees').get().c}`);
-  console.log(`   • Amallar (Ish haqi): ${db.prepare('SELECT COUNT(*) as c FROM records WHERE is_deleted=0').get().c}`);
-  console.log(`   • Buyurtmalar (Kvadratlar): ${db.prepare('SELECT COUNT(*) as c FROM kvadratlar WHERE is_deleted=0').get().c}`);
-  console.log(`   • Lavozimlar (Lavozimlar): ${db.prepare('SELECT COUNT(*) as c FROM positions').get().c}`);
-  console.log(`   • Bosqichlar (WorkflowSteps): ${db.prepare('SELECT COUNT(*) as c FROM workflow_steps').get().c}`);
+  const totalEmployeesInDb = db.prepare('SELECT COUNT(*) as c FROM employees').get().c;
+  const totalRecordsInDb = db.prepare('SELECT COUNT(*) as c FROM records WHERE is_deleted=0').get().c;
+  const totalKvadratlarInDb = db.prepare('SELECT COUNT(*) as c FROM kvadratlar WHERE is_deleted=0').get().c;
+  const totalPositionsInDb = db.prepare('SELECT COUNT(*) as c FROM positions').get().c;
+  const totalWorkflowStepsInDb = db.prepare('SELECT COUNT(*) as c FROM workflow_steps').get().c;
+  console.log(`   • Xodimlar (Hodimlar): ${totalEmployeesInDb}`);
+  console.log(`   • Amallar (Ish haqi): ${totalRecordsInDb}`);
+  console.log(`   • Buyurtmalar (Kvadratlar): ${totalKvadratlarInDb}`);
+  console.log(`   • Lavozimlar (Lavozimlar): ${totalPositionsInDb}`);
+  console.log(`   • Bosqichlar (WorkflowSteps): ${totalWorkflowStepsInDb}`);
   console.log('   • Barcha listlar 100% to\'liq va xatosiz import qilindi!');
   console.log('====================================================\n');
+
+  return {
+    success: true,
+    backupFile,
+    stats: {
+      employees: totalEmployeesInDb,
+      records: totalRecordsInDb,
+      kvadratlar: totalKvadratlarInDb,
+      positions: totalPositionsInDb,
+      workflowSteps: totalWorkflowStepsInDb,
+      totalUZS,
+      totalUSD,
+      totalM2: Number(totalM2.toFixed(2))
+    },
+    timestamp: new Date().toISOString()
+  };
 }
 
 if (require.main === module) {

@@ -200,6 +200,12 @@ router.post('/', async (req, res) => {
         result = setGlobalSettingHandler(body.key, body.value);
         break;
 
+      // ---- Google Sheets Import (SuperAdmin only) ----
+      case 'admin_import_from_sheets':
+        if (!auth.isSuperAdmin) return res.json({ success: false, error: "Faqat SuperAdmin Google Sheets dan ma'lumot yuklay oladi!" });
+        result = await handleAdminImportFromSheets();
+        break;
+
       // ---- Kvadratlar & Workflow ----
       case 'kvadrat_get_all':
         result = await handleKvadratGetAll(auth);
@@ -1427,7 +1433,7 @@ async function handleWorkflowGetConfig() {
     isEnd:         s.is_end === 1,
     is_end:        s.is_end === 1
   }));
-  return { success: true, config: steps };
+  return { success: true, config: steps, steps, data: steps };
 }
 
 async function handleWorkflowSaveConfig(steps, auth) {
@@ -1472,7 +1478,7 @@ async function handlePositionsGetAll() {
     position_name: p.position_name,
     icon:          p.icon || '💼'
   }));
-  return { success: true, positions };
+  return { success: true, positions, data: positions };
 }
 
 async function handlePositionsSaveAll(positions, auth) {
@@ -1664,6 +1670,30 @@ async function handleAIRunReport(auth) {
     return { success: true, message: "AI Hisobot yaratildi va Telegramga yuborildi." };
   } else {
     return { success: false, error: aiRes.error };
+  }
+}
+
+let isImportInProgress = false;
+
+async function handleAdminImportFromSheets() {
+  if (isImportInProgress) {
+    return { success: false, error: "Import jarayoni hozirda davom etmoqda. Iltimos, kuting..." };
+  }
+  isImportInProgress = true;
+  try {
+    const { importRealData } = require('../import_real_data_from_gas');
+    const result = await importRealData();
+    return {
+      success: true,
+      message: "Google Sheets dan ma'lumotlar muvaffaqiyatli import qilindi!",
+      stats: result.stats,
+      backupFile: result.backupFile
+    };
+  } catch (err) {
+    console.error('[handleAdminImportFromSheets error]', err);
+    return { success: false, error: err.message };
+  } finally {
+    isImportInProgress = false;
   }
 }
 

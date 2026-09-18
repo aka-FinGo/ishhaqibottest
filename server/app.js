@@ -63,9 +63,12 @@ app.use((err, req, res, _next) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✅ Ishhaqibot Server port ${PORT} da ishlayapti`);
-  console.log(`   http://localhost:${PORT}`);
-});
+let serverInstance = null;
+if (require.main === module) {
+  serverInstance = app.listen(PORT, () => {
+    console.log(`✅ Ishhaqibot Server port ${PORT} da ishlayapti`);
+    console.log(`   http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;

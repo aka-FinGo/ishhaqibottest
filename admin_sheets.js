@@ -2861,3 +2861,33 @@ function showAccessDenied() {
     `;
 }
 
+async function importFromGoogleSheetsInside() {
+    const isOk = confirm("⚠️ DIQQAT!\n\nGoogle Sheets dagi barcha ma'lumotlar (Hodimlar, Ish haqi, Kvadratlar, Lavozimlar) SQLite bazasiga yangilanadi.\n\nHar bir importdan oldin avtomatik zaxira nusxasi (backup) olinadi.\n\nDavom ettirishni tasdiqlaysizmi?");
+    if (!isOk) return;
+
+    const btn = document.getElementById('btnSyncGSheetsTop');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "⏳ Yuklanmoqda...";
+    }
+
+    try {
+        const res = await apiRequest('admin_import_from_sheets', {});
+        if (res && res.success) {
+            const stats = res.stats || {};
+            alert(`✅ Google Sheets dan muvaffaqiyatli import qilindi!\n\n• Xodimlar: ${stats.employees || 0} ta\n• Moliyaviy amallar: ${stats.records || 0} ta\n• Kvadratlar buyurtmalari: ${stats.kvadratlar || 0} ta\n\nJadval ma'lumotlari qayta yuklanmoqda...`);
+            window.location.reload(true);
+        } else {
+            alert("❌ Xatolik: " + (res?.error || "Import muvaffaqiyatsiz bo'ldi"));
+        }
+    } catch (e) {
+        alert("❌ Xatolik: " + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "📥 GSheets Import";
+        }
+    }
+}
+
+
